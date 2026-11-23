@@ -37,6 +37,11 @@ public class EntryIndexState implements UserDataOwner {
         });
     }
 
+    /** Removes the entry's index state; joins the caller's transaction. */
+    public void forget(long entryId) {
+        em.createNativeQuery("DELETE FROM entry_index_state WHERE entry_id = ?1").setParameter(1, entryId).executeUpdate();
+    }
+
     /** Ids (ascending, greater than {@code afterId}) of FINISHED entries not indexed for {@code modelId}. */
     @SuppressWarnings("unchecked")
     public List<Long> unindexed(String modelId, long afterId, int limit) {

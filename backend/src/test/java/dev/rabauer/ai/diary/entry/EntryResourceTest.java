@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,10 +121,13 @@ class EntryResourceTest {
     }
 
     @Test
-    void deleteRemovesEntry() {
+    void deleteRemovesEntryAndItsVectors() {
         long id = create("to delete", "2026-11-20T08:00:00");
+        given().post("/api/entries/" + id + "/finish").then().statusCode(200);
+        indexer.awaitIdle();
+        assertThat(Fakes.vectors().count(EntryIndexer.NAMESPACE, Long.toString(id))).isPositive();
         given().delete("/api/entries/" + id).then().statusCode(204);
         given().get("/api/entries/" + id).then().statusCode(404);
-        assertThat(List.of(id)).isNotEmpty();
+        assertThat(Fakes.vectors().count(EntryIndexer.NAMESPACE, Long.toString(id))).isZero();
     }
 }

@@ -108,11 +108,19 @@ public class EntryService {
         return new PageDto<>(items, p, s, repository.count());
     }
 
+    @Inject
+    EntryIndexState indexState;
+    @Inject
+    dev.rabauer.ai.diary.spi.VectorStore vectors;
+
+    /** Deletes the entry with its derived data (vectors, index state). */
     @Transactional
     public void delete(long id) {
         if (!repository.deleteById(id)) {
             throw ApiException.notFound("Entry");
         }
+        indexState.forget(id);
+        vectors.delete(EntryIndexer.NAMESPACE, Long.toString(id));
     }
 
     DiaryEntryEntity find(long id) {
