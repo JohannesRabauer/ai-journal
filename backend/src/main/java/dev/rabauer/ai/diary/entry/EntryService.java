@@ -34,6 +34,8 @@ public class EntryService {
     @Inject
     Event<EntryFinished> finished;
     @Inject
+    Event<EntryDeleted> deleted;
+    @Inject
     Clock clock;
 
     /** Features with per-entry data (e.g. coach) can register here to fill {@code hasCoachConversation}. */
@@ -121,6 +123,7 @@ public class EntryService {
         }
         indexState.forget(id);
         vectors.delete(EntryIndexer.NAMESPACE, Long.toString(id));
+        deleted.fire(new EntryDeleted(id));
     }
 
     DiaryEntryEntity find(long id) {
