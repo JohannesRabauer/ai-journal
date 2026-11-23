@@ -1,121 +1,88 @@
 package dev.rabauer.ai.diary;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.Route;
-import dev.rabauer.ai.diary.dto.NewEntry;
-import dev.rabauer.ai.diary.dto.ProcessedEntry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
+import dev.rabauer.ai.diary.api.entry.CreateEntryRequest;
+import dev.rabauer.ai.diary.api.entry.EntryDto;
+import dev.rabauer.ai.diary.api.entry.EntrySource;
+import dev.rabauer.ai.diary.api.entry.EntryStatus;
+import dev.rabauer.ai.diary.client.BackendException;
+import dev.rabauer.ai.diary.client.EntriesClient;
+import dev.rabauer.ai.diary.views.EntryFormat;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
+/**
+ * Wave 0 interim view: save-first text entries and the newest-first list. No AI output anywhere.
+ * Replaced by the design shell (W1c) and recorder/entries views (W1b).
+ */
 @Route("")
 public class MainView extends VerticalLayout {
 
-    private final String backendUrl;
+    private final EntriesClient entries;
+    private final VerticalLayout list = new VerticalLayout();
 
-    @Autowired
-    public MainView(Environment env) {
-        this.backendUrl = env.getProperty("backend.url");
+    public MainView(EntriesClient entries) {
+        this.entries = entries;
         setSizeFull();
-        UI currentUi = UI.getCurrent();
 
-        TextArea inputArea = new TextArea("New entry");
-        inputArea.setWidthFull();
+        TextArea input = new TextArea("New entry");
+        input.setWidthFull();
+        input.setMinHeight("8em");
+        Button save = new Button("Save entry", e -> save(input));
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button saveButton = new Button("Save", e -> saveNewEntry(inputArea, currentUi));
-
-        HorizontalLayout horizontalLayout = new HorizontalLayout(inputArea, saveButton);
-        horizontalLayout.setWidthFull();
-        horizontalLayout.setAlignItems(Alignment.BASELINE);
-        this.add(horizontalLayout);
-
-        this.getEntries(10, 0)
-                .subscribe(
-                        entry -> currentUi.access(
-                                () -> this.add(new UiEntry(entry).container())
-                        )
-                );
+        list.setPadding(false);
+        add(input, save, list);
+        reload();
     }
 
-    private void saveNewEntry(TextArea inputArea, UI currentUi) {
-        String input = inputArea.getValue();
-        LocalDateTime now = LocalDateTime.now();
-
-        inputArea.clear();
-        UiEntry newUiEntry = new UiEntry(now);
-        newUiEntry.entryText.setValue(input);
-        this.addComponentAtIndex(1, newUiEntry.container);
-
-        storeNewEntry(input, now)
-                .subscribe(
-                        token -> currentUi.access(() -> newUiEntry.entryAiText().setValue(newUiEntry.entryAiText().getValue() + token))
-                );
-    }
-
-    private WebClient buildRestClient() {
-        return WebClient
-                .builder()
-                .baseUrl(backendUrl)
-                .build();
-    }
-
-    private Flux<String> storeNewEntry(String entryText, LocalDateTime entryTimestamp) {
-        return buildRestClient()
-                .post()
-                .uri("/newEntry")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new NewEntry(entryText, entryTimestamp))
-                .accept(MediaType.TEXT_PLAIN)
-                .retrieve()
-                .bodyToFlux(String.class);
-    }
-
-    private Flux<ProcessedEntry> getEntries(int amount, int offset) {
-        return buildRestClient()
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/entries")
-                        .queryParam("amount", amount)
-                        .queryParam("offset", offset)
-                        .build()
-                )
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .bodyToFlux(ProcessedEntry.class);
-    }
-
-    public record UiEntry(
-            TextArea entryText,
-            TextArea entryAiText,
-            HorizontalLayout container
-    ) {
-        public UiEntry(LocalDateTime entryTime) {
-            this(
-                    new TextArea("Entry - " + DateTimeFormatter.ofPattern("dd.MM.yyyy-hh:mm").format(entryTime)),
-                    new TextArea("Ai Remarks"),
-                    new HorizontalLayout()
-            );
-            this.entryAiText.setReadOnly(true);
-            this.entryAiText.setWidthFull();
-            this.entryText.setReadOnly(true);
-            this.entryText.setWidthFull();
-            this.container.add(this.entryText, this.entryAiText());
-            this.container.setWidthFull();
+    private void save(TextArea input) {
+        String text = input.getValue();
+        if (text.isBlank()) {
+            return;
         }
-
-        public UiEntry(ProcessedEntry entry) {
-            this(entry.entryTimestamp());
-            this.entryText().setValue(entry.entryText());
-            this.entryAiText.setValue(entry.entryAiText());
+        try {
+            EntryDto created = entries.create(new CreateEntryRequest(text, null, null, EntrySource.TEXT));
+            entries.finish(created.id());
+            input.clear();
+            reload();
+        } catch (BackendException e) {
+            Notification.show(e.error().message());
+        } catch (RuntimeException e) {
+            Notification.show("The diary service is not reachable. Your text is still in the editor.");
         }
+    }
+
+    private void reload() {
+        list.removeAll();
+        try {
+            entries.list(0, 20).items().forEach(e -> list.add(card(e)));
+        } catch (RuntimeException e) {
+            list.add(new Paragraph("Entries could not be loaded."));
+        }
+    }
+
+    private Div card(EntryDto e) {
+        Div card = new Div(new H3(EntryFormat.title(e)), new Paragraph(e.text()));
+        card.setWidthFull();
+        if (e.legacyAiRemark() != null && !e.legacyAiRemark().isBlank()) {
+            Details remark = new Details("Earlier AI remark", new Paragraph(e.legacyAiRemark()));
+            remark.setOpened(false);
+            card.add(remark);
+        }
+        if (e.status() != EntryStatus.FINISHED) {
+            card.add(new Button("Finish entry", ev -> {
+                entries.finish(e.id());
+                reload();
+            }));
+        }
+        return card;
     }
 }
