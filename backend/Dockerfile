@@ -1,34 +1,23 @@
-# Stage 1: Build the Quarkus application
+# Build context: repository root (needs the shared api module). See docker-compose.yml.
 FROM maven:3.9.11-eclipse-temurin-25 AS build
+WORKDIR /src
 
-# Set working directory
-WORKDIR /app
+COPY pom.xml ./
+COPY api/pom.xml api/
+COPY backend/pom.xml backend/
+COPY frontend/pom.xml frontend/
+COPY api/src api/src
+COPY backend/src backend/src
 
-# Copy Maven project files
-COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline
+    mvn -B -ntp -pl backend -am package -DskipTests
 
-COPY src ./src
-
-# Package the application (skip tests for faster builds)
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests
-
-# Stage 2: Run the application
 FROM eclipse-temurin:25-jre-alpine
-
-# Set working directory
 WORKDIR /app
+COPY --from=build /src/backend/target/quarkus-app/ /app/
 
-# Copy the built Quarkus application from the previous stage
-COPY --from=build /app/target/quarkus-app/lib/ /app/lib/
-COPY --from=build /app/target/quarkus-app/*.jar /app/
-COPY --from=build /app/target/quarkus-app/app/ /app/app/
-COPY --from=build /app/target/quarkus-app/quarkus/ /app/quarkus/
-
-# Expose port
+# Inside the container network only; the port is published on 127.0.0.1 by compose.
+ENV JOURNAL_HTTP_HOST=0.0.0.0
 EXPOSE 8080
-
-# Run the Quarkus application
+USER 1001
 CMD ["java", "-jar", "quarkus-run.jar"]

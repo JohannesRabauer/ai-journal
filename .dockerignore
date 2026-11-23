@@ -1,0 +1,12 @@
+# Never send journal data or build output into a Docker build context.
+.git
+.env
+db/data
+db/data_personal
+ollama/data
+data
+**/target
+**/node_modules
+frontend/src/main/frontend/generated
+**/.idea
+**/.vscode

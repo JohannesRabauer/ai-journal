@@ -1,32 +1,23 @@
 # syntax=docker/dockerfile:1.4
-# Stage 1: Build the Spring Boot application
+# Build context: repository root (needs the shared api module). See docker-compose.yml.
 FROM maven:3.9.11-eclipse-temurin-25 AS build
+WORKDIR /src
 
-# Set working directory
-WORKDIR /app
+COPY pom.xml ./
+COPY api/pom.xml api/
+COPY backend/pom.xml backend/
+COPY frontend/pom.xml frontend/
+COPY api/src api/src
+COPY frontend/src frontend/src
 
-# Copy Maven project files
-COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline
+    mvn -B -ntp -pl frontend -am package -DskipTests -Pproduction
 
-COPY src ./src
-
-# Package the application (skip tests for faster builds)
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -Pproduction
-
-# Stage 2: Run the Spring Boot application
-FROM eclipse-temurin:25_36-jre-alpine
-
-# Set working directory
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
+COPY --from=build /src/frontend/target/app.jar app.jar
 
-# Copy the built Spring Boot jar from the build stage
-COPY --from=build /app/target/*.jar app.jar
-
-# Expose the default Spring Boot port
+ENV JOURNAL_HTTP_HOST=0.0.0.0
 EXPOSE 8081
-
-# Run the Spring Boot application
+USER 1001
 ENTRYPOINT ["java", "-jar", "app.jar"]
