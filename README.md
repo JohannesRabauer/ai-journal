@@ -1,311 +1,93 @@
 # AI Diary
 
-A **local-first, privacy-focused AI journal** that analyzes your thoughts using vector embeddings and semantic memory. Write privately, journal intelligently, discover patterns in your life.
+A local-first, privacy-focused voice and text journal. You write or speak; entries are saved first, then transcribed
+(voice) and indexed. Nothing is analysed while you write. Afterwards you can reflect with a coach that asks questions,
+turn learnings into memory items with spaced review, do thinking exercises and read weekly reflections.
 
-Built with **Java 21**, **Quarkus**, **PostgreSQL + pgvector**, **Ollama (qwen3)**, and **LangChain4j**.
+No telemetry, no external fonts or CDNs. In the full profiles nothing leaves your machine except one-time model
+downloads. Details: [docs/PRIVACY.md](docs/PRIVACY.md). Specification: [docs/SPEC.md](docs/SPEC.md).
 
----
+Stack: Quarkus 3.29 (backend), Vaadin 24 on Spring Boot (frontend), PostgreSQL + pgvector, Ollama, faster-whisper,
+Piper, Java 25.
 
-## Quick Start
+## Three ways to run it
 
-### Prerequisites
+| Profile | For | AI | Data leaves the device? |
+|---|---|---|---|
+| **A** docker compose | a PC or server with Docker | local: Ollama, Whisper, Piper | no |
+| **B** plain Java | development, or your own services | local, run by you | no |
+| **C** `lite-cloud` | Raspberry Pi 3 (1 GB) | OpenAI API | **yes** (text and audio) |
 
-- Docker + Docker Compose
-- ~8GB RAM (4GB for model, 2GB for app, 2GB buffer)
-- GPU optional (CPU mode works, slower)
-- ~5GB disk space (for Qwen3 model)
+Prerequisite for all: copy `.env.example` to `.env` and set `JOURNAL_DB_PASSWORD` (A, B). Never commit `.env`.
+Every setting: [docs/CONFIG.md](docs/CONFIG.md).
 
-### Run It
+### Profile A: docker compose
 
-```bash
-git clone https://github.com/JohannesRabauer/ai-journal.git
-cd ai-journal
-docker compose up --build
+Needs Docker with Compose, about 8 GB RAM, about 8 GB disk for models. Choose **one** of `gpu` (NVIDIA GPU with
+the container toolkit) or `cpu`; add `tts` for spoken questions.
+
+Windows PowerShell:
+```powershell
+Copy-Item .env.example .env          # then edit .env: set JOURNAL_DB_PASSWORD
+docker compose --profile cpu --profile tts up --build -d
+# GPU instead:  docker compose --profile gpu --profile tts up --build -d
+# without speech output (add JOURNAL_TTS_PROVIDER=none to .env):  docker compose --profile cpu up --build -d
+```
+sh (Linux/macOS):
+```sh
+cp .env.example .env                 # then edit .env: set JOURNAL_DB_PASSWORD
+mkdir -p data/audio data/whisper data/piper data/ollama
+docker compose --profile cpu --profile tts up --build -d
+```
+Open http://127.0.0.1:8081. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
+Piper voices); the Whisper service becomes healthy once its model is cached. Check with `docker compose ps`. Stop with
+`docker compose --profile cpu --profile tts down`. All ports are published on `127.0.0.1` only. On Linux set
+`JOURNAL_UID`/`JOURNAL_GID` in `.env` to your user if it is not 1001.
+
+Existing database from an earlier version? Read "Securing an existing database" in [docs/PRIVACY.md](docs/PRIVACY.md).
+
+### Profile B: plain Java
+
+Run PostgreSQL with pgvector (for example `docker compose up -d db`, published on `127.0.0.1:15432`), Ollama
+(`ollama pull qwen3:1.7b qwen3-embedding:0.6b`), a Whisper service and optionally Piper yourself, then set their
+endpoints in `.env` (defaults: `localhost:11434`, `:8000`, `:5000`). Needs JDK 25 (`JAVA_HOME`).
+
+Windows PowerShell (two terminals):
+```powershell
+scripts\run-backend.ps1       # builds with mvnw on first run (-Build to force)
+scripts\run-frontend.ps1
+```
+sh:
+```sh
+sh scripts/run-backend.sh     # --build to force
+sh scripts/run-frontend.sh
+```
+Open http://127.0.0.1:8081.
+
+### Profile C: lite-cloud (Raspberry Pi 3)
+
+**Entry text and audio are sent to OpenAI.** It only starts with `OPENAI_API_KEY` and
+`JOURNAL_CLOUD_CONSENT=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE`. Build on a PC, run on the Pi with systemd:
+[docs/PI.md](docs/PI.md) (Raspberry Pi OS Lite 64-bit only). To try it on a PC:
+
+```powershell
+scripts\build-lite.ps1
+# set OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT in .env, then:
+scripts\run-lite.ps1
+```
+```sh
+sh scripts/build-lite.sh && sh scripts/run-lite.sh
 ```
 
-Then open **`http://localhost:8081`** and start journaling.
-
----
-
-## What It Does
-
-1. **Write privately** — Your diary stays on your machine. No cloud, no tracking.
-2. **Get AI insights** — Llama 3.2 analyzes each entry: mood, key scenario, growth insight, actionable advice.
-3. **Semantic memory** — Entries are converted to 1024-dimensional vectors and stored in PostgreSQL.
-4. **Pattern discovery** — The system retrieves similar past entries and uses them as context for better analysis.
-
-### Example Workflow
-
-```
-You write:  "Had a tense conversation with my manager, felt defensive."
-           ↓
-LLM analyzes (streamed):
-  Mood: Guarded, reactive
-  Scenario: Feedback felt personal
-  Insight: You've felt this way before (finds 3 similar entries from past)
-  Advice: Practice curiosity before reacting
-           ↓
-Entry + embedding stored in PostgreSQL for future retrieval
-```
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────┐
-│     Frontend (Vaadin + Spring Boot) │
-│          localhost:8081             │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│   Backend (Quarkus + LangChain4j)   │
-│          localhost:8080             │
-└──────────┬──────────────┬───────────┘
-           │              │
-    ┌──────▼─────┐   ┌────▼──────┐
-    │ PostgreSQL │   │   Ollama  │
-    │ + pgvector │   │   Qwen 3  │
-    │ :15432     │   │  :11434   │
-    └────────────┘   └───────────┘
-```
-
-### Services
-
-| Service        | Purpose                                                   | Port   |
-|----------------|-----------------------------------------------------------|--------|
-| **Ollama**     | LLM runtime (Llama 3.2 for local inference)               | 11434  |
-| **PostgreSQL** | Entry storage + vector embeddings (pgvector extension)    | 15432  |
-| **Quarkus**    | REST API, AI orchestration, vector ingestion              | 8080   |
-| **Vaadin**     | Web UI (pure Java, reactive, streams tokens real-time)    | 8081   |
-
----
-
-## Key Features
-
-### 🔐 Privacy First
-- Runs entirely locally. Your data never leaves your machine.
-- Ollama keeps the LLM on your GPU or CPU.
-- No external API calls.
-
-### ⚡ Reactive & Fast
-- Streaming responses: see the AI thinking in real-time.
-- Non-blocking writes: UI stays responsive while embeddings are stored.
-- Quarkus startup: ~1 second (JVM) or ~50ms (native).
-
-### 🧠 Semantic Memory (RAG)
-- **Retrieval-Augmented Generation**: each new entry retrieves top-k similar chunks from your history.
-- LLM uses your own patterns as context—no fine-tuning needed.
-- HNSW indexes in pgvector make nearest-neighbor search sub-millisecond.
-
-### 🏗️ Production-Ready
-- Docker Compose for reproducible deployments.
-- Hibernate ORM + Panache for clean database access.
-- LangChain4j for seamless LLM integration.
-
----
-
-## Tech Stack
-
-| Layer   | Technology                               |
-|---------|------------------------------------------|
-| **UI**  | Vaadin 24.9.2 + Spring Boot 3.5.6        |
-| **API** | Quarkus 3.28.5 + LangChain4j + Mutiny    |
-| **DB**  | PostgreSQL + pgvector (1024-d vectors)   |
-| **LLM** | Ollama + Qwen3 (local inference)         |
-| **Dep** | Maven, Docker Compose                    |
-
----
-
-## API Endpoints
-
-### Submit a New Entry
-
-```bash
-POST http://localhost:8080/newEntry
-Content-Type: application/json
-
-{
-  "entryText": "Today I felt anxious about the presentation.",
-  "entryTimestamp": "2025-11-30T14:30:00"
-}
-```
-
-**Response:** Server-Sent Events (streaming text/plain)
-- Tokens from the LLM arrive in real-time.
-- Backend concurrently embeds and stores the entry.
-
-### List Previous Entries
-
-```bash
-GET http://localhost:8080/entries?amount=10&offset=0
-```
-
-**Response:** JSON array of past entries with AI analysis and timestamps.
-
----
-
-## How Vectors Work (Technical Deep Dive)
-
-### Embedding
-
-When you submit an entry, the embedding model converts text → 1024-dimensional vector:
-
-```
-Text: "I felt defeated today"
-           ↓
-Vector: [-0.023, 0.456, -0.891, ..., 0.234] (1024 floats)
-```
-
-Similar texts produce nearby vectors in semantic space.
-
-### Storage & Search
-
-```sql
-ALTER TABLE documents ADD COLUMN embedding vector(1024);
-CREATE INDEX ON documents USING hnsw (embedding vector_cosine_ops);
-```
-
-- **HNSW**: graph-based index for fast nearest-neighbor search (O(log n) lookup).
-- **Cosine similarity**: angle between vectors (1 = identical, -1 = opposite).
-
-### RAG Pattern
-
-```
-New entry → Embed → Find top-k similar chunks in DB
-                              ↓
-                    Pass them to LLM as context
-                              ↓
-                    LLM generates better analysis
-```
-
-Example:
-- You write: "Nervous about tomorrow's review"
-- System finds: 3 past entries about anxiety + reviews
-- LLM sees them and says: *"You've handled this before. Two months ago you wrote..."*
-
----
-
-## Database Schema
-
-```sql
-CREATE TABLE documents (
-    id BIGSERIAL PRIMARY KEY,
-    entry_text TEXT NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
-    ai_content TEXT,
-    embedding vector(1024)
-);
-
-CREATE INDEX idx_embedding_hnsw ON documents 
-USING hnsw (embedding vector_cosine_ops);
-```
-
----
-
-## Configuration
-
-All config is in `docker-compose.yml` or Quarkus `application.properties`:
-
-```properties
-# Backend → Ollama
-quarkus.langchain4j.ollama.base-url=http://ollama:11434
-
-# Backend → PostgreSQL
-quarkus.datasource.jdbc.url=jdbc:postgresql://db:15432/ai-diary
-quarkus.datasource.username=ai-diary
-quarkus.datasource.password=not-secure  # Change in production!
-
-# Ollama model settings
-OLLAMA_KEEP_ALIVE=-1  # Keep model loaded in memory
-```
-
----
-
-## Running in Production
-
-### Native Build
-
-For faster startup and lower memory, compile to native:
-
-```bash
-mvn clean package -Dnative -DskipTests -f backend/pom.xml
-```
-
-Backend binary: `backend/target/backend-runner` (~50ms startup).
-
-### Resource Limits
-
-Adjust in `docker-compose.yml`:
-
-```yaml
-services:
-  ollama:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1  # Use GPU if available
-```
-
-### Security Notes
-
-- Change `POSTGRES_PASSWORD` in production.
-- Use environment variables for sensitive config.
-- Consider adding auth to the Vaadin frontend.
-- Run behind a reverse proxy (nginx, Traefik) if exposed.
-
----
-
-## Roadmap
-
-- [ ] Multi-user support (shared / private diaries)
-- [ ] Export/visualization of mood trends
-- [ ] Wearable integration (heart rate, sleep correlation)
-- [ ] Fine-tuning on personal journaling style
-- [ ] Graph database for thought interconnection
-- [ ] Mobile app with offline-first sync
-- [ ] Custom LLM model support (beyond Ollama)
-
----
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit changes (`git commit -am 'Add feature'`)
-4. Push to branch (`git push origin feature/my-feature`)
-5. Open a Pull Request
-
----
-
-## License
-
-[Add your license here — MIT, Apache 2.0, etc.]
-
----
-
-## Learning Resources
-
-### Concepts
-
-- [Embeddings & Semantic Search](https://www.pinecone.io/learn/vector-database/)
-- [Retrieval-Augmented Generation (RAG)](https://arxiv.org/abs/2005.11401)
-- [Quarkus Guide](https://quarkus.io/guides/)
-- [LangChain4j Docs](https://docs.langchain4j.dev/)
-
-### Related Projects
-
-- [Ollama](https://ollama.ai) — Run local LLMs
-- [pgvector](https://github.com/pgvector/pgvector) — PostgreSQL vector extension
-- [LangChain4j](https://github.com/langchain4j/langchain4j) — LLM framework for Java
-- [Quarkus](https://quarkus.io) — Kubernetes-native Java framework
-
----
-
-## Questions?
-
-Open an issue on GitHub or reach out. Enjoy journaling! 📝
+## Privacy in short
+- Profiles A and B: all data and all AI stay on your machine; ports bind to `127.0.0.1`; logs never contain journal content.
+- Export everything as a zip (Settings, or `GET /api/data/export?includeAudio=true`) and delete everything with a
+  typed confirmation (Settings, or `POST /api/data/delete-all`).
+- Profile C relaxes this: see the caveat in [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## Development
+- `scripts\verify.ps1` / `sh scripts/verify.sh`: build and all tests (no network after dependencies are cached, no Docker).
+- `scripts\smoke-compose.ps1` / `sh scripts/smoke-compose.sh`: opt-in Docker smoke test (builds the images, starts
+  db, backend and frontend with fake providers in a throwaway project, then removes everything).
+- Docs: [PLAN](docs/PLAN.md), [DECISIONS](docs/DECISIONS.md), [CONVENTIONS](docs/CONVENTIONS.md),
+  [CONFIG](docs/CONFIG.md), [PRIVACY](docs/PRIVACY.md), [PI](docs/PI.md).

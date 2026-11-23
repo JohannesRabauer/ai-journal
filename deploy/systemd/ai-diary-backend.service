@@ -1,0 +1,42 @@
+# AI Diary backend (lite-cloud, Raspberry Pi). Install per docs/PI.md.
+[Unit]
+Description=AI Diary backend (lite-cloud)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ai-diary
+Group=ai-diary
+# /etc/ai-diary/env: mode 0600, owner root. Holds OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT (see deploy/env.example).
+EnvironmentFile=/etc/ai-diary/env
+Environment=QUARKUS_PROFILE=lite-cloud
+Environment=JOURNAL_DB_URL=jdbc:h2:file:/var/lib/ai-diary/journal;DB_CLOSE_ON_EXIT=FALSE
+Environment=JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/var/lib/ai-diary/audio
+Environment=JOURNAL_STT_PROVIDER=openai JOURNAL_LLM_PROVIDER=openai JOURNAL_EMBEDDING_PROVIDER=openai
+Environment=JOURNAL_TTS_PROVIDER=openai JOURNAL_VECTOR_PROVIDER=jdbc JOURNAL_AUDIO_PROVIDER=filesystem
+Environment=JOURNAL_HTTP_HOST=127.0.0.1
+WorkingDirectory=/var/lib/ai-diary
+ExecStart=/usr/bin/java -Xmx128m -Xms32m -XX:+UseSerialGC -Xss256k -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -XX:TieredStopAtLevel=1 -XX:MaxDirectMemorySize=32m -jar /opt/ai-diary/backend/quarkus-run.jar
+Restart=on-failure
+RestartSec=10
+MemoryMax=350M
+TimeoutStartSec=300
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictNamespaces=true
+ReadWritePaths=/var/lib/ai-diary
+StateDirectory=ai-diary
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=multi-user.target

@@ -1,18 +1,138 @@
-# Profile A (full local). Wave 0 hardening: ports on 127.0.0.1, password from .env, no trust auth.
-# Wave 1 (W1d) adds compose profiles (gpu/cpu), whisper and piper services.
+# Profile A: full local stack. See README.md and docs/CONFIG.md.
+#
+#   docker compose --profile gpu up --build -d                  # + Ollama and Whisper on an NVIDIA GPU
+#   docker compose --profile cpu up --build -d                  # + Ollama and Whisper on CPU
+#   docker compose --profile cpu --profile tts up --build -d    # + Piper text-to-speech
+#   docker compose up --build -d                                # only db, backend, frontend (AI services external)
+#
+# Pick exactly one of gpu / cpu. All published ports bind to 127.0.0.1. Secrets come from .env only.
+# Directories under ./data are created on first start; on Linux create them first
+# (mkdir -p data/audio data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
+# if your user id is not 1001 (backend and piper containers must be able to write there).
+
+x-ollama: &ollama
+  image: ollama/ollama:0.20.0
+  ports:
+    - "127.0.0.1:11434:11434"
+  volumes:
+    - ./data/ollama:/root/.ollama
+    - ./ollama/init:/init:ro
+  environment:
+    - OLLAMA_KEEP_ALIVE=-1
+    - OLLAMA_NUM_PARALLEL=2
+    - OLLAMA_MAX_LOADED_MODELS=2
+    - OLLAMA_MODELS_TO_PULL=${OLLAMA_MODELS_TO_PULL:-qwen3-embedding:0.6b qwen3:1.7b}
+  entrypoint: [ "/bin/sh", "/init/run_ollama.sh" ]
+  healthcheck:
+    test: [ "CMD", "ollama", "list" ]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 20s
+  restart: unless-stopped
+
+x-whisper: &whisper
+  ports:
+    - "127.0.0.1:8000:8000"
+  volumes:
+    # Model cache: downloaded once from Hugging Face, then offline.
+    - ./data/whisper:/home/ubuntu/.cache/huggingface/hub
+  environment:
+    - WHISPER_MODEL=${WHISPER_MODEL:-Systran/faster-whisper-small}
+  healthcheck:
+    # healthy only once the model is cached (the first start downloads it)
+    test: [ "CMD-SHELL", "curl -fsS http://127.0.0.1:8000/v1/models | grep -q \"$$WHISPER_MODEL\"" ]
+    interval: 15s
+    timeout: 5s
+    retries: 20
+    start_period: 60s
+  restart: unless-stopped
+
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
+  db:
+    build:
+      context: ./db
     ports:
-      - "127.0.0.1:11434:11434"
-    volumes:
-      - ./ollama/data:/root/.ollama
-      - ./ollama/init:/init
+      - "127.0.0.1:${JOURNAL_DB_HOST_PORT:-15432}:5432"
     environment:
-      - OLLAMA_KEEP_ALIVE=-1
-      - OLLAMA_NUM_PARALLEL=2
-      - OLLAMA_MAX_LOADED_MODELS=2
+      - POSTGRES_USER=ai-diary
+      - POSTGRES_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env (see .env.example)}
+      - POSTGRES_DB=ai-diary
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ai-diary -d ai-diary" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - ${JOURNAL_DB_DATA_DIR:-./db/data}:/var/lib/postgresql/data/
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    user: "${JOURNAL_UID:-1001}:${JOURNAL_GID:-1001}"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - JOURNAL_DB_URL=jdbc:postgresql://db:5432/ai-diary
+      - JOURNAL_DB_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env}
+      - JOURNAL_HTTP_HOST=0.0.0.0
+      # Providers (docs/CONFIG.md). TTS defaults to none until the Piper client lands (Wave 2); then use JOURNAL_TTS_PROVIDER=piper with the tts profile.
+      - JOURNAL_STT_PROVIDER=${JOURNAL_STT_PROVIDER:-whisper}
+      - JOURNAL_LLM_PROVIDER=${JOURNAL_LLM_PROVIDER:-ollama}
+      - JOURNAL_EMBEDDING_PROVIDER=${JOURNAL_EMBEDDING_PROVIDER:-ollama}
+      - JOURNAL_VECTOR_PROVIDER=${JOURNAL_VECTOR_PROVIDER:-pgvector}
+      - JOURNAL_AUDIO_PROVIDER=${JOURNAL_AUDIO_PROVIDER:-filesystem}
+      - JOURNAL_TTS_PROVIDER=${JOURNAL_TTS_PROVIDER:-none}
+      - JOURNAL_SCHEDULER_PROVIDER=${JOURNAL_SCHEDULER_PROVIDER:-fake}
+      - JOURNAL_STT_WHISPER_BASE_URL=${JOURNAL_STT_WHISPER_BASE_URL:-http://whisper:8000}
+      - JOURNAL_LLM_OLLAMA_BASE_URL=${JOURNAL_LLM_OLLAMA_BASE_URL:-http://ollama:11434}
+      - JOURNAL_EMBEDDING_OLLAMA_BASE_URL=${JOURNAL_EMBEDDING_OLLAMA_BASE_URL:-http://ollama:11434}
+      - JOURNAL_TTS_PIPER_BASE_URL=${JOURNAL_TTS_PIPER_BASE_URL:-http://piper:5000}
+      - JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/data/audio
+    volumes:
+      - ${JOURNAL_AUDIO_DATA_DIR:-./data/audio}:/data/audio
+    ports:
+      - "127.0.0.1:${JOURNAL_BACKEND_HOST_PORT:-8080}:8080"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/system/info || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - BACKEND_URL=http://backend:8080
+      - JOURNAL_HTTP_HOST=0.0.0.0
+    ports:
+      - "127.0.0.1:${JOURNAL_FRONTEND_HOST_PORT:-8081}:8081"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/ || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---- AI services (compose profiles) -------------------------------------------------------------------------
+  ollama-gpu:
+    <<: *ollama
+    profiles: [ "gpu" ]
+    networks:
+      default:
+        aliases: [ ollama ]
     deploy:
       resources:
         reservations:
@@ -20,55 +140,53 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
-    entrypoint: [ "/bin/sh", "/init/run_ollama.sh" ]
 
-  db:
+  ollama-cpu:
+    <<: *ollama
+    profiles: [ "cpu" ]
+    networks:
+      default:
+        aliases: [ ollama ]
+
+  # faster-whisper behind an OpenAI-compatible API (POST /v1/audio/transcriptions). Pinned Speaches image.
+  whisper-gpu:
+    <<: *whisper
     build:
-      context: ./db
-    container_name: db
-    ports:
-      - "127.0.0.1:15432:5432"
+      context: ./whisper
+      args:
+        VARIANT: cuda
+    profiles: [ "gpu" ]
+    networks:
+      default:
+        aliases: [ whisper ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+
+  whisper-cpu:
+    <<: *whisper
+    build:
+      context: ./whisper
+      args:
+        VARIANT: cpu
+    profiles: [ "cpu" ]
+    networks:
+      default:
+        aliases: [ whisper ]
+
+  piper:
+    build:
+      context: ./piper
+    user: "${JOURNAL_UID:-1001}:${JOURNAL_GID:-1001}"
+    profiles: [ "tts" ]
     environment:
-      - POSTGRES_USER=ai-diary
-      - POSTGRES_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env (see .env.example)}
-      - POSTGRES_DB=ai-diary
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ai-diary -d ai-diary"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - PIPER_VOICES=${PIPER_VOICES:-de_DE-thorsten-medium en_US-lessac-medium}
     volumes:
-      - ./db/data/:/var/lib/postgresql/data/
-      - ./db/init:/docker-entrypoint-initdb.d
-
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: backend
-    depends_on:
-      db:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-    environment:
-      - JOURNAL_DB_URL=jdbc:postgresql://db:5432/ai-diary
-      - JOURNAL_DB_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env}
-      - JOURNAL_HTTP_HOST=0.0.0.0
+      - ./data/piper:/voices
     ports:
-      - "127.0.0.1:8080:8080"
-
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    container_name: frontend
-    depends_on:
-      backend:
-        condition: service_started
-    environment:
-      - BACKEND_URL=http://backend:8080
-      - JOURNAL_HTTP_HOST=0.0.0.0
-    ports:
-      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:5000:5000"
+    restart: unless-stopped
