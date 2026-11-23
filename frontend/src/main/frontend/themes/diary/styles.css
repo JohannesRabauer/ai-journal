@@ -1,0 +1,312 @@
+/*
+ * AI Diary theme. System fonts only (SPEC 10: no external fonts or CDNs). One accent colour.
+ * Colour tokens and their contrast ratios are documented in docs/DESIGN.md and verified by
+ * ThemeContrastTest, which parses the --diary-* tokens below. Keep both in sync.
+ */
+:root {
+  --diary-bg: #faf8f5;
+  --diary-surface: #ffffff;
+  --diary-text: #1f2328;
+  --diary-muted: #575d64;
+  --diary-accent: #2c5f66;
+  --diary-on-accent: #ffffff;
+  --diary-error: #a4262c;
+  --diary-border: #8a8f94;
+  --diary-rule: #e3dfd8;
+
+  --diary-measure: 65ch;
+  --diary-space: 1.5rem;
+  --diary-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --diary-nav-height: 4.25rem;
+
+  --lumo-font-family: var(--diary-font);
+  --lumo-font-size-m: 1.0625rem;
+  --lumo-line-height-m: 1.6;
+  --lumo-base-color: var(--diary-bg);
+  --lumo-body-text-color: var(--diary-text);
+  --lumo-header-text-color: var(--diary-text);
+  --lumo-secondary-text-color: var(--diary-muted);
+  --lumo-tertiary-text-color: var(--diary-muted);
+  --lumo-disabled-text-color: var(--diary-muted);
+  --lumo-primary-color: var(--diary-accent);
+  --lumo-primary-text-color: var(--diary-accent);
+  --lumo-primary-color-50pct: color-mix(in srgb, var(--diary-accent) 50%, transparent);
+  --lumo-primary-color-10pct: color-mix(in srgb, var(--diary-accent) 10%, transparent);
+  --lumo-primary-contrast-color: var(--diary-on-accent);
+  --lumo-error-color: var(--diary-error);
+  --lumo-error-text-color: var(--diary-error);
+  --lumo-error-contrast-color: #ffffff;
+  --lumo-contrast-60pct: var(--diary-border);
+  --lumo-contrast-50pct: var(--diary-border);
+  --lumo-border-radius-m: 0.5rem;
+}
+
+html[theme~='dark'] {
+  --diary-bg: #16191c;
+  --diary-surface: #1e2226;
+  --diary-text: #e8e6e3;
+  --diary-muted: #a9afb5;
+  --diary-accent: #7cc4cc;
+  --diary-on-accent: #10181a;
+  --diary-error: #ff9a9f;
+  --diary-border: #7b8288;
+  --diary-rule: #2d3338;
+  --lumo-error-contrast-color: #10181a;
+}
+
+html {
+  font-family: var(--diary-font);
+  background: var(--diary-bg);
+  color: var(--diary-text);
+}
+
+body {
+  background: var(--diary-bg);
+  color: var(--diary-text);
+  line-height: 1.6;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--diary-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Shell layout -------------------------------------------------------------------- */
+.diary-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--diary-bg);
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: var(--diary-accent);
+  color: var(--diary-on-accent);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.diary-nav {
+  flex: 0 0 15rem;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  padding: 2rem 1rem;
+  border-right: 1px solid var(--diary-rule);
+  overflow-y: auto;
+}
+.diary-brand {
+  margin: 0 0 1.5rem 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.diary-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.diary-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--diary-text);
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.diary-nav a:hover {
+  background: color-mix(in srgb, var(--diary-accent) 10%, transparent);
+}
+/* Active item: marker bar plus bold text (not colour alone) */
+.diary-nav a[aria-current='page'] {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--diary-accent) 14%, transparent);
+  box-shadow: inset 4px 0 0 var(--diary-accent);
+}
+.diary-nav vaadin-icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.diary-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.diary-main {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--diary-measure) + 2 * var(--diary-space));
+  margin: 0 auto;
+  padding: 2.5rem var(--diary-space) 4rem;
+  outline: none;
+}
+.diary-main h1 {
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.diary-main h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.diary-main p {
+  max-width: var(--diary-measure);
+}
+.diary-muted {
+  color: var(--diary-muted);
+}
+
+/* ---- Cloud / offline banner ---------------------------------------------------------- */
+.diary-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  padding: 0.75rem var(--diary-space);
+  border-bottom: 2px solid var(--diary-accent);
+  background: var(--diary-surface);
+  color: var(--diary-text);
+}
+.diary-banner[hidden] {
+  display: none;
+}
+.diary-banner strong {
+  margin-right: 0.35rem;
+}
+.diary-banner-inner {
+  max-width: calc(var(--diary-measure) + 2 * var(--diary-space));
+  margin: 0 auto;
+}
+.diary-banner-inner vaadin-button {
+  margin-inline-start: 0.5rem;
+}
+.diary-banner-cloud {
+  border-bottom-width: 4px;
+  border-bottom-style: double;
+}
+
+/* ---- Components ---------------------------------------------------------------------- */
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 28rem;
+}
+.diary-form > * {
+  width: 100%;
+}
+.diary-status {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--diary-accent);
+  background: var(--diary-surface);
+}
+.diary-status.diary-error {
+  border-left-color: var(--diary-error);
+  color: var(--diary-error);
+}
+.diary-result {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+.diary-danger {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid var(--diary-error);
+  border-radius: 0.5rem;
+}
+.diary-danger h3 {
+  margin-top: 0;
+}
+code.diary-phrase {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  background: var(--diary-surface);
+  border: 1px solid var(--diary-border);
+}
+
+/* ---- Mobile: bottom navigation bar --------------------------------------------------- */
+@media (max-width: 767.98px) {
+  .diary-shell {
+    display: block;
+  }
+  .diary-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 20;
+    height: auto;
+    min-height: var(--diary-nav-height);
+    padding: 0 0 env(safe-area-inset-bottom);
+    border-right: 0;
+    border-top: 1px solid var(--diary-rule);
+    background: var(--diary-surface);
+    overflow: visible;
+  }
+  .diary-brand {
+    display: none;
+  }
+  .diary-nav ul {
+    flex-direction: row;
+    gap: 0;
+  }
+  .diary-nav li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .diary-nav a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+    height: 100%;
+    min-height: var(--diary-nav-height);
+    padding: 0.25rem 0.1rem;
+    border-radius: 0;
+    font-size: 0.65rem;
+    line-height: 1.15;
+    text-align: center;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+  .diary-nav a[aria-current='page'] {
+    box-shadow: inset 0 4px 0 var(--diary-accent);
+  }
+  .diary-main {
+    padding: 1.5rem 1rem calc(var(--diary-nav-height) + 2.5rem);
+  }
+  .diary-banner {
+    padding: 0.6rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
