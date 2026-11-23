@@ -95,7 +95,7 @@ services:
       - JOURNAL_TTS_PIPER_BASE_URL=${JOURNAL_TTS_PIPER_BASE_URL:-http://piper:5000}
       - JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/data/audio
     volumes:
-      - ./data/audio:/data/audio
+      - ${JOURNAL_AUDIO_DATA_DIR:-./data/audio}:/data/audio
     ports:
       - "127.0.0.1:8080:8080"
     healthcheck:
