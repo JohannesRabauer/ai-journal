@@ -1,6 +1,6 @@
 # Plan
 
-Source of truth for behavior: [SPEC.md](SPEC.md) (draft v0.1, awaiting owner review).
+Source of truth for behavior: [SPEC.md](SPEC.md) (v0.1, approved 2026-11-23).
 Decisions: [DECISIONS.md](DECISIONS.md). Status: [PROGRESS.md](PROGRESS.md). Rules for every change: [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Starting point (inspected 2026-11-23)
@@ -33,10 +33,12 @@ browser ──same origin──> frontend (Vaadin/Spring, :8081) ──REST─�
 | Worker | Owns (create/modify only these) |
 |---|---|
 | W1a | backend `audio/`, `transcription/`, `spi/stt/`, `spi/audio/`; delete `rest/stub/RecordingsApiStub`, `TranscriptionsApiStub`; migrations V10–V19 |
-| W1b | frontend `recorder/` (Java), `src/main/frontend/recorder/`, `views/entries/`, `client/RecordingsClient`, `client/TranscriptionsClient`, upload proxy controller; JS tests |
-| W1c | frontend `shell/`, `views/` placeholders, theme `src/main/frontend/themes/`, `MainView` replacement, `client/SystemClient`, `client/SettingsClient` |
+| W1b | frontend `recorder/` (Java), `src/main/frontend/recorder/`, `views/today/`, `views/entries/`, deletes `MainView`, `i18n/entries_*`, `client/RecordingsClient`, `client/TranscriptionsClient`, upload proxy controller; JS tests |
+| W1c | frontend `shell/` (MainLayout, I18NProvider, cloud banner), `views/memory|gym|weekly` placeholders, `views/settings/`, theme `src/main/frontend/themes/`, `i18n/shell_*`, `i18n/settings_*`, `client/PrivacyClient`, `client/SystemClient`, `client/SettingsClient` |
 | W1d | `docker-compose.yml`, `*/Dockerfile`, `whisper/`, `piper/`, `scripts/run-*`, `scripts/smoke-*`, `deploy/`, `.env.example`, README, docs `PI.md` `PRIVACY.md` `CONFIG.md`; backend `privacy/` service+resource; delete `PrivacyApiStub`; migrations V20–V29 |
 | W1e | backend `spi/llm/`, `spi/embedding/`, `spi/vector/`, `entry/EntryIndexer` backfill; migrations V30–V39 |
+
+Translations: one bundle per feature, `frontend/src/main/resources/i18n/<feature>_{en,de}.properties`, merged by W1c's provider.
 
 Shared hot spots resolved by the orchestrator at merge time: `backend/pom.xml`, `frontend/pom.xml`,
 `application.properties` (each worker only appends its own keys under a `# ---- <worker>` header).

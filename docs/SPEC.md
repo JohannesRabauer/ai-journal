@@ -1,6 +1,6 @@
 # AI Diary — Product Specification
 
-Status: **DRAFT v0.1 for owner review** (2026-11-23). Written by the orchestrator from the
+Status: **v0.1, approved by the owner 2026-11-23**. Written by the orchestrator from the
 owner's brief and the existing app because no spec existed. Everything here is open to change;
 sections marked *(assumption)* are guesses the owner should confirm.
 

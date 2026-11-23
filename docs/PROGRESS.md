@@ -1,6 +1,6 @@
 # Progress
 
-## Wave 0 — done (2026-11-23), waiting for spec approval before Wave 1
+## Wave 0 — done (2026-11-23); spec approved by the owner the same day
 | Item | Status | Evidence |
 |---|---|---|
 | Spec | Drafted (docs/SPEC.md v0.1) | owner review pending |
@@ -15,7 +15,13 @@
 Not verified in Wave 0: the interim Vaadin view in a browser (replaced in W1c); full compose stack start.
 
 ## Open questions for the owner
-1. Approve or amend docs/SPEC.md (especially §5 rule 7 crisis message, §6 lesson list, §7 categories, §8 sections).
-2. Existing database `db/data` was initialized with `trust` auth; v1 docs will describe switching it to a password.
+1. Existing database `db/data` was initialized with `trust` auth; v1 docs will describe switching it to a password.
 
-## Wave 1 — not started
+## Wave 1 — in progress (started 2026-11-23)
+| Worker | Branch | Worktree | Status |
+|---|---|---|---|
+| W1a STT, recordings, audio storage | feat/w1a-stt | ../wt-w1a | running |
+| W1b recorder + entries UI | feat/w1b-recorder-ui | ../wt-w1b | running |
+| W1c design shell | feat/w1c-shell | ../wt-w1c | running |
+| W1d deployment + privacy | feat/w1d-deploy | ../wt-w1d | running |
+| W1e LLM/embedding/vector providers | feat/w1e-providers | ../wt-w1e | running |
