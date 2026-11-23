@@ -60,3 +60,12 @@ mappings (W1e's `W1eConfigKeys` stays as documentation of its keys). Typos in pr
 SmallRye; `SelfValidating` providers check their own values.
 
 **D-017 Merge order Wave 1:** W1e, W1c merged first (independent); W1a, W1d, W1b follow.
+
+**D-018 Entry-scoped routes get their own interface.** JAX-RS selects the resource class by class-level path first, so
+`/api/entries/{id}/...` routes declared on a class rooted at `/api` were shadowed by `EntriesApi` (found by W1a).
+Now: `EntryTranscriptionsApi`, `EntryConversationsApi` rooted at `/api/entries/{entryId}/...`.
+
+**D-019 Single-entry delete cascades via `EntryDeleted`** (AFTER_SUCCESS observers): vectors, index state,
+recordings, audio files and transcription jobs. Every later feature with per-entry rows must observe it.
+
+**D-020 HTTP 429 is retryable** (`ERROR_RESPONSE`) for every provider.
