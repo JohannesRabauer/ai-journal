@@ -69,3 +69,12 @@ Now: `EntryTranscriptionsApi`, `EntryConversationsApi` rooted at `/api/entries/{
 recordings, audio files and transcription jobs. Every later feature with per-entry rows must observe it.
 
 **D-020 HTTP 429 is retryable** (`ERROR_RESPONSE`) for every provider.
+
+**D-021 `none` TTS provider is the default** (main and compose) until W2b's Piper client lands; W2b switches compose
+to `piper` with the `tts` profile.
+
+**D-022 Pi frontend binds 127.0.0.1 by default.** v1 has no authentication, so LAN access (0.0.0.0) is a documented,
+deliberate opt-in; default access is via SSH tunnel.
+
+**D-023 Privacy failure policy (W1d):** export and delete-all continue past a failing owner; export marks it in
+`manifest.json` (`complete=false`), delete-all answers 500 `DELETE_INCOMPLETE` naming the owners and is safe to rerun.

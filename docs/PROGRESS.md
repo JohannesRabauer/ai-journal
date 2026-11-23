@@ -23,7 +23,7 @@ Not verified in Wave 0: the interim Vaadin view in a browser (replaced in W1c); 
 | W1a STT, recordings, audio storage | feat/w1a-stt | ../wt-w1a | merged (173 backend tests on main) |
 | W1b recorder + entries UI | feat/w1b-recorder-ui | ../wt-w1b | running |
 | W1c design shell | feat/w1c-shell | ../wt-w1c | merged (29 frontend tests; browser-checked against a mock backend) |
-| W1d deployment + privacy | feat/w1d-deploy | ../wt-w1d | running |
+| W1d deployment + privacy | feat/w1d-deploy | ../wt-w1d | merged (180 backend tests on main; worker ran compose smoke, whisper and piper live) |
 | W1e LLM/embedding/vector providers | feat/w1e-providers | ../wt-w1e | merged (120 backend tests; opt-in pgvector contract run green on PG 17) |
 
-Orchestrator fixes after merge: D-016 (journal.* keys), D-018 route contract, D-019 delete cascade, D-020 429 retryable.
+Orchestrator fixes after merge: D-016 (journal.* keys), D-018 route contract, D-019 delete cascade, D-020 429 retryable, D-021 none TTS default, D-022 Pi localhost bind.
