@@ -53,3 +53,10 @@ embedding spaces. pgvector store uses an unbounded `vector` column (no ANN index
 **D-014 Commit trailer.** `Assisted-by: Claude` per owner instruction; no `Co-authored-by` for Claude.
 
 **D-015 OLLAMA_DEBUG removed** from compose (debug logging can include prompts = journal content).
+
+**D-016 Unknown `journal.*` keys allowed.** `JournalConfig` maps prefix `journal`, which made SmallRye reject provider
+keys set in properties files. `smallrye.config.mapping.validate-unknown=false` instead of per-worker registration
+mappings (W1e's `W1eConfigKeys` stays as documentation of its keys). Typos in provider keys are therefore not caught by
+SmallRye; `SelfValidating` providers check their own values.
+
+**D-017 Merge order Wave 1:** W1e, W1c merged first (independent); W1a, W1d, W1b follow.
