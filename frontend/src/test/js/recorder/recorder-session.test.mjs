@@ -102,7 +102,7 @@ test('chunks are not retained after persisting: nothing pending in memory once a
   assert.deepEqual(await t.storage.listChunkIndices('rec-1'), []);
 });
 
-test('reload mid-recording: a new session finds the pending recording, uploads missing chunks and can continue', async () => {
+test('reload mid-recording: a new session finds the pending recording, uploads missing chunks and offers only finishing', async () => {
   const server = new FakeServer();
   const storage = new MemoryStorage();
   const a = setup({ server, storage, dead: true });
@@ -125,15 +125,16 @@ test('reload mid-recording: a new session finds the pending recording, uploads m
   assert.deepEqual([...server.recordings.get('rec-1').chunks.keys()].sort(), [0, 1, 2], 'no audio lost');
   assert.equal(events(b.log, 'recovered').length, 1);
 
-  // continue: indices carry on, same recording id and entry
-  await b.session.start({ continueFrom: info });
-  assert.equal(b.session.recordingId, 'rec-1');
-  assert.equal(b.session.elapsedMs() >= info.elapsedMs, true);
-  b.rec().emitChunk(bytes(8));
-  await b.session.stop();
-  const rec = server.recordings.get('rec-1');
-  assert.equal(rec.status, 'COMPLETE');
-  assert.equal(rec.totalChunks, 4);
+  // no continuation: a new recording after the reload gets a new id, the old one is untouched
+  await b.session.finishRecovered(info);
+  assert.equal(server.recordings.get('rec-1').status, 'COMPLETE');
+  assert.equal(server.recordings.get('rec-1').totalChunks, 3);
+  b.session.reset();
+  await b.session.start({ entryId: info.entryId });
+  assert.notEqual(b.session.recordingId, 'rec-1');
+  assert.equal(b.session.entryId, info.entryId, 'new recording is added to the same entry');
+  assert.equal(server.recordings.get(b.session.recordingId).entryId, info.entryId);
+  assert.equal(server.recordings.get('rec-1').chunks.size, 3, 'old recording gets no further chunks');
 });
 
 test('reload mid-recording: user can finish the recovered recording as it is', async () => {

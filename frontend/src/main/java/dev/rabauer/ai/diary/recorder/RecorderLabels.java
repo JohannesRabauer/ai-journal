@@ -10,7 +10,7 @@ public final class RecorderLabels {
 
     static final List<String> KEYS = List.of("record", "pause", "resume", "stop", "elapsed", "level", "idle", "requesting",
             "recording", "paused", "stopping", "uploading", "pending", "waiting", "done", "retry", "recoverTitle",
-            "recoverText", "continue", "finish");
+            "recoverText", "finish");
 
     private RecorderLabels() {
     }

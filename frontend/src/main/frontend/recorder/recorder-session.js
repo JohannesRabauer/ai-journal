@@ -80,10 +80,11 @@ export class RecorderSession extends Emitter {
   }
 
   /**
-   * Starts a new recording, or continues a recovered one ({@code continueFrom} from {@link #recoverPending}).
-   * @param {{entryId?: number|null, language?: string, entryTimestamp?: string|null, continueFrom?: object}} [options]
+   * Starts a NEW recording (always a new recording id; a recovered recording is never continued, because two
+   * MediaRecorder sessions in one file are not safely decodable). Pass {@code entryId} to add it to an existing entry.
+   * @param {{entryId?: number|null, language?: string, entryTimestamp?: string|null}} [options]
    */
-  async start({ entryId = null, language = 'auto', entryTimestamp = null, continueFrom = null } = {}) {
+  async start({ entryId = null, language = 'auto', entryTimestamp = null } = {}) {
     const { mediaDevices, MediaRecorder, storage, api, now } = this.#deps;
     this.#sm.send('request');
 
@@ -95,40 +96,24 @@ export class RecorderSession extends Emitter {
     }
 
     try {
-      const mimeType = continueFrom?.mimeType || pickMimeType(MediaRecorder);
+      const mimeType = pickMimeType(MediaRecorder);
       this.#recorder = new MediaRecorder(this.#stream, mimeType ? { mimeType } : undefined);
       const actualMime = this.#recorder.mimeType || mimeType || 'audio/webm';
 
-      if (continueFrom) {
-        this.#meta = {
-          recordingId: continueFrom.recordingId,
-          entryId: continueFrom.entryId,
-          mimeType: continueFrom.mimeType,
-          language,
-          startedAt: now(),
-          nextIndex: continueFrom.nextIndex,
-          elapsedMs: continueFrom.elapsedMs,
-          stopped: false,
-          totalChunks: null,
-        };
-        this.#nextIndex = continueFrom.nextIndex;
-        this.#baseElapsedMs = continueFrom.elapsedMs;
-      } else {
-        const dto = await api.start({ entryId, mimeType: actualMime, language, entryTimestamp });
-        this.#meta = {
-          recordingId: dto.id,
-          entryId: dto.entryId,
-          mimeType: actualMime,
-          language,
-          startedAt: now(),
-          nextIndex: 0,
-          elapsedMs: 0,
-          stopped: false,
-          totalChunks: null,
-        };
-        this.#nextIndex = 0;
-        this.#baseElapsedMs = 0;
-      }
+      const dto = await api.start({ entryId, mimeType: actualMime, language, entryTimestamp });
+      this.#meta = {
+        recordingId: dto.id,
+        entryId: dto.entryId,
+        mimeType: actualMime,
+        language,
+        startedAt: now(),
+        nextIndex: 0,
+        elapsedMs: 0,
+        stopped: false,
+        totalChunks: null,
+      };
+      this.#nextIndex = 0;
+      this.#baseElapsedMs = 0;
       this.#accumulatedMs = 0;
       await storage.putRecording(this.#meta);
       this.#queue = this.#newQueue(this.#meta.recordingId);
@@ -201,8 +186,8 @@ export class RecorderSession extends Emitter {
 
   /**
    * Looks for recordings interrupted by a reload or crash, uploads their missing chunks and reports what to offer.
-   * Emits {@code recovered} {info} when the user may continue or finish; completes stopped recordings itself.
-   * @returns {Promise<object|null>} recovery info for a recording that can be continued/finished, else null
+   * Emits {@code recovered} {info} when the user may finish it; completes stopped recordings itself.
+   * @returns {Promise<object|null>} recovery info for a recording that can be finished, else null
    */
   async recoverPending() {
     const { storage, api, sleep, retry } = this.#deps;

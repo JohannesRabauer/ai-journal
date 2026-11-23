@@ -31,8 +31,7 @@ const DEFAULT_LABELS = {
   done: 'Recording saved.',
   retry: 'Try again',
   recoverTitle: 'An unfinished recording was found',
-  recoverText: 'Your audio is safe. Continue recording, or finish it as it is.',
-  continue: 'Continue recording',
+  recoverText: 'Your audio is safe. Finish it to save and transcribe what was recorded.',
   finish: 'Finish recording',
 };
 
@@ -71,8 +70,7 @@ const TEMPLATE = `
     <p><strong id="rt"></strong></p>
     <p id="rx"></p>
     <div class="row">
-      <button type="button" class="primary" id="rcontinue"></button>
-      <button type="button" id="rfinish"></button>
+      <button type="button" class="primary" id="rfinish"></button>
     </div>
   </div>
   <div class="wave" aria-hidden="true">
@@ -122,7 +120,7 @@ export class DiaryRecorder extends HTMLElement {
     this.els = {
       time: $('#time'), record: $('#record'), pause: $('#pause'), stop: $('#stop'), retry: $('#retry'),
       status: $('#status'), recover: $('.recover'), rtitle: $('#rt'), rtext: $('#rx'),
-      rcontinue: $('#rcontinue'), rfinish: $('#rfinish'),
+      rfinish: $('#rfinish'),
     };
     this.#waveform = new WaveformView({
       canvas: $('canvas'),
@@ -171,7 +169,7 @@ export class DiaryRecorder extends HTMLElement {
 
   #wire() {
     const s = this.#session;
-    const { record, pause, stop, retry, rcontinue, rfinish } = this.els;
+    const { record, pause, stop, retry, rfinish } = this.els;
     record.addEventListener('click', () => {
       this.#lastError = null;
       const entryAttr = this.getAttribute('entry-id');
@@ -186,11 +184,6 @@ export class DiaryRecorder extends HTMLElement {
       } else if (s.state === State.ERROR) {
         s.reset();
       }
-    });
-    rcontinue.addEventListener('click', () => {
-      const info = this.#recovery;
-      this.#recovery = null;
-      s.start({ continueFrom: info, language: this.getAttribute('language') ?? 'auto' });
     });
     rfinish.addEventListener('click', () => {
       const info = this.#recovery;
@@ -293,7 +286,7 @@ export class DiaryRecorder extends HTMLElement {
   #render() {
     const L = this.#labels;
     const state = this.#session.state;
-    const { record, pause, stop, retry, status, time, recover, rtitle, rtext, rcontinue, rfinish } = this.els;
+    const { record, pause, stop, retry, status, time, recover, rtitle, rtext, rfinish } = this.els;
     const live = state === State.RECORDING || state === State.PAUSED;
     const busy = state === State.REQUESTING || state === State.STOPPING || state === State.UPLOADING;
 
@@ -314,7 +307,6 @@ export class DiaryRecorder extends HTMLElement {
     recover.hidden = !this.#recovery;
     rtitle.textContent = L.recoverTitle;
     rtext.textContent = L.recoverText;
-    rcontinue.textContent = L.continue;
     rfinish.textContent = L.finish;
 
     let text = L[{ [State.IDLE]: 'idle', [State.REQUESTING]: 'requesting', [State.RECORDING]: 'recording',
