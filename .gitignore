@@ -2,3 +2,7 @@
 /db/data
 /ollama/data
 /db/data_personal
+.env
+/data
+/frontend/src/main/frontend/node_modules
+target/

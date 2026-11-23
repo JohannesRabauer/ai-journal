@@ -29,9 +29,11 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Shared REST contract (records) with the backend -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webflux</artifactId>
+            <groupId>dev.rabauer.ai.diary</groupId>
+            <artifactId>api</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <dependencyManagement>
