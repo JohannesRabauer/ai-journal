@@ -34,6 +34,11 @@ public class EntryIndexer {
     VectorStore vectors;
     @Inject
     EntryRepository repository;
+    @Inject
+    EntryIndexState state;
+
+    /** Result of one indexing attempt. UNREACHABLE tells the backfill to stop and retry later. */
+    public enum Outcome { INDEXED, FAILED, UNREACHABLE }
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "entry-indexer");
@@ -45,31 +50,43 @@ public class EntryIndexer {
         executor.submit(() -> index(event.entryId()));
     }
 
-    /** Synchronous indexing; returns false on provider failure. */
+    /** Synchronous indexing; returns false on failure. */
     public boolean index(long entryId) {
+        return attempt(entryId) == Outcome.INDEXED;
+    }
+
+    /** Synchronous indexing that tells why it failed (never throws, never logs content). */
+    public Outcome attempt(long entryId) {
         try {
             String text = QuarkusTransaction.requiringNew().call(() -> {
                 DiaryEntryEntity e = repository.findById(entryId);
-                return e == null ? null : e.entryText;
+                return e == null ? null : (e.entryText == null ? "" : e.entryText);
             });
-            if (text == null || text.isBlank()) {
+            if (text == null) { // entry no longer exists
                 vectors.delete(NAMESPACE, Long.toString(entryId));
-                return true;
+                return Outcome.INDEXED;
+            }
+            if (text.isBlank()) {
+                vectors.delete(NAMESPACE, Long.toString(entryId));
+                state.record(entryId, embeddings.modelId());
+                return Outcome.INDEXED;
             }
             List<String> parts = chunk(text, CHUNK_CHARS);
             List<float[]> vecs = embeddings.embedAll(parts);
+            String modelId = embeddings.modelId(); // read after embedding: includes the dimension once known
             List<VectorStore.Chunk> chunks = new ArrayList<>();
             for (int i = 0; i < parts.size(); i++) {
-                chunks.add(new VectorStore.Chunk(i, parts.get(i), vecs.get(i), embeddings.modelId()));
+                chunks.add(new VectorStore.Chunk(i, parts.get(i), vecs.get(i), modelId));
             }
             vectors.upsert(NAMESPACE, Long.toString(entryId), chunks);
-            return true;
+            state.record(entryId, modelId);
+            return Outcome.INDEXED;
         } catch (ProviderException e) {
             LOG.warnf("Indexing entry %d failed (%s/%s); will retry on next backfill.", entryId, e.provider(), e.kind());
-            return false;
+            return e.kind() == ProviderException.Kind.UNREACHABLE ? Outcome.UNREACHABLE : Outcome.FAILED;
         } catch (RuntimeException e) {
             LOG.warnf("Indexing entry %d failed: %s", entryId, e.getClass().getSimpleName());
-            return false;
+            return Outcome.FAILED;
         }
     }
 
