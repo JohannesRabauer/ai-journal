@@ -45,4 +45,4 @@ Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acc
 |---|---|---|---|
 | W3a memory + SM-2 + lessons | feat/w3a-memory | ../wt-w3a | running |
 | W3b thinking gym | feat/w3b-gym | ../wt-w3b | merged |
-| W3c weekly reflection | feat/w3c-weekly | ../wt-w3c | review: fix requested (user's own health/number words) |
+| W3c weekly reflection | feat/w3c-weekly | ../wt-w3c | merged (358 backend, 152 frontend on main) |
