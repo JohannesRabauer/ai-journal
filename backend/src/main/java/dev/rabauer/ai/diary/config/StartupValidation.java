@@ -12,7 +12,6 @@ import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /** Fails startup with one clear message listing every configuration problem. */
 @ApplicationScoped
@@ -30,10 +29,6 @@ public class StartupValidation {
     @ConfigProperty(name = "quarkus.flyway.migrate-at-start")
     boolean migratedByQuarkus;
 
-    @ConfigProperty(name = "quarkus.datasource.db-kind")
-    String dbKind;
-    @ConfigProperty(name = "quarkus.datasource.password")
-    Optional<String> dbPassword;
 
     void onStart(@Observes @Priority(1) StartupEvent event) {
         var selections = providers.selections();
@@ -41,10 +36,7 @@ public class StartupValidation {
                 config.profile(),
                 List.copyOf(selections.values()),
                 config.cloud().consent(),
-                config.openai().apiKey().filter(k -> !k.isBlank()).isPresent(),
-                dbKind,
-                dbPassword.filter(p -> !p.isBlank()).isPresent(),
-                dbPassword.filter(ConfigValidator.PLACEHOLDER_DB_PASSWORD::equals).isPresent())));
+                config.openai().apiKey().filter(k -> !k.isBlank()).isPresent())));
         if (errors.isEmpty()) {
             for (Capability c : Capability.values()) {
                 providers.selectedInstance(c)
@@ -58,7 +50,7 @@ public class StartupValidation {
         if (!migratedByQuarkus) {
             flyway.get().migrate();
         }
-        StringBuilder sb = new StringBuilder("AI Diary profile=").append(config.profile()).append(", db=").append(dbKind);
+        StringBuilder sb = new StringBuilder("AI Diary profile=").append(config.profile()).append(", db=h2");
         selections.values().forEach(s -> sb.append(", ").append(s.capability().key()).append('=').append(s.name()));
         LOG.info(sb);
         selections.values().stream()

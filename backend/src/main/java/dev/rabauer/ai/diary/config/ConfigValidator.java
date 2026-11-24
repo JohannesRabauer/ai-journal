@@ -13,19 +13,8 @@ public final class ConfigValidator {
     public record Input(String profile,
                         List<ProviderSelection> selections,
                         Optional<String> cloudConsent,
-                        boolean openAiKeyPresent,
-                        String dbKind,
-                        boolean dbPasswordPresent,
-                        boolean dbPasswordIsPlaceholder) {
-
-        public Input(String profile, List<ProviderSelection> selections, Optional<String> cloudConsent,
-                     boolean openAiKeyPresent, String dbKind, boolean dbPasswordPresent) {
-            this(profile, selections, cloudConsent, openAiKeyPresent, dbKind, dbPasswordPresent, false);
-        }
+                        boolean openAiKeyPresent) {
     }
-
-    /** The example value of .env.example: a database with this password is not protected. */
-    public static final String PLACEHOLDER_DB_PASSWORD = "change-me-to-a-long-random-value";
 
     private ConfigValidator() {
     }
@@ -59,22 +48,6 @@ public final class ConfigValidator {
             if (!in.openAiKeyPresent()) {
                 errors.add("lite-cloud requires an OpenAI API key: set OPENAI_API_KEY (property journal.openai.api-key).");
             }
-            if (!"h2".equals(in.dbKind())) {
-                errors.add("lite-cloud requires the embedded H2 database, but this build uses '" + in.dbKind()
-                        + "'. Build with -Dquarkus.profile=lite-cloud (see scripts/build-lite.*).");
-            }
-        }
-        boolean pgvector = in.selections().stream()
-                .anyMatch(s -> s.capability() == Capability.VECTOR && "pgvector".equals(s.name()));
-        if (pgvector && !"postgresql".equals(in.dbKind())) {
-            errors.add("journal.vector.provider=pgvector requires PostgreSQL; use journal.vector.provider=jdbc with " + in.dbKind() + ".");
-        }
-        if ("postgresql".equals(in.dbKind()) && !in.dbPasswordPresent()) {
-            errors.add("No database password configured: set JOURNAL_DB_PASSWORD (property quarkus.datasource.password).");
-        }
-        if ("postgresql".equals(in.dbKind()) && in.dbPasswordIsPlaceholder()) {
-            errors.add("JOURNAL_DB_PASSWORD still has the example value from .env.example. Choose your own long random password "
-                    + "(for a database that already exists see scripts/secure-existing-db.*).");
         }
         return errors;
     }

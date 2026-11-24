@@ -7,11 +7,11 @@ outbound connections are the provider endpoints you configure.
 
 | | A: docker compose | B: plain Java | C: `lite-cloud` |
 |---|---|---|---|
-| Entry text, transcripts, conversations, memory | local PostgreSQL | local PostgreSQL | local H2 file |
+| Entry text, transcripts, conversations, memory | local H2 file | local H2 file | local H2 file |
 | Audio recordings | `./data/audio` | `JOURNAL_AUDIO_FILESYSTEM_DIRECTORY` | `/var/lib/ai-diary/audio` |
 | Transcription, questions, embeddings, speech | Whisper, Ollama, Piper on your machine | same, services you run | **OpenAI API** |
 | Outbound connections | none while running. Model downloads (Ollama registry, Hugging Face) only while a model is missing, i.e. on first start | none | OpenAI (`api.openai.com`) |
-| Ports | database, backend and frontend published on `127.0.0.1` only; Ollama, Whisper and Piper publish no port at all (only the other containers reach them) | backend/frontend bind `127.0.0.1` by default | both units bind `127.0.0.1` (SSH tunnel). Opening the frontend to the home network is an explicit opt-in (`JOURNAL_HTTP_HOST=0.0.0.0` and `JOURNAL_ALLOWED_HOSTS`, docs/PI.md) |
+| Ports | backend and frontend published on `127.0.0.1` only (the H2 database is embedded in the backend and has no port); Ollama, Whisper and Piper publish no port at all (only the other containers reach them) | backend/frontend bind `127.0.0.1` by default | both units bind `127.0.0.1` (SSH tunnel). Opening the frontend to the home network is an explicit opt-in (`JOURNAL_HTTP_HOST=0.0.0.0` and `JOURNAL_ALLOWED_HOSTS`, docs/PI.md) |
 
 Models are downloaded once. After that you can disconnect the machine; profiles A and B keep working. The containers
 check what is cached before they connect anywhere: the Ollama container runs `ollama pull` only for models that
@@ -70,12 +70,12 @@ for the main flows including failures.
 
 | Data | Location |
 |---|---|
-| Database (profile A) | `./db/data` (or `JOURNAL_DB_DATA_DIR`) |
+| Database (profile A) | `./data/db/journal.mv.db` (or `JOURNAL_DB_DATA_DIR`) |
 | Audio files (A) | `./data/audio` |
 | Ollama models, Whisper model, Piper voices (A) | `./data/ollama`, `./data/whisper`, `./data/piper` (models only, no journal data) |
-| Database (B) | your PostgreSQL |
+| Database (B) | `./data/journal.mv.db` (or the path in `JOURNAL_DB_URL`) |
 | Database and audio (C) | `/var/lib/ai-diary/journal.mv.db`, `/var/lib/ai-diary/audio` |
-| Embeddings | in the database (vector tables); in `lite-cloud` also in the H2 file |
+| Embeddings | in the same H2 file (vector table `vector_chunk`) |
 
 ## Export
 
@@ -89,7 +89,7 @@ curl -o ai-diary-export.zip "http://127.0.0.1:8080/api/data/export?includeAudio=
 The Settings page streams the zip from the backend directly into the browser download; no temporary copy is written on the
 server (older versions used a temp file, which is swept at startup). The zip holds one JSON file per data owner
 (`entries.json`, `settings.json`, `coach/...`, `legacy/chat_history.json`, `legacy/diary.json` with text and metadata of the
-pre-v1 pgvector table, PostgreSQL only) and
+pre-v1 `diary` table, when present) and
 audio files when requested, plus `manifest.json` (export time, profile, owners and whether each succeeded, `complete`).
 Embeddings are derived data and are not exported (they are rebuilt from the entries). If one owner fails, the export
 continues, marks it `failed` in the manifest and sets `complete=false`; check the manifest.
@@ -103,48 +103,31 @@ curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d "{\"confi
 ```
 
 This removes entries, transcripts, conversations, memory items, reviews, reports, settings, the old pre-v1 tables,
-vector embeddings (both vector tables, `vector_chunk` and `vector_chunk_pg`, whichever store is active) and all audio files. The response lists how many rows/files each part deleted. A wrong phrase returns
+vector embeddings (`vector_chunk`) and all audio files. The response lists how many rows/files each part deleted. A wrong phrase returns
 400 and deletes nothing. If a part fails, the others are still deleted and the call returns 500 `DELETE_INCOMPLETE`
 naming the failed parts; run it again (it is idempotent) or check the server log. Export first if you want a copy.
 
-Legacy `diary` rows (the pre-v1 pgvector table) are not linked to entries by id: deleting a single entry cannot always
+Legacy `diary` rows (the pre-v1 table) are not linked to entries by id: deleting a single entry cannot always
 find its legacy rows (it can only when their metadata names the entry). Delete-all removes all of them.
 
-What the endpoint does not touch: downloaded models, the `./db/data` directory itself (empty tables remain), database
-backups you made (`./backups`), exports you saved, and PostgreSQL's own files (deleted rows are reclaimed by vacuum,
-not overwritten). For a full wipe stop the stack and remove the data:
+What the endpoint does not touch: downloaded models, the database file itself (`journal.mv.db`, empty tables remain; H2 reuses freed space, it does not overwrite it), backups
+you made, exports you saved. For a full wipe stop the stack and remove the data:
 
 ```
 docker compose down -v
 # Windows PowerShell
-Remove-Item -Recurse -Force data, db\data
+Remove-Item -Recurse -Force data
 # Linux / macOS
-rm -rf data db/data
+rm -rf data
 ```
 
 On the Pi: `sudo systemctl stop ai-diary-frontend ai-diary-backend && sudo rm -rf /var/lib/ai-diary`.
-(Never do this to `db/data` before you have an export or backup you want to keep.)
+(Never do this to `data` (the H2 file and audio) before you have an export or backup you want to keep.)
 
-## Securing an existing database
+## Importing data from the old PostgreSQL version
 
-Databases created before v1 were initialized by a compose file that used PostgreSQL `trust` authentication: any process
-that could reach the (then publicly published) port could connect without a password. New v1 databases get a password
-from `.env`, but an **existing** data directory keeps its old `pg_hba.conf`; the new `JOURNAL_DB_PASSWORD` is not applied
-to it. Fix it once:
-
-1. Stop the backend: `docker compose stop backend frontend` (leave `db` running).
-2. In `.env` set `JOURNAL_DB_PASSWORD` to a new long random value (not the example value).
-3. **Back up first.** The script does it for you (a `pg_dump` into `./backups`, mode 0600) unless you pass
-   `-SkipBackup` / `SKIP_BACKUP=1`. You can also copy the data directory while the stack is stopped.
-4. Run the script (it never deletes or rewrites data):
-   - Windows: `scripts\secure-existing-db.ps1`
-   - Linux/macOS: `sh scripts/secure-existing-db.sh`
-   It sets the password of the `ai-diary` role, copies `pg_hba.conf` to `pg_hba.conf.bak-before-secure`, replaces every
-   `trust` rule with `scram-sha-256`, reloads PostgreSQL and verifies that the right password works and a wrong one is
-   rejected. Pass a container name to secure a database that does not belong to this compose project.
-5. Start everything: `docker compose up -d`.
-
-To restore the backup into a fresh database: `docker compose exec -T db pg_restore -U ai-diary -d ai-diary --clean --if-exists < backups\<file>.dump`
-(in PowerShell use `cmd /c "docker compose exec -T db pg_restore ... < file"`).
-Profile B users with their own PostgreSQL: set a password for the role (`ALTER ROLE "ai-diary" PASSWORD '...'`) and change
-`trust` to `scram-sha-256` in `pg_hba.conf` manually.
+Earlier versions stored the journal in PostgreSQL + pgvector (D-032 replaced it by the embedded H2 file). To bring that data
+over, stop the backend and run `pwsh scripts/import-legacy-postgres.ps1 -DataDir db/data_personal` (sh twin:
+`sh scripts/import-legacy-postgres.sh <datadir>`). It works on a COPY of the old data directory with a temporary
+container, loads the legacy tables `documents` and `chat_history` into the H2 file database and stops nothing else. Delete the
+old PostgreSQL data directory yourself when you no longer need it.

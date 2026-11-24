@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * A pre-v1 database (tables created by Hibernate "update", no Flyway history) is baselined and upgraded without
  * losing data. Mirrors the production settings baseline-on-migrate=true, baseline-version=1.
- * The PostgreSQL variant is covered by the opt-in Docker smoke test (scripts/smoke-*.ps1).
  */
 class LegacyDatabaseMigrationTest {
 
@@ -30,7 +29,7 @@ class LegacyDatabaseMigrationTest {
         }
 
         var result = Flyway.configure().dataSource(url, "sa", "")
-                .locations("classpath:db/migration/h2")
+                .locations("classpath:db/migration")
                 .baselineOnMigrate(true).baselineVersion("1")
                 .load().migrate();
         assertThat(result.success).isTrue();
@@ -56,24 +55,9 @@ class LegacyDatabaseMigrationTest {
     @Test
     void freshDatabaseGetsFullSchema() {
         String url = "jdbc:h2:mem:fresh" + System.nanoTime() + ";DB_CLOSE_DELAY=-1";
-        var result = Flyway.configure().dataSource(url, "sa", "").locations("classpath:db/migration/h2")
+        var result = Flyway.configure().dataSource(url, "sa", "").locations("classpath:db/migration")
                 .baselineOnMigrate(true).baselineVersion("1").load().migrate();
         assertThat(result.migrationsExecuted).isGreaterThanOrEqualTo(2);
     }
 
-    @Test
-    void everyMigrationExistsForBothVendors() throws Exception {
-        var pg = listMigrations("db/migration/postgresql");
-        var h2 = listMigrations("db/migration/h2");
-        assertThat(h2).as("each PostgreSQL migration needs an H2 twin with the same version and name").isEqualTo(pg);
-    }
-
-    private static java.util.SortedSet<String> listMigrations(String location) throws Exception {
-        var url = Thread.currentThread().getContextClassLoader().getResource(location);
-        assertThat(url).isNotNull();
-        try (var files = java.nio.file.Files.list(java.nio.file.Path.of(url.toURI()))) {
-            return files.map(p -> p.getFileName().toString()).filter(n -> n.endsWith(".sql"))
-                    .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
-        }
-    }
 }

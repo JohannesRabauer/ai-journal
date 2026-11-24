@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 /**
- * Vector store on plain JDBC tables ({@code vector_chunk}, migration V31) that works on H2 and PostgreSQL.
+ * Vector store on plain JDBC tables ({@code vector_chunk}, migration V31) in the embedded H2 database.
  * Vectors are stored as big-endian float32 bytes; cosine similarity is computed in Java while streaming only the rows
  * of the requested namespace + model + dimension (fine at journal scale: thousands of chunks).
  */

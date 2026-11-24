@@ -61,3 +61,6 @@ Wave 3 closed: main green (405 backend, 170 frontend, 88 JS tests). All twelve a
 
 ## Wave 4 — done 2026-11-24
 Main green (425 backend, 183 frontend, 91 JS tests). All twelve acceptance criteria pass (docs/ACCEPTANCE.md). Open items are hardware/owner decisions only (real Pi, real microphone, screen reader, model size).
+
+## Post-wave change: D-032
+PostgreSQL + pgvector removed; the only database is the embedded H2 file (`data/journal.mv.db`, compose: `data/db/journal.mv.db`), vectors in the `jdbc` store, one build for all profiles (docs/DECISIONS.md D-032). Scripts, docs and deploy units updated; `smoke-plain` no longer needs Docker. Earlier entries above describe the PostgreSQL state and are kept as history.

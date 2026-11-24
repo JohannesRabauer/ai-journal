@@ -3,12 +3,12 @@
 #   docker compose --profile gpu up --build -d                  # + Ollama and Whisper on an NVIDIA GPU
 #   docker compose --profile cpu up --build -d                  # + Ollama and Whisper on CPU
 #   docker compose --profile cpu --profile tts up --build -d    # + Piper text-to-speech (also set JOURNAL_TTS_PROVIDER=piper in .env)
-#   docker compose up --build -d                                # only db, backend, frontend (AI services external)
+#   docker compose up --build -d                                # only backend, frontend (AI services external)
 #
-# Pick exactly one of gpu / cpu. All published ports (db, backend, frontend) bind to 127.0.0.1; the AI services
+# Pick exactly one of gpu / cpu. All published ports (backend, frontend) bind to 127.0.0.1; the AI services
 # (ollama, whisper, piper) publish nothing and are reachable only from the other containers. Secrets come from .env only.
 # Directories under ./data are created on first start; on Linux create them first
-# (mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
+# (mkdir -p data/db data/audio data/tts-cache data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
 # if your user id is not 1001 (backend and piper containers must be able to write there).
 
 x-ollama: &ollama
@@ -49,37 +49,14 @@ x-whisper: &whisper
   restart: unless-stopped
 
 services:
-  db:
-    build:
-      context: ./db
-    ports:
-      - "127.0.0.1:${JOURNAL_DB_HOST_PORT:-15432}:5432"
-    environment:
-      - POSTGRES_USER=ai-diary
-      - POSTGRES_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env (see .env.example)}
-      - POSTGRES_DB=ai-diary
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ai-diary -d ai-diary" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    volumes:
-      - ${JOURNAL_DB_DATA_DIR:-./db/data}:/var/lib/postgresql/data/
-      - ./db/init:/docker-entrypoint-initdb.d:ro
-    restart: unless-stopped
-
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     user: "${JOURNAL_UID:-1001}:${JOURNAL_GID:-1001}"
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      - JOURNAL_DB_URL=jdbc:postgresql://db:5432/ai-diary
-      - JOURNAL_DB_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env}
+      # Embedded H2 file database (D-032): one file in the mounted data folder, no database server.
+      - JOURNAL_DB_URL=jdbc:h2:file:/data/db/journal;DB_CLOSE_ON_EXIT=FALSE
       - JOURNAL_HTTP_HOST=0.0.0.0
       # Extra Host names accepted besides localhost/127.0.0.1/[::1]/backend (LAN opt-in, docs/PI.md)
       - JOURNAL_ALLOWED_HOSTS=${JOURNAL_ALLOWED_HOSTS:-}
@@ -87,10 +64,11 @@ services:
       - JOURNAL_STT_PROVIDER=${JOURNAL_STT_PROVIDER:-whisper}
       - JOURNAL_LLM_PROVIDER=${JOURNAL_LLM_PROVIDER:-ollama}
       - JOURNAL_EMBEDDING_PROVIDER=${JOURNAL_EMBEDDING_PROVIDER:-ollama}
-      - JOURNAL_VECTOR_PROVIDER=${JOURNAL_VECTOR_PROVIDER:-pgvector}
+      - JOURNAL_VECTOR_PROVIDER=${JOURNAL_VECTOR_PROVIDER:-jdbc}
       - JOURNAL_AUDIO_PROVIDER=${JOURNAL_AUDIO_PROVIDER:-filesystem}
       - JOURNAL_TTS_PROVIDER=${JOURNAL_TTS_PROVIDER:-none}
       - JOURNAL_SCHEDULER_PROVIDER=${JOURNAL_SCHEDULER_PROVIDER:-sm2}
+      - JOURNAL_LLM_OLLAMA_MODEL=${JOURNAL_LLM_OLLAMA_MODEL:-qwen3:1.7b}
       - JOURNAL_STT_WHISPER_BASE_URL=${JOURNAL_STT_WHISPER_BASE_URL:-http://whisper:8000}
       - JOURNAL_LLM_OLLAMA_BASE_URL=${JOURNAL_LLM_OLLAMA_BASE_URL:-http://ollama:11434}
       - JOURNAL_EMBEDDING_OLLAMA_BASE_URL=${JOURNAL_EMBEDDING_OLLAMA_BASE_URL:-http://ollama:11434}
@@ -98,6 +76,7 @@ services:
       - JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/data/audio
       - JOURNAL_TTS_CACHE_DIR=/data/tts-cache
     volumes:
+      - ${JOURNAL_DB_DATA_DIR:-./data/db}:/data/db
       - ${JOURNAL_AUDIO_DATA_DIR:-./data/audio}:/data/audio
       - ./data/tts-cache:/data/tts-cache
     ports:

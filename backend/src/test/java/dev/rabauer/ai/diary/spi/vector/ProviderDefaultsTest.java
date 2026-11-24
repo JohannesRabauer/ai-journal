@@ -31,21 +31,21 @@ class ProviderDefaultsTest {
     }
 
     @Test
-    void fullProfileUsesOllamaAndPgvector() throws IOException {
+    void fullProfileUsesOllamaAndJdbcVectors() throws IOException {
         SmallRyeConfig c = config(null);
         assertThat(c.getValue("journal.llm.provider", String.class)).isEqualTo("ollama");
         assertThat(c.getValue("journal.embedding.provider", String.class)).isEqualTo("ollama");
-        assertThat(c.getValue("journal.vector.provider", String.class)).isEqualTo("pgvector");
+        assertThat(c.getValue("journal.vector.provider", String.class)).isEqualTo("jdbc");
         List<String> errors = ConfigValidator.validate(new ConfigValidator.Input("full", List.of(
                 new ProviderSelection(Capability.LLM, "ollama", Set.of("ollama", "openai", "fake"), false),
                 new ProviderSelection(Capability.EMBEDDING, "ollama", Set.of("ollama", "openai", "fake"), false),
-                new ProviderSelection(Capability.VECTOR, "pgvector", Set.of("pgvector", "jdbc", "memory"), false)),
-                Optional.empty(), false, "postgresql", true));
+                new ProviderSelection(Capability.VECTOR, "jdbc", Set.of("jdbc", "memory"), false)),
+                Optional.empty(), false));
         assertThat(errors).isEmpty();
     }
 
     @Test
-    void liteCloudUsesOpenAiAndJdbcOnH2() throws IOException {
+    void liteCloudUsesOpenAiAndJdbc() throws IOException {
         SmallRyeConfig c = config("lite-cloud");
         assertThat(c.getValue("journal.llm.provider", String.class)).isEqualTo("openai");
         assertThat(c.getValue("journal.embedding.provider", String.class)).isEqualTo("openai");
@@ -53,8 +53,8 @@ class ProviderDefaultsTest {
         List<String> errors = ConfigValidator.validate(new ConfigValidator.Input("lite-cloud", List.of(
                 new ProviderSelection(Capability.LLM, "openai", Set.of("ollama", "openai", "fake"), true),
                 new ProviderSelection(Capability.EMBEDDING, "openai", Set.of("ollama", "openai", "fake"), true),
-                new ProviderSelection(Capability.VECTOR, "jdbc", Set.of("pgvector", "jdbc", "memory"), false)),
-                Optional.of(JournalConfig.CLOUD_CONSENT_PHRASE), true, "h2", false));
+                new ProviderSelection(Capability.VECTOR, "jdbc", Set.of("jdbc", "memory"), false)),
+                Optional.of(JournalConfig.CLOUD_CONSENT_PHRASE), true));
         assertThat(errors).isEmpty();
     }
 

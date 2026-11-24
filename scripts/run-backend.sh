@@ -1,22 +1,17 @@
 #!/usr/bin/env sh
-# Profile B: run the backend with plain Java against services you run yourself (Postgres, Ollama, Whisper, Piper).
+# Profile B: run the backend with plain Java against services you run yourself (Ollama, Whisper, Piper; the database is embedded H2 in data/journal.mv.db).
 # Usage: scripts/run-backend.sh [--build]     (--build forces a Maven build; it also runs when the jar is missing)
 # Reads .env in the repository root; variables already set in the environment win. See docs/CONFIG.md.
 set -eu
 . "$(dirname "$0")/run-common.sh"
 import_dotenv
 
-if [ -z "${JOURNAL_DB_PASSWORD:-}" ]; then
-  echo "JOURNAL_DB_PASSWORD is not set. Copy .env.example to .env and set it (the database user is ai-diary)." >&2
-  exit 1
-fi
 set_default JOURNAL_STT_PROVIDER whisper
 set_default JOURNAL_LLM_PROVIDER ollama
 set_default JOURNAL_EMBEDDING_PROVIDER ollama
-set_default JOURNAL_VECTOR_PROVIDER pgvector
+set_default JOURNAL_VECTOR_PROVIDER jdbc
 set_default JOURNAL_AUDIO_PROVIDER filesystem
 set_default JOURNAL_TTS_PROVIDER piper
-set_default JOURNAL_DB_URL jdbc:postgresql://localhost:15432/ai-diary
 set_default JOURNAL_STT_WHISPER_BASE_URL http://localhost:8000
 set_default JOURNAL_LLM_OLLAMA_BASE_URL http://localhost:11434
 set_default JOURNAL_EMBEDDING_OLLAMA_BASE_URL http://localhost:11434

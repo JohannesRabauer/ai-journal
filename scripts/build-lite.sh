@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
-# Builds the lite-cloud artifacts (profile C): backend with the H2 datasource (build-time decision, D-007) into
+# Builds the lite-cloud artifacts (profile C): the normal backend build (one build serves every profile, D-032; lite-cloud is chosen at runtime with QUARKUS_PROFILE) into
 # backend/target/lite-app, and the production frontend jar (frontend/target/app.jar).
 # The Pi needs the jars only: build on a PC, then copy them (docs/PI.md).
 set -eu
 . "$(dirname "$0")/run-common.sh"
 
-echo "==> Backend (-Dquarkus.profile=lite-cloud, output lite-app)"
-mvn_run -pl backend -am package -DskipTests -Dquarkus.profile=lite-cloud -Dquarkus.package.output-directory=lite-app
+echo "==> Backend (output lite-app)"
+mvn_run -pl backend -am package -DskipTests -Dquarkus.package.output-directory=lite-app
 echo "==> Frontend (production)"
 mvn_run -pl frontend -am package -DskipTests -Pproduction
 

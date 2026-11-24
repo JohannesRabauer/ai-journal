@@ -109,3 +109,11 @@ quote and source. Deleting an item keeps an anonymous review log (time, grade, i
 no-auth local app from websites in the user's browser. Every non-GET request to the backend and to the frontend's
 /upload/** proxies requires the header `X-AI-Diary: 1` (forces a CORS preflight, which fails), foreign `Origin`
 headers are rejected, and both servers accept only localhost hosts (plus `JOURNAL_ALLOWED_HOSTS` for the Pi LAN opt-in).
+
+**D-032 One embedded H2 database for all profiles (post-wave change).** PostgreSQL + pgvector is replaced by the embedded
+H2 file database for every profile; vectors use the `jdbc` store (cosine similarity in Java, fine at journal scale).
+Reason: over-engineered for a single-user journal, heavy on a Raspberry Pi 3, one process less, one build for all profiles.
+Consequences: Flyway location is plain `db/migration`; `lite-cloud` is selected purely at runtime with
+`QUARKUS_PROFILE=lite-cloud` (no separate build; supersedes the build-time part of D-003/D-007); the `pgvector` provider,
+the compose `db` service, `JOURNAL_DB_PASSWORD` and the db host port are gone. Old PostgreSQL data is imported with
+`scripts/import-legacy-postgres.*`.

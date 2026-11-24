@@ -99,3 +99,6 @@ keyboard focus, list semantics, 375 px reflow, reduced motion, ARIA on the recor
 - Real microphone in a real browser (recorder, answer recorder, recording guard); audible TTS playback.
 - Screen reader testing; automated axe scan.
 - Local model size: qwen3:1.7b is safe but clumsy; a larger model is one setting.
+
+## Post-wave change: D-032
+After Wave 4 PostgreSQL + pgvector was replaced by the embedded H2 file database for all profiles (D-032). References above to PostgreSQL, pgvector and the `db` service describe the state at acceptance time; criteria 11 and 12 must be re-run (`smoke-compose`, `smoke-plain`, `smoke-lite`) against the H2-only build. Pi memory numbers should be re-measured.

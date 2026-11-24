@@ -1,17 +1,16 @@
 # Opt-in smoke test of profile B (plain Java) with FAKE AI providers, so no Ollama, Whisper or Piper is needed. Not part of verify.
 # Profile B stays local: no OpenAI, no mock-openai here.
-#   1. starts ONLY Postgres (pgvector) from docker-compose.yml in a throwaway compose project with a throwaway data dir
+#   1. uses a throwaway embedded H2 database file (no Docker, no database container)
 #   2. starts scripts\run-backend.ps1 and scripts\run-frontend.ps1 non-interactively (they build first when a jar is missing)
 #   3. checks /api/system/info (profile full, cloudMode false), entry create + list, frontend 200, export zip, delete-all
-#   4. stops everything and removes the container, volume and temp dir (always)
-# Needs: JDK 25 (JAVA_HOME), Docker, free ports on 127.0.0.1. The real ./db/data and ./data are never used.
+#   4. stops everything and removes the temp dir (always)
+# Needs: JDK 25 (JAVA_HOME), free ports on 127.0.0.1. The real ./data is never used.
 # Usage: scripts\smoke-plain.ps1
 . (Join-Path $PSScriptRoot 'run-common.ps1')
 
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ("ai-diary-smoke-plain-" + [Guid]::NewGuid().ToString('N').Substring(0, 8))
-New-Item -ItemType Directory -Path (Join-Path $tmp 'db'), (Join-Path $tmp 'audio'), (Join-Path $tmp 'tts-cache') | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $tmp 'audio'), (Join-Path $tmp 'tts-cache') | Out-Null
 $procs = [System.Collections.Generic.List[object]]::new()
-$composeStarted = $false
 
 function Step($m) { Write-Host "==> $m" -ForegroundColor Cyan }
 function Ok($m) { Write-Host "    ok: $m" }
@@ -50,38 +49,20 @@ function Api($method, $path, $body) {
     try { Invoke-RestMethod @a } catch { Fail "$method $path -> $($_.Exception.Message) $($_.ErrorDetails.Message)" }
 }
 
-$names = 'COMPOSE_PROJECT_NAME', 'JOURNAL_DB_PASSWORD', 'JOURNAL_DB_DATA_DIR', 'JOURNAL_DB_HOST_PORT', 'JOURNAL_DB_URL', 'JOURNAL_HTTP_PORT', 'JOURNAL_STT_PROVIDER',
+$names = 'JOURNAL_DB_URL', 'JOURNAL_HTTP_PORT', 'JOURNAL_STT_PROVIDER',
     'JOURNAL_LLM_PROVIDER', 'JOURNAL_EMBEDDING_PROVIDER', 'JOURNAL_TTS_PROVIDER', 'JOURNAL_VECTOR_PROVIDER', 'JOURNAL_AUDIO_PROVIDER',
     'JOURNAL_AUDIO_FILESYSTEM_DIRECTORY', 'JOURNAL_TTS_CACHE_DIR', 'BACKEND_URL', 'JOURNAL_FRONTEND_PORT', 'JOURNAL_HTTP_HOST', 'QUARKUS_PROFILE', 'OPENAI_API_KEY', 'JOURNAL_CLOUD_CONSENT'
 $saved = @{}
 foreach ($k in $names) { $saved[$k] = [Environment]::GetEnvironmentVariable($k, 'Process') }
 
 try {
-    $docker = Get-Command docker -ErrorAction SilentlyContinue
-    if (-not $docker) { Fail 'docker not found (only the Postgres container is needed)' }
     # Clean slate: nothing from the caller's environment (or a cloud setup) may leak into profile B.
     foreach ($k in 'QUARKUS_PROFILE', 'OPENAI_API_KEY', 'JOURNAL_CLOUD_CONSENT') { Set-Env $k $null }
-    $dbPort = Get-FreePort; $bePort = Get-FreePort; $fePort = Get-FreePort
-    $dbPassword = [Guid]::NewGuid().ToString('N')
-    Set-Env 'COMPOSE_PROJECT_NAME' 'aidiarysmokeplain'
-    Set-Env 'JOURNAL_DB_PASSWORD' $dbPassword
-    Set-Env 'JOURNAL_DB_DATA_DIR' ((Join-Path $tmp 'db') -replace '\\', '/')
-    Set-Env 'JOURNAL_DB_HOST_PORT' "$dbPort"
-
-    Step 'start Postgres only (docker compose db, throwaway project and data dir)'
-    Push-Location $RepoRoot
-    try {
-        $composeStarted = $true
-        & docker compose up -d --build --wait --wait-timeout 300 db
-        if ($LASTEXITCODE -ne 0) { Fail "docker compose up db failed ($LASTEXITCODE)" }
-    }
-    finally { Pop-Location }
-    Ok "postgres on 127.0.0.1:$dbPort"
-
-    # Fake providers: the app runs fully without AI services; vectors in pgvector, audio on the filesystem (as in profile B).
-    Set-Env 'JOURNAL_DB_URL' "jdbc:postgresql://127.0.0.1:$dbPort/ai-diary"
+    $bePort = Get-FreePort; $fePort = Get-FreePort
+    # Fake providers: the app runs fully without AI services; vectors in the jdbc store, audio on the filesystem (as in profile B).
+    Set-Env 'JOURNAL_DB_URL' ("jdbc:h2:file:" + ((Join-Path $tmp 'h2/journal') -replace '\\', '/') + ';DB_CLOSE_ON_EXIT=FALSE')
     foreach ($c in 'STT', 'LLM', 'EMBEDDING', 'TTS') { Set-Env "JOURNAL_${c}_PROVIDER" 'fake' }
-    Set-Env 'JOURNAL_VECTOR_PROVIDER' 'pgvector'
+    Set-Env 'JOURNAL_VECTOR_PROVIDER' 'jdbc'
     Set-Env 'JOURNAL_AUDIO_PROVIDER' 'filesystem'
     Set-Env 'JOURNAL_AUDIO_FILESYSTEM_DIRECTORY' (Join-Path $tmp 'audio')
     Set-Env 'JOURNAL_TTS_CACHE_DIR' (Join-Path $tmp 'tts-cache')
@@ -126,12 +107,8 @@ try {
     Write-Host '==> smoke-plain OK' -ForegroundColor Green
 }
 finally {
-    Step 'cleanup (stop processes and container, remove temp dir)'
+    Step 'cleanup (stop processes, remove temp dir)'
     foreach ($p in $procs) { Stop-Tree $p }
-    if ($composeStarted) {
-        Push-Location $RepoRoot
-        try { & docker compose down -v --remove-orphans 2>&1 | Out-Null } finally { Pop-Location }
-    }
     foreach ($k in $saved.Keys) { Set-Env $k $saved[$k] }
     Start-Sleep -Milliseconds 800
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue

@@ -59,4 +59,3 @@ If you want to learn more about building native executables, please consult <htt
 - SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Document your REST APIs with OpenAPI - comes with Swagger UI
 - LangChain4j Ollama ([guide](https://docs.quarkiverse.io/quarkus-langchain4j/dev/index.html)): Provides the basic integration of Ollama with LangChain4j
 - LangChain4j Easy RAG ([guide](https://docs.quarkiverse.io/quarkus-langchain4j/dev/rag-easy-rag.html)): Provides the Easy RAG functionality with LangChain4j
-- LangChain4j pgvector embedding store ([guide](https://docs.quarkiverse.io/quarkus-langchain4j/dev/index.html)): Provides the pgvector Embedding store for Quarkus LangChain4j

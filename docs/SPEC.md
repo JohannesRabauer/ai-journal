@@ -170,13 +170,13 @@ lists past weeks.
 ## 11. Deployment profiles
 
 ### 11.1 Profile A — docker-compose (full local)
-ollama, postgres+pgvector, whisper (faster-whisper with an OpenAI-compatible HTTP API), piper
-TTS, backend, frontend. Compose profiles select GPU/CPU variants and optional services.
+ollama, whisper (faster-whisper with an OpenAI-compatible HTTP API), piper
+TTS, backend (with the embedded H2 file database, D-032), frontend. Compose profiles select GPU/CPU variants and optional services.
 Secrets via `.env` (`.env.example` committed). Ports on 127.0.0.1.
 
 ### 11.2 Profile B — plain Java
-Backend and frontend via `java -jar` / mvnw against externally running Postgres, Ollama,
-Whisper and Piper; every endpoint configurable by env var / properties. Scripts:
+Backend and frontend via `java -jar` / mvnw against externally running Ollama,
+Whisper and Piper (the database is the embedded H2 file); every endpoint configurable by env var / properties. Scripts:
 `scripts/run-*.ps1` (primary) and `scripts/run-*.sh`.
 
 ### 11.3 Profile C — `lite-cloud` (Raspberry Pi 3, 1 GB RAM, 64-bit OS only)

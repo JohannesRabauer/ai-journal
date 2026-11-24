@@ -7,7 +7,7 @@ turn learnings into memory items with spaced review, do thinking exercises and r
 No telemetry, no external fonts or CDNs. In the full profiles nothing leaves your machine except one-time model
 downloads. Details: [docs/PRIVACY.md](docs/PRIVACY.md). Specification: [docs/SPEC.md](docs/SPEC.md).
 
-Stack: Quarkus 3.29 (backend), Vaadin 24 on Spring Boot (frontend), PostgreSQL + pgvector, Ollama, faster-whisper,
+Stack: Quarkus 3.29 (backend), Vaadin 24 on Spring Boot (frontend), embedded H2 file database, Ollama, faster-whisper,
 Piper, Java 25.
 
 ## Three ways to run it
@@ -18,7 +18,7 @@ Piper, Java 25.
 | **B** plain Java | development, or your own services | local, run by you | no |
 | **C** `lite-cloud` | Raspberry Pi 3 (1 GB) | OpenAI API | **yes** (text and audio) |
 
-Prerequisite for all: copy `.env.example` to `.env` and set `JOURNAL_DB_PASSWORD` (A, B). Never commit `.env`.
+Optional for all: copy `.env.example` to `.env` to change settings (there is no database password; the database is an embedded H2 file). Never commit `.env`.
 Every setting: [docs/CONFIG.md](docs/CONFIG.md).
 
 ### Profile A: docker compose
@@ -28,27 +28,33 @@ the container toolkit) or `cpu`; add `tts` for spoken questions and set `JOURNAL
 
 Windows PowerShell:
 ```powershell
-Copy-Item .env.example .env          # then edit .env: set JOURNAL_DB_PASSWORD
+Copy-Item .env.example .env          # optional: edit .env
 docker compose --profile cpu --profile tts up --build -d
 # GPU instead:  docker compose --profile gpu --profile tts up --build -d
 # without speech output (keep the default JOURNAL_TTS_PROVIDER=none):  docker compose --profile cpu up --build -d
 ```
 sh (Linux/macOS):
 ```sh
-cp .env.example .env                 # then edit .env: set JOURNAL_DB_PASSWORD
+cp .env.example .env                 # optional: edit .env
 mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama
 docker compose --profile cpu --profile tts up --build -d
 ```
 Open http://127.0.0.1:8081. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
 Piper voices); the Whisper service becomes healthy once its model is cached. Check with `docker compose ps`. Stop with
-`docker compose --profile cpu --profile tts down`. The database, backend and frontend ports are published on `127.0.0.1` only; Ollama, Whisper and Piper publish none (docs/CONFIG.md shows how to expose them for debugging). On Linux set
+`docker compose --profile cpu --profile tts down`. The backend and frontend ports are published on `127.0.0.1` only (the database is embedded H2 in the backend, no port); Ollama, Whisper and Piper publish none (docs/CONFIG.md shows how to expose them for debugging). On Linux set
 `JOURNAL_UID`/`JOURNAL_GID` in `.env` to your user if it is not 1001.
 
-Existing database from an earlier version? Read "Securing an existing database" in [docs/PRIVACY.md](docs/PRIVACY.md).
+Data lives in `data/db/journal.mv.db` (compose) or `data/journal.mv.db` (plain Java). Backup: stop the backend and copy that folder.
+
+#### Importing data from the old PostgreSQL version
+Earlier versions used PostgreSQL + pgvector. To keep that data, run while the backend is stopped:
+`pwsh scripts/import-legacy-postgres.ps1 -DataDir db/data_personal` (sh: `sh scripts/import-legacy-postgres.sh <datadir>`).
+It works on a COPY of the old data directory with a temporary container, loads the legacy tables `documents` and `chat_history`
+into the H2 file database and stops nothing else.
 
 ### Profile B: plain Java
 
-Run PostgreSQL with pgvector (for example `docker compose up -d db`, published on `127.0.0.1:15432`), Ollama
+The database is embedded (H2 file `data/journal.mv.db`), no Docker needed for it. Run Ollama
 (`ollama pull qwen3:1.7b qwen3-embedding:0.6b`), a Whisper service and optionally Piper yourself, then set their
 endpoints in `.env` (defaults: `localhost:11434`, `:8000`, `:5000`). Needs JDK 25 (`JAVA_HOME`).
 
@@ -90,8 +96,8 @@ sh scripts/build-lite.sh && sh scripts/run-lite.sh
 ## Development
 - `scripts\verify.ps1` / `sh scripts/verify.sh`: build and all tests (no network after dependencies are cached, no Docker).
 - `scripts\smoke-compose.ps1` / `sh scripts/smoke-compose.sh`: opt-in Docker smoke test (builds the images, starts
-  db, backend and frontend with fake providers in a throwaway project, then removes everything).
-- `scripts\smoke-plain.ps1` / `sh scripts/smoke-plain.sh`: opt-in smoke test of profile B (only Postgres in Docker, backend
+  backend and frontend with fake providers in a throwaway project, then removes everything).
+- `scripts\smoke-plain.ps1` / `sh scripts/smoke-plain.sh`: opt-in smoke test of profile B (no Docker, throwaway H2 file, backend
   and frontend via `run-backend`/`run-frontend` with fake providers; entry, export, delete-all).
 - `scripts\smoke-lite.ps1` / `sh scripts/smoke-lite.sh`: opt-in smoke test of profile C against a local mock of the OpenAI
   API (`scripts/mock-openai`, Node 18+, nothing leaves your machine): consent/key refusal, cloud banner, coach, memory,

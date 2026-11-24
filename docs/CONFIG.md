@@ -10,11 +10,11 @@ for the final defaults.
 
 | Profile | `journal.profile` | Providers | DB | Start |
 |---|---|---|---|---|
-| A: docker compose | `full` | Ollama, Whisper, Piper (local) | PostgreSQL + pgvector | `docker compose --profile cpu up --build -d` |
-| B: plain Java | `full` | same, services run by you | PostgreSQL | `scripts/run-backend.*`, `scripts/run-frontend.*` |
+| A: docker compose | `full` | Ollama, Whisper, Piper (local) | embedded H2 file, `jdbc` vector store | `docker compose --profile cpu up --build -d` |
+| B: plain Java | `full` | same, services run by you | embedded H2 file, `jdbc` vector store | `scripts/run-backend.*`, `scripts/run-frontend.*` |
 | C: `lite-cloud` | `lite-cloud` | OpenAI only | H2 file, in-JVM vectors | `scripts/run-lite.*` or systemd (docs/PI.md) |
 
-`lite-cloud` is a separate build (`scripts/build-lite.*`, datasource kind is a build-time decision, D-007) and needs
+One build serves every profile (D-032). `lite-cloud` is selected purely at runtime and needs
 `QUARKUS_PROFILE=lite-cloud`, `OPENAI_API_KEY` and `JOURNAL_CLOUD_CONSENT=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE`.
 Startup fails without them. It cannot be activated by accident in A/B.
 
@@ -25,7 +25,7 @@ Startup fails without them. It cannot be activated by accident in A/B.
 | `journal.stt.provider` (`JOURNAL_STT_PROVIDER`) | `whisper`, `openai`*, `fake` | `whisper` | `openai` |
 | `journal.llm.provider` | `ollama`, `openai`*, `fake` | `ollama` | `openai` |
 | `journal.embedding.provider` | `ollama`, `openai`*, `fake` | `ollama` | `openai` |
-| `journal.vector.provider` | `pgvector` (PostgreSQL only), `jdbc` (H2 or PostgreSQL), `memory` | `pgvector` | `jdbc` |
+| `journal.vector.provider` | `jdbc` (cosine similarity in Java), `memory` | `jdbc` | `jdbc` |
 | `journal.audio.provider` | `filesystem`, `memory` | `filesystem` | `filesystem` |
 | `journal.tts.provider` | `piper`, `openai`*, `none`, `fake` | `none` (set `piper` with the `tts` compose profile) | `openai` |
 | `journal.scheduler.provider` | `fake` (W3a adds the real one) | `fake` | `fake` |
@@ -45,9 +45,8 @@ compose profile keep `JOURNAL_TTS_PROVIDER=none` (the default, D-021; the coach 
 | `journal.openai.base-url` | `JOURNAL_OPENAI_BASE_URL` | `https://api.openai.com/v1` | |
 | `quarkus.http.host` | `JOURNAL_HTTP_HOST` | `127.0.0.1` | Containers set `0.0.0.0` and publish on `127.0.0.1` |
 | `quarkus.http.port` | `JOURNAL_HTTP_PORT` | `8080` | |
-| `quarkus.datasource.jdbc.url` | `JOURNAL_DB_URL` | `jdbc:postgresql://localhost:15432/ai-diary` (lite: `jdbc:h2:file:./data/journal;DB_CLOSE_ON_EXIT=FALSE`) | |
-| `quarkus.datasource.username` | `JOURNAL_DB_USER` | `ai-diary` (lite: `journal`) | |
-| `quarkus.datasource.password` | `JOURNAL_DB_PASSWORD` | empty | Required for PostgreSQL; startup validation reports it |
+| `quarkus.datasource.jdbc.url` | `JOURNAL_DB_URL` | `jdbc:h2:file:./data/journal;DB_CLOSE_ON_EXIT=FALSE` | Embedded H2 file `data/journal.mv.db`; compose uses `jdbc:h2:file:/data/db/journal;...` |
+| `quarkus.datasource.username` | `JOURNAL_DB_USER` | `journal` | |
 
 ## Provider keys
 
@@ -130,10 +129,9 @@ Profile B (plain Java) runs these services yourself on the default local ports, 
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `JOURNAL_DB_PASSWORD` | compose, scripts | **Required.** PostgreSQL password and backend DB password |
 | `JOURNAL_ALLOWED_HOSTS` | compose, systemd, scripts | Extra accepted `Host` names (comma list), see above and docs/PI.md |
 | `WHISPER_ALLOW_ONLINE` | whisper container | `1` keeps the Hugging Face client online after the model is cached (default: offline) |
-| `JOURNAL_DB_DATA_DIR` | compose | Host directory of the PostgreSQL data (default `./db/data`) |
+| `JOURNAL_DB_DATA_DIR` | compose | Host directory of the H2 database file `journal.mv.db` (default `./data/db`) |
 | `JOURNAL_UID`, `JOURNAL_GID` | compose (Linux) | User the backend/piper containers run as (default 1001:1001) |
 | `OLLAMA_MODELS_TO_PULL` | compose | Space separated model list pulled on first start |
 | `WHISPER_MODEL` | compose | Hugging Face id of the faster-whisper model |

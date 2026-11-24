@@ -32,8 +32,9 @@ The Pi is too small to build the app (Maven, npm). On a PC with JDK 25:
 scripts\build-lite.ps1        (Windows)      sh scripts/build-lite.sh     (Linux/macOS)
 ```
 
-Result: `backend/target/lite-app/` (a directory, copy it whole) and `frontend/target/app.jar`. The backend is a **separate
-build** with the H2 datasource (D-007); the normal backend jar does not start in `lite-cloud`.
+Result: `backend/target/lite-app/` (a directory, copy it whole) and `frontend/target/app.jar`. It is the same build as for
+the other profiles (D-032); `lite-cloud` is selected at runtime by `QUARKUS_PROFILE=lite-cloud` (set by the unit). The only
+database is the embedded H2 file in the backend JVM: no database process, nothing else to install.
 
 ## Install on the Pi
 ```
@@ -116,6 +117,9 @@ Use `-SkipBuild` / `--skip-build` to reuse existing jars. It does not replace th
 ## Measurements
 
 ### Wave 0 spike (2026-11-23)
+Note: these numbers were measured WITH a PostgreSQL container on another host, before D-032 (embedded H2 only, no database
+process). They should be re-measured; the memory budget is expected to get easier.
+
 Pre-v1 jars (backend Quarkus 3.29, frontend Vaadin 24.9 production build) in `eclipse-temurin:25-jre` containers with
 `--memory=1g`, backend against PostgreSQL in a separate container (not counted). One browser session opened on the UI and
 reloaded 3x, then `VmRSS`/`VmHWM` of the JVM read from `/proc`, flags as above.

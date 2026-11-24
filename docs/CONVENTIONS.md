@@ -19,7 +19,7 @@
   removed by an `@Observes(during = AFTER_SUCCESS) EntryDeleted` observer (D-019).
 - REST classes: never root a class at a prefix of another resource's routes; entry-scoped routes go on an interface
   rooted at `/api/entries/{entryId}/...` (D-018).
-- Migrations: additive only, your assigned version range, **same file name in `db/migration/postgresql` and `db/migration/h2`**.
+- Migrations: additive only, your assigned version range, one file in `db/migration` (H2 only since D-032; the per-vendor sub-folders are gone).
 - REST: implement the interface in `rest/`; delete the matching `rest/stub/*Stub` in the same commit. Need a contract
   change (`api/` records, `rest/` interfaces, `spi/` interfaces)? Stop and report to the orchestrator.
 - Errors to the client: throw `ApiException` (user-presentable message, no content) or let `ProviderException` /

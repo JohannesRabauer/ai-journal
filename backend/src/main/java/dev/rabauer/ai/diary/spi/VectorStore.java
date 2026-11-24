@@ -3,8 +3,8 @@ package dev.rabauer.ai.diary.spi;
 import java.util.List;
 
 /**
- * Similarity search over embedded chunks. Implementations: {@code pgvector} (PostgreSQL only),
- * {@code jdbc} (cosine in Java over stored float arrays; works on H2 and PostgreSQL), {@code memory}.
+ * Similarity search over embedded chunks. Implementations: {@code jdbc} (cosine in Java over stored float
+ * arrays in the embedded H2 database; plenty for a journal), {@code memory}.
  *
  * <p>{@code namespace} separates owners, e.g. {@code "entry"}; {@code ownerId} is the owner's id as string.
  */

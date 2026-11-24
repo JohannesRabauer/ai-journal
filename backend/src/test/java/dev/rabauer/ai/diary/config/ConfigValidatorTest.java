@@ -20,7 +20,7 @@ class ConfigValidatorTest {
     }
 
     private static ConfigValidator.Input full(List<ProviderSelection> sel) {
-        return new ConfigValidator.Input("full", sel, Optional.empty(), false, "postgresql", true);
+        return new ConfigValidator.Input("full", sel, Optional.empty(), false);
     }
 
     @Test
@@ -53,49 +53,26 @@ class ConfigValidatorTest {
     }
 
     @Test
-    void liteCloudRequiresConsentKeyAndH2() {
-        var in = new ConfigValidator.Input("lite-cloud", local(), Optional.of("yes"), false, "postgresql", true);
+    void liteCloudRequiresConsentAndKey() {
+        var in = new ConfigValidator.Input("lite-cloud", local(), Optional.of("yes"), false);
         List<String> errors = ConfigValidator.validate(in);
-        assertThat(errors).hasSize(3);
+        assertThat(errors).hasSize(2);
         assertThat(String.join("\n", errors))
                 .contains("JOURNAL_CLOUD_CONSENT=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE")
-                .contains("OPENAI_API_KEY")
-                .contains("-Dquarkus.profile=lite-cloud");
+                .contains("OPENAI_API_KEY");
     }
 
     @Test
-    void liteCloudWithConsentKeyAndH2IsValidAndAllowsExternalProviders() {
+    void liteCloudWithConsentAndKeyIsValidAndAllowsExternalProviders() {
         var sel = local();
         sel.set(2, new ProviderSelection(Capability.LLM, "openai", Set.of("openai"), true));
-        var in = new ConfigValidator.Input("lite-cloud", sel, Optional.of(JournalConfig.CLOUD_CONSENT_PHRASE), true, "h2", false);
+        var in = new ConfigValidator.Input("lite-cloud", sel, Optional.of(JournalConfig.CLOUD_CONSENT_PHRASE), true);
         assertThat(ConfigValidator.validate(in)).isEmpty();
     }
 
     @Test
     void unknownProfileIsReported() {
-        var in = new ConfigValidator.Input("cloud", local(), Optional.empty(), false, "postgresql", true);
+        var in = new ConfigValidator.Input("cloud", local(), Optional.empty(), false);
         assertThat(ConfigValidator.validate(in)).singleElement().asString().contains("journal.profile=cloud");
-    }
-
-    @Test
-    void pgvectorRequiresPostgres() {
-        var sel = local();
-        sel.set(4, new ProviderSelection(Capability.VECTOR, "pgvector", Set.of("pgvector"), false));
-        var in = new ConfigValidator.Input("full", sel, Optional.empty(), false, "h2", false);
-        assertThat(ConfigValidator.validate(in)).singleElement().asString().contains("pgvector requires PostgreSQL");
-    }
-
-    @Test
-    void postgresRequiresPassword() {
-        var in = new ConfigValidator.Input("full", local(), Optional.empty(), false, "postgresql", false);
-        assertThat(ConfigValidator.validate(in)).singleElement().asString().contains("JOURNAL_DB_PASSWORD");
-    }
-
-    @Test
-    void examplePasswordFromEnvExampleIsRejected() {
-        var in = new ConfigValidator.Input("full", local(), Optional.empty(), false, "postgresql", true, true);
-        assertThat(ConfigValidator.validate(in)).singleElement().asString()
-                .contains("example value").contains(".env.example");
-        assertThat(ConfigValidator.PLACEHOLDER_DB_PASSWORD).isEqualTo("change-me-to-a-long-random-value");
     }
 }
