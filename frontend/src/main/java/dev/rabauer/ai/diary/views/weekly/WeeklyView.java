@@ -31,6 +31,7 @@ import dev.rabauer.ai.diary.api.insights.WeeklyReportDto;
 import dev.rabauer.ai.diary.api.insights.WeeklyReportSummaryDto;
 import dev.rabauer.ai.diary.client.EntriesClient;
 import dev.rabauer.ai.diary.client.WeeklyClient;
+import dev.rabauer.ai.diary.shell.DiaryIcons;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.views.entries.BrowserZone;
 import dev.rabauer.ai.diary.views.entries.EntryDetailView;
@@ -74,6 +75,11 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
     private final EntriesClient entries;
 
     private final Select<Week> picker = new Select<>();
+    private final H1 title = new H1();
+    private final Paragraph dateRange = new Paragraph();
+    private final Button previousWeek = new Button();
+    private final Button nextWeek = new Button();
+    private List<Week> pickerWeeks = List.of();
     private final Div statusLine = new Div();
     private final Div errorBox = new Div();
     private final Div notice = new Div();
@@ -114,9 +120,26 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
             }
         });
 
+        title.addClassName("weekly-title");
+        title.getElement().setAttribute("tabindex", "-1");
+        dateRange.addClassNames("diary-eyebrow", "weekly-range");
+        previousWeek.setIcon(DiaryIcons.create("chevron-left"));
+        previousWeek.addClassName("weekly-nav-button");
+        previousWeek.getElement().setAttribute("aria-label", getTranslation("weekly.nav.previous"));
+        previousWeek.addClickListener(e -> step(1));
+        nextWeek.setIcon(DiaryIcons.create("chevron-right"));
+        nextWeek.addClassName("weekly-nav-button");
+        nextWeek.getElement().setAttribute("aria-label", getTranslation("weekly.nav.next"));
+        nextWeek.addClickListener(e -> step(-1));
+        Div heading = new Div(dateRange, title);
+        heading.addClassName("weekly-heading");
+        Div header = new Div(previousWeek, heading, nextWeek);
+        header.addClassName("weekly-header");
+
         Paragraph intro = new Paragraph(getTranslation("weekly.intro"));
-        intro.addClassName("weekly-muted");
-        add(new H1(getTranslation("weekly.title")), intro, picker, statusLine, errorBox, notice, reportBox, historyBox);
+        intro.addClassName("weekly-lead");
+        add(header, intro, picker, statusLine, errorBox, notice, reportBox, historyBox);
+        updateHeader();
         statusLine.setVisible(false);
         errorBox.setVisible(false);
         notice.setVisible(false);
@@ -165,6 +188,7 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
         Week last = WeeklyPresenter.lastCompleted(today);
         updatingPicker = true;
         try {
+            pickerWeeks = weeks;
             picker.setItems(weeks);
             picker.setItemLabelGenerator(w -> {
                 String key = w.equals(thisWeek) ? "weekly.week.thisSoFar" : w.equals(last) ? "weekly.week.last" : "weekly.week.option";
@@ -174,6 +198,29 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
         } finally {
             updatingPicker = false;
         }
+    }
+
+    /** Moves to an older (+1) or newer (-1) week of the picker list; weeks are listed newest first. */
+    private void step(int direction) {
+        if (selected == null || busy || draft != null) {
+            return;
+        }
+        int index = pickerWeeks.indexOf(selected) + direction;
+        if (index >= 0 && index < pickerWeeks.size()) {
+            Week week = pickerWeeks.get(index);
+            rebuildPicker(week);
+            select(week);
+        }
+    }
+
+    private void updateHeader() {
+        Week week = selected != null ? selected : WeeklyPresenter.lastCompleted(today());
+        title.setText(getTranslation("weekly.week.heading", String.valueOf(week.isoWeek())));
+        dateRange.setText(WeeklyPresenter.range(week, getLocale()));
+        int index = pickerWeeks.indexOf(week);
+        boolean idle = !busy && draft == null;
+        previousWeek.setEnabled(idle && index >= 0 && index < pickerWeeks.size() - 1);
+        nextWeek.setEnabled(idle && index > 0);
     }
 
     /** Shows the stored report of a week, or the offer to create one. */
@@ -376,6 +423,7 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
             }
         }
         picker.setEnabled(!busy && draft == null);
+        updateHeader();
 
         reportBox.removeAll();
         focusTarget = null;
@@ -406,23 +454,23 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
         WeeklyReportDto r = current.report();
         Div box = new Div();
 
-        H2 heading = new H2(getTranslation("weekly.week.heading", String.valueOf(r.isoWeek())));
-        heading.getElement().setAttribute("tabindex", "-1");
-        focusTarget = heading;
-        Paragraph dates = new Paragraph(WeeklyPresenter.range(WeeklyPresenter.weekOf(r), getLocale()));
-        dates.addClassName("weekly-muted");
+        box.addClassName("weekly-article");
+        focusTarget = title;
         Paragraph meta = new Paragraph(metaText(r));
         meta.addClassName("weekly-muted");
-        box.add(heading, dates, meta, actions());
+        box.add(meta);
 
         // 1. Recurring themes
         Section themes = section("weekly.section.themes");
         if (r.recurringThemes().isEmpty()) {
             themes.add(none());
         }
+        Div grid = new Div();
+        grid.addClassName("weekly-themes");
+        themes.add(grid);
         for (WeeklyReportDto.Theme t : r.recurringThemes()) {
             Div theme = new Div();
-            theme.addClassName("weekly-theme");
+            theme.addClassNames("weekly-theme", "diary-card");
             Span title = new Span(t.title());
             title.addClassName("weekly-theme__title");
             Paragraph description = new Paragraph(t.description());
@@ -433,7 +481,7 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
                 t.entryIds().forEach(id -> links.add(entryLink(id)));
                 theme.add(links);
             }
-            themes.add(theme);
+            grid.add(theme);
         }
         box.add(themes);
 
@@ -481,6 +529,7 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
             question.add(q);
         }
         box.add(question);
+        box.add(actions());
         return box;
     }
 
@@ -497,7 +546,6 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
         Div actions = new Div();
         actions.addClassName("weekly-actions");
         Button edit = new Button(getTranslation("weekly.edit"), e -> startEdit());
-        edit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         Button again = new Button(getTranslation("weekly.regenerate"), e -> confirmRegenerate());
         again.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         Button delete = new Button(getTranslation("weekly.delete"), e -> confirmDelete());
@@ -554,13 +602,11 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
     // ------------------------------------------------------------------ editor
 
     private Component editor() {
-        WeeklyReportDto r = current.report();
         Div box = new Div();
         box.addClassName("weekly-editor");
-        H2 heading = new H2(getTranslation("weekly.week.heading", String.valueOf(r.isoWeek())));
         Paragraph help = new Paragraph(getTranslation("weekly.edit.help"));
         help.addClassName("weekly-muted");
-        box.add(heading, help);
+        box.add(help);
 
         Section themes = section("weekly.section.themes");
         for (EditDraft.ThemeRow row : draft.themes) {
@@ -707,7 +753,9 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
                 Span meta = new Span(WeeklyPresenter.range(week, getLocale()) + " · "
                         + getTranslation("weekly.history.created", WeeklyPresenter.dateTime(s.generatedAt(), zone, getLocale())));
                 meta.addClassName("weekly-muted");
-                list.add(new ListItem(open, meta));
+                ListItem item = new ListItem(open, meta);
+                item.addClassNames("weekly-history-item", "diary-card");
+                list.add(item);
             }
             section.add(list);
         }
