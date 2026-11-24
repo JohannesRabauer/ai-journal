@@ -30,7 +30,8 @@
   --lumo-disabled-text-color: var(--diary-muted);
   --lumo-primary-color: var(--diary-accent);
   --lumo-primary-text-color: var(--diary-accent);
-  --lumo-primary-color-50pct: color-mix(in srgb, var(--diary-accent) 50%, transparent);
+  /* Lumo draws every focus ring with this token; at 50% alpha it falls below 3:1 (WCAG 1.4.11), so it is solid. */
+  --lumo-primary-color-50pct: var(--diary-accent);
   --lumo-primary-color-10pct: color-mix(in srgb, var(--diary-accent) 10%, transparent);
   --lumo-primary-contrast-color: var(--diary-on-accent);
   --lumo-error-color: var(--diary-error);
@@ -248,6 +249,29 @@ code.diary-phrase {
   border: 1px solid var(--diary-border);
 }
 
+/* Form controls get a visible boundary (3:1, WCAG 1.4.11); Lumo's default is a faint fill only. */
+vaadin-text-field::part(input-field),
+vaadin-text-area::part(input-field),
+vaadin-select::part(input-field),
+vaadin-combo-box::part(input-field),
+vaadin-integer-field::part(input-field),
+vaadin-date-picker::part(input-field) {
+  border: 1px solid var(--diary-border);
+}
+vaadin-text-field[invalid]::part(input-field),
+vaadin-text-area[invalid]::part(input-field),
+vaadin-select[invalid]::part(input-field) {
+  border-color: var(--diary-error);
+}
+vaadin-checkbox::part(checkbox),
+vaadin-radio-button::part(radio) {
+  border: 1px solid var(--diary-border);
+  box-sizing: border-box;
+}
+vaadin-checkbox[checked]::part(checkbox) {
+  border-color: var(--diary-accent);
+}
+
 /* ---- Mobile: bottom navigation bar --------------------------------------------------- */
 @media (max-width: 767.98px) {
   .diary-shell {
@@ -302,6 +326,19 @@ code.diary-phrase {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Parts inside Vaadin shadow roots are not reached by the universal selector below. */
+  vaadin-progress-bar::part(bar),
+  vaadin-progress-bar::part(value),
+  vaadin-dialog-overlay::part(overlay),
+  vaadin-confirm-dialog-overlay::part(overlay),
+  vaadin-confirm-dialog-overlay::part(backdrop),
+  vaadin-notification-card::part(overlay),
+  vaadin-details::part(content),
+  vaadin-select-overlay::part(overlay),
+  vaadin-button::part(label) {
+    animation: none !important;
+    transition: none !important;
+  }
   *,
   *::before,
   *::after {
