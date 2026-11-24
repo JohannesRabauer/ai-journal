@@ -1,5 +1,6 @@
 package dev.rabauer.ai.diary.entry;
 
+import dev.rabauer.ai.diary.privacy.PurgeGeneration;
 import dev.rabauer.ai.diary.spi.EmbeddingGateway;
 import dev.rabauer.ai.diary.spi.ProviderException;
 import dev.rabauer.ai.diary.spi.VectorStore;
@@ -36,6 +37,8 @@ public class EntryIndexer {
     EntryRepository repository;
     @Inject
     EntryIndexState state;
+    @Inject
+    PurgeGeneration purge;
 
     /** Result of one indexing attempt. UNREACHABLE tells the backfill to stop and retry later. */
     public enum Outcome { INDEXED, FAILED, UNREACHABLE }
@@ -57,6 +60,7 @@ public class EntryIndexer {
 
     /** Synchronous indexing that tells why it failed (never throws, never logs content). */
     public Outcome attempt(long entryId) {
+        long generation = purge.current();
         try {
             String text = QuarkusTransaction.requiringNew().call(() -> {
                 DiaryEntryEntity e = repository.findById(entryId);
@@ -78,8 +82,21 @@ public class EntryIndexer {
             for (int i = 0; i < parts.size(); i++) {
                 chunks.add(new VectorStore.Chunk(i, parts.get(i), vecs.get(i), modelId));
             }
-            vectors.upsert(NAMESPACE, Long.toString(entryId), chunks);
-            state.record(entryId, modelId);
+            // The embedding call may have taken seconds: the entry may be gone (or everything purged) meanwhile.
+            // Re-check and write inside one transaction, then re-check once more and clean up after ourselves:
+            // either a concurrent delete commits before the second check (we remove what we wrote) or after it
+            // (its EntryDeleted observer removes it).
+            boolean written = QuarkusTransaction.requiringNew().call(() -> {
+                if (purge.changedSince(generation) || repository.findById(entryId) == null) {
+                    return false;
+                }
+                vectors.upsert(NAMESPACE, Long.toString(entryId), chunks);
+                state.record(entryId, modelId);
+                return true;
+            });
+            if (!written || purge.changedSince(generation) || stillMissing(entryId)) {
+                discard(entryId);
+            }
             return Outcome.INDEXED;
         } catch (ProviderException e) {
             LOG.warnf("Indexing entry %d failed (%s/%s); will retry on next backfill.", entryId, e.provider(), e.kind());
@@ -88,6 +105,16 @@ public class EntryIndexer {
             LOG.warnf("Indexing entry %d failed: %s", entryId, e.getClass().getSimpleName());
             return Outcome.FAILED;
         }
+    }
+
+    private boolean stillMissing(long entryId) {
+        return QuarkusTransaction.requiringNew().call(() -> repository.findById(entryId) == null);
+    }
+
+    /** Removes what this indexer may have written for an entry that was deleted while it was being embedded. */
+    private void discard(long entryId) {
+        vectors.delete(NAMESPACE, Long.toString(entryId));
+        QuarkusTransaction.requiringNew().run(() -> state.forget(entryId));
     }
 
     /** Splits on paragraph, then sentence boundaries, into pieces of at most {@code max} characters. */
