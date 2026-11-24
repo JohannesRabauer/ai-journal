@@ -335,8 +335,9 @@ class MemoryFlowTest {
         assertThat(reveal.getLong("sourceId")).isEqualTo(entry);
         assertThat(reveal.getString("attemptText")).isEqualTo("my guess");
 
-        JsonPath graded = given().contentType(ContentType.JSON).body("{\"quality\":4}").post("/api/memory/reviews/" + item + "/grade")
+        JsonPath graded = given().contentType(ContentType.JSON).body("{\"quality\":5}").post("/api/memory/reviews/" + item + "/grade")
                 .then().statusCode(200).extract().jsonPath();
+        assertThat(graded.getDouble("easeFactor")).isEqualTo(2.6); // SM-2 ease update proves sm2 (not the fake) is active
         assertThat(graded.getInt("repetitions")).isEqualTo(1);
         assertThat(graded.getInt("intervalDays")).isEqualTo(5);
         assertThat(graded.getString("nextReviewOn")).isEqualTo(LocalDate.now().plusDays(5).toString());
