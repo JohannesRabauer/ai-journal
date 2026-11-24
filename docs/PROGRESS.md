@@ -73,3 +73,10 @@ check the HTML pages (200, h1, CSP header) on the backend port. Tests after phas
 `./mvnw verify`), 215 JS tests (`cd backend && npm test`); `smoke-plain`, `smoke-lite` (single JVM about 221 MB Windows
 working set after rendering every page) and `smoke-compose` green. Open: phase 6, measure the one JVM on a real Pi 3 and
 redo the screen reader / axe pass. Dependabot PRs for Vaadin and Spring Boot (#20, #26) are obsolete and should be closed.
+
+## Qute migration phase 6, accessibility part: done 2026-11-24
+Manual and scripted WCAG 2.1 AA pass over all eight pages (light and dark, 1280/375/320 px, keyboard, no-JS, 200% text),
+documented in docs/A11Y.md ("Qute UI pass"). Fixed: the phone tab bar (now in the flow, wraps at large text), single-key
+grade shortcuts (WCAG 2.1.4, now only with focus in the revealed card), unannounced settings field error, 24 px checkboxes,
+large-text overflow in gym cards, memory tiles, journal filter and entry layout. New `AccessibilityMarkupTest`. Still open:
+the real Raspberry Pi 3 measurement, a real screen reader run, a recording with a real microphone.

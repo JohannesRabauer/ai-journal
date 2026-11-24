@@ -1,6 +1,6 @@
 # Migration plan: Vaadin frontend → Qute pages in the backend
 
-Status: **phases 0 to 5 done** (2026-11-24, branch `qute/phase-5`); the Vaadin frontend is removed and one JVM serves everything. Phase 6 (real Pi measurement) is open. Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
+Status: **phases 0 to 5 done** (2026-11-24, branch `qute/phase-5`); the Vaadin frontend is removed and one JVM serves everything. Phase 6: the a11y pass is done (2026-11-24, [A11Y.md](A11Y.md)); the real Pi measurement is open. Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
 Proof of concept: branch `spike/qute-journal` (Journal page, commit `bd72455`).
 
 ## Why
@@ -83,7 +83,7 @@ phase 5, so the app was usable at every step.
 | 3 | ~~Coach (Reflect) — and here the side-by-side layout from the mockup becomes cheap~~ **done** | coach flow incl. voice answers and TTS |
 | 4 | ~~Remember (with next-interval hints: extend `ReviewCardDto`), Gym, Week, Settings (+ export, delete-all)~~ **done** | every Vaadin route has a Qute page |
 | 5 | ~~Remove `frontend/` module, its Dockerfile, systemd unit, compose service, scripts; port 8081 → 8080 in docs; close Dependabot PRs #20 and #26~~ **done** (the two PRs themselves are still to be closed by the owner) | one JVM; `smoke-plain`, `smoke-lite`, `smoke-compose` green; DESIGN/PI/README/CONFIG updated |
-| 6 | Measure on a real Pi 3 (RSS of the one JVM), re-tune `-Xmx`; a11y pass (keyboard, screen reader, axe) | numbers in PI.md; A11Y.md updated |
+| 6 | Measure on a real Pi 3 (RSS of the one JVM), re-tune `-Xmx` **(open, needs the hardware)**; ~~a11y pass (keyboard, contrast, reflow, no-JS)~~ **done** 2026-11-24 (no real screen reader, no axe download) | numbers in PI.md (open); A11Y.md "Qute UI pass" done |
 
 ## Conventions (phase 0 foundation; every later phase follows them)
 **Routes.** `/` Today, `/journal` list, `/journal/{id}` entry detail, `/journal/{id}/reflect` coach, `/memory`, `/gym`,
