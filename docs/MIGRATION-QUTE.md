@@ -1,6 +1,6 @@
 # Migration plan: Vaadin frontend → Qute pages in the backend
 
-Status: **proposed** (2026-11-24). Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
+Status: **proposed** (2026-11-24); phase 0 implemented on branch `qute/phase-0`. Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
 Proof of concept: branch `spike/qute-journal` (Journal page, commit `bd72455`).
 
 ## Why
@@ -84,6 +84,62 @@ phase 5, so the app is usable at every step. Phases 2–4 can run in parallel (s
 | 4 | Remember (with next-interval hints: extend `ReviewCardDto`), Gym, Week, Settings (+ export, delete-all) | every Vaadin route has a Qute page |
 | 5 | Remove `frontend/` module, its Dockerfile, systemd unit, compose service, scripts; port 8081 → 8080 in docs; close Dependabot PRs #20 and #26 | one JVM; `smoke-plain`, `smoke-lite`, `smoke-compose` green; DESIGN/PI/README/CONFIG updated |
 | 6 | Measure on a real Pi 3 (RSS of the one JVM), re-tune `-Xmx`; a11y pass (keyboard, screen reader, axe) | numbers in PI.md; A11Y.md updated |
+
+## Conventions (phase 0 foundation; every later phase follows them)
+**Routes.** `/` Today, `/journal` list, `/journal/{id}` entry detail, `/journal/{id}/reflect` coach, `/memory`, `/gym`,
+`/weekly`, `/settings`. `/api/**` stays JSON. Routes not built yet answer with the "not moved yet" page
+(`NotMovedResource`, plus the two `/journal/{id}` methods in `JournalResource`): a phase deletes the method of the route
+it builds. One URL prefix belongs to one resource class (JAX-RS), so nested routes live in the prefix's class.
+
+**Java.**
+- One resource per page under `web/ui/`, with a typed `@CheckedTemplate` (`static native TemplateInstance page(Shell shell, Messages t, <ViewModel> v)`),
+  template at `templates/<Resource>/<method>.html`, layout `{#include base}`. Fragments (`{#fragment id=...}`) for the
+  progressive-enhancement chunks.
+- Presenters are plain Java (no Quarkus/JAX-RS types), pure, with unit tests (`JournalPresenter` is the pattern).
+  Resources only gather data, call a presenter, and build the view model.
+- "Today/Yesterday" and other date logic take the zone from the `diary-tz` cookie: `ClientZone.resolve(cookie, clock.getZone())`.
+- Shell: `ShellFactory.create(messages, activeHref)`; the cloud status comes from `SystemInfoService` (shared with `/api/system/info`).
+- Writes without JavaScript: a `POST` form route consumes `application/x-www-form-urlencoded`, declares
+  `@FormParam("_csrf") String token`, calls `csrf.require(token)` (injected `Csrf`) before changing anything, and answers
+  `303` to a GET page (flash message via query parameter, never journal text). `CsrfCookieFilter` refuses a form route
+  that does not declare `_csrf`. Templates emit the field with `{#csrf /}` inside the `<form method="post">`.
+  `TestFormResource` (test sources) is the reference implementation.
+
+**Templates and HTML.** Qute auto-escaping always; never `raw`/`safe` on user or model text. No inline `<script>`,
+`style=""` or `on*=` (CSP `script-src 'self'; style-src 'self'`). One `h1` per page; every control labelled; native
+elements first (`<button>`, `<a>`, `<dialog>`, `<details>`); after an in-place update focus goes to the new content or
+a status; status text lives in an `aria-live="polite"` region (`role="status"`); focus is trapped only in a modal
+`<dialog>`. Calm UI: no streaks, scores, alarm colours for ordinary states.
+
+**i18n.** Texts come from `Messages` (`i18n/<feature>_{en,de}.properties`, copied from the frontend, CRLF line endings,
+non-ASCII characters as Unicode escapes like the frontend files); a new feature's bundle is added to `Messages.BUNDLES`.
+Language: `Accept-Language`, later the setting. Texts needed by JavaScript are rendered into `data-*` attributes of the
+element; the modules contain no texts of their own.
+
+**CSS.** Shared tokens and building blocks in `css/styles.css` (contrast verified by `ThemeContrastTest`); one stylesheet
+per page `css/<page>.css`, loaded via `{#head}`, classes prefixed with the page (`entries-`, `coach-`, `memory-`, ...).
+
+**JavaScript.** One ES module per page `js/<page>.js` (`<script type="module" src="/js/<page>.js">` in `{#scripts}`),
+importing the shared modules below. `js/shell.js` is on every page (time zone cookie, offline banner). Same-origin
+`fetch` only, via `api.js` (always `X-AI-Diary: 1`). Forms: the JS path intercepts `submit`, calls the API with `api.js`
+and updates the page; the no-JS path is the real `<form method="post">` with `{#csrf /}`.
+
+| Module | API |
+|---|---|
+| `api.js` | `api(path, {method, body, headers, signal})`, `get/post/put/del(path, ...)` resolve parsed JSON (or `null`); reject with `ApiError {code, message, status}` (`NETWORK`, `HTTP_<n>`, or the backend's `ErrorDto.code`) |
+| `notify.js` | `notify(text, {kind: 'info' or 'error', timeoutMs})` into `#diary-notify` |
+| `confirm.js` | `confirmDialog({title, message, confirmLabel, cancelLabel, destructive}) -> Promise<boolean>` |
+| `autosave.js` | `AutosavePresenter`, `entryOperations()`, `createAutosave({presenter, getText, create, update, onState, onSaved})`, `bindAutosave({textarea, status, presenter, ops, onSaved})`; the status element carries `data-saving/-saved/-failed/-retry` |
+| `poll.js` | `createPoller({task, isDone, onResult, onError, intervalMs: 2000, maxPolls, baseMs, maxMs}) -> {start, stop, running}` |
+| `status.js` | `initStatus()` (done by `shell.js`); `createStatus({banner, navStatus, fetchInfo}).check()` |
+| `tz.js` | `ensureTimeZoneCookie()` (done by `shell.js`) |
+| `lib/backoff.js` | `retryDelayMs(attempt, {baseMs, maxMs, random})` (copy of the frontend file; identical until phase 5) |
+
+**Tests.** Java: unit tests for presenters, `@QuarkusTest` page tests with RestAssured (structure, escaping, one `h1`,
+headers, de/en). Browser modules: `node --test` with injected fakes (`backend/src/test/js/*.test.mjs`, no dependencies;
+`backend/package.json` only marks the folder as ES modules). Run them with `cd backend && npm test` or
+`node --test "backend/src/test/js/**/*.test.mjs"` from the repository root; `scripts/verify.*` runs them next to the
+frontend's. `ThemeContrastTest` (backend) parses the tokens of `css/styles.css`; new tokens get a contrast assertion.
 
 ## Effort estimate
 The spike (one read-only page with progressive enhancement, tests, security headers) took one agent about 90 minutes.
