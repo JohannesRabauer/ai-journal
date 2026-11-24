@@ -3,7 +3,7 @@ package dev.rabauer.ai.diary.views.entries;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -33,9 +33,14 @@ public class EntriesView extends VerticalLayout implements HasDynamicTitle {
     public EntriesView(EntriesClient entries) {
         this.entries = entries;
         setMaxWidth("48rem");
-        add(new H2(getTranslation("entries.journal.title")), list, pager);
+        add(new H1(getTranslation("entries.journal.title")), list, pager);
         list.setPadding(false);
+        list.getElement().setAttribute("role", "list");
+        list.getElement().setAttribute("aria-label", getTranslation("entries.journal.listLabel"));
+        pager.getElement().setAttribute("role", "navigation");
+        pager.getElement().setAttribute("aria-label", getTranslation("entries.journal.pager"));
         pager.setAlignItems(FlexComponent.Alignment.CENTER);
+        pager.getStyle().set("flex-wrap", "wrap");
         load(0);
     }
 
@@ -45,6 +50,11 @@ public class EntriesView extends VerticalLayout implements HasDynamicTitle {
     }
 
     private void load(int requestedPage) {
+        load(requestedPage, null);
+    }
+
+    /** @param focusNext after paging, keyboard focus goes back to the pager button the user used (it is rebuilt) */
+    private void load(int requestedPage, Boolean focusNext) {
         list.removeAll();
         pager.removeAll();
         PageDto<EntryDto> result;
@@ -63,23 +73,29 @@ public class EntriesView extends VerticalLayout implements HasDynamicTitle {
         }
         Paging paging = Paging.of(result);
         if (paging.pageCount() > 1) {
-            Button previous = new Button(getTranslation("entries.journal.previous"), e -> load(page - 1));
+            Button previous = new Button(getTranslation("entries.journal.previous"), e -> load(page - 1, false));
             previous.setEnabled(paging.hasPrevious());
-            Button next = new Button(getTranslation("entries.journal.next"), e -> load(page + 1));
+            Button next = new Button(getTranslation("entries.journal.next"), e -> load(page + 1, true));
             next.setEnabled(paging.hasNext());
             Span label = new Span(getTranslation("entries.journal.page", paging.displayPage(), paging.displayPageCount()));
             pager.add(previous, label, next);
+            if (focusNext != null) {
+                Button target = focusNext ? (next.isEnabled() ? next : previous) : (previous.isEnabled() ? previous : next);
+                target.focus();
+            }
         }
     }
 
     private Div card(Row row) {
         Div card = new Div();
+        card.getElement().setAttribute("role", "listitem");
         card.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)")
                 .set("border-radius", "var(--lumo-border-radius-l)").set("padding", "var(--lumo-space-m)")
                 .set("width", "100%").set("box-sizing", "border-box");
 
         HorizontalLayout head = new HorizontalLayout();
         head.setAlignItems(FlexComponent.Alignment.CENTER);
+        head.getStyle().set("flex-wrap", "wrap");
         head.add(EntryDetailView.link(row.date().isBlank() ? getTranslation("entries.untitled") : row.date(), row.id()));
         if (row.voice()) {
             head.add(badge(getTranslation("entries.badge.voice")));

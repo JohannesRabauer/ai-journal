@@ -5,7 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
@@ -69,10 +69,11 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
             showMessage("entries.detail.notFound");
             return;
         }
-        load(id);
+        load(id, false);
     }
 
-    private void load(long id) {
+    /** @param refocus after an in-page action the old controls are gone, so focus moves to the entry heading */
+    private void load(long id, boolean refocus) {
         removeAll();
         add(new RouterLink(getTranslation("entries.detail.back"), EntriesView.class));
         EntryDto entry;
@@ -98,9 +99,15 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         EntryActions actions = EntryActions.forEntry(entry.status(), hasAudio, !blank(entry.text()), false);
 
         EntryListPresenter.Row row = EntryListPresenter.row(entry, UI.getCurrent().getLocale());
-        HorizontalLayout head = new HorizontalLayout(new H2(row.date()), new Span(getTranslation(row.statusKey())));
+        H1 heading = new H1(row.date());
+        heading.getElement().setAttribute("tabindex", "-1");
+        HorizontalLayout head = new HorizontalLayout(heading, new Span(getTranslation(row.statusKey())));
         head.setAlignItems(FlexComponent.Alignment.BASELINE);
+        head.getStyle().set("flex-wrap", "wrap"); // reflow at 320px (WCAG 1.4.10)
         add(head);
+        if (refocus) {
+            heading.getElement().executeJs("this.focus()");
+        }
         if (entry.source() == EntrySource.VOICE) {
             Span voice = new Span(getTranslation("entries.badge.voice"));
             voice.getElement().getThemeList().add("badge contrast");
@@ -121,7 +128,7 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         }
 
         EntryEditorPanel panel = new EntryEditorPanel(entries, transcriptions, this::getTranslation,
-                () -> Language.AUTO, changed -> load(changed.id()));
+                () -> Language.AUTO, changed -> load(changed.id(), true));
         panel.show(entry, hasAudio);
         add(panel);
 
@@ -132,6 +139,7 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         }
 
         HorizontalLayout footer = new HorizontalLayout();
+        footer.getStyle().set("flex-wrap", "wrap");
         boolean finished = entry.status() == EntryStatus.FINISHED;
         Button reflect = new Button(getTranslation(entry.hasCoachConversation() ? "coach.entry.reflect.open" : "entries.reflect"),
                 e -> UI.getCurrent().navigate(CoachView.class, new RouteParameters("id", String.valueOf(entry.id()))));
@@ -174,7 +182,7 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
     private void deleteAudio(EntryDto entry) {
         try {
             recordings.deleteAudio(entry.recordingId());
-            load(entry.id());
+            load(entry.id(), true);
         } catch (BackendException e) {
             Notification.show(e.error().message());
         } catch (RuntimeException e) {

@@ -12,7 +12,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Paragraph;
@@ -96,6 +96,8 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
     private long entryId;
     private ConversationDto conversation;
     private boolean busy;
+    /** The control that was just used is rebuilt by refresh(); put keyboard focus on the new first control. */
+    private boolean refocusControls;
     private boolean voiceBusy;
     private String busyKey = "coach.thinking";
     private ErrorInfo error;
@@ -136,7 +138,7 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         buildStartBox();
         conversationBox.add(statusLine, transcript, currentBox, answerBox, controls);
         add(speech);
-        add(messageBox, startBox, thinking, errorBox, conversationBox);
+        add(new H1(getTranslation("coach.title")), messageBox, startBox, thinking, errorBox, conversationBox);
         startBox.setVisible(false);
         conversationBox.setVisible(false);
         thinking.setVisible(false);
@@ -297,16 +299,19 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
     }
 
     private void pause() {
+        refocusControls = true;
         long id = conversation.id();
         run(() -> coach.pause(id), Reveal.QUIET, null, this::pause);
     }
 
     private void resume() {
+        refocusControls = true;
         long id = conversation.id();
         run(() -> coach.resume(id), Reveal.CURRENT_QUESTION, null, this::resume);
     }
 
     private void end() {
+        refocusControls = true;
         long id = conversation.id();
         run(() -> coach.end(id), Reveal.QUIET, null, this::end);
     }
@@ -359,6 +364,9 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
             error = info;
             retry = info.retryable() ? retryAction : null;
             refresh();
+            // The button that was pressed was disabled while busy; keep keyboard users in the error box.
+            errorBox.getChildren().filter(Button.class::isInstance).findFirst()
+                    .ifPresent(c -> ((Button) c).focus());
             return;
         }
         ConversationDto result = outcome.result();
@@ -478,6 +486,14 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         answerBox.setVisible(actions.answer());
         renderControls(actions);
         updateEnabled();
+        if (refocusControls && !busy) {
+            refocusControls = false;
+            controls.getChildren().findFirst().ifPresent(c -> {
+                if (c instanceof Button b) {
+                    b.focus();
+                }
+            });
+        }
     }
 
     private void renderTranscript() {
@@ -530,7 +546,7 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         var question = CoachPresenter.currentQuestion(conversation);
         currentBox.setVisible(question.isPresent());
         question.ifPresent(q -> {
-            H3 title = new H3(getTranslation("coach.current.title"));
+            H2 title = new H2(getTranslation("coach.current.title"));
             title.setId("coach-current-title");
             currentBox.getElement().setAttribute("aria-labelledby", "coach-current-title");
             currentBox.add(title, new Paragraph(q.content()));

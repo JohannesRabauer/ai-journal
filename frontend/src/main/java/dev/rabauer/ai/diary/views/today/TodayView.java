@@ -2,8 +2,8 @@ package dev.rabauer.ai.diary.views.today;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -40,11 +40,13 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
     private final AutosaveEditor writeEditor;
     private final EntryEditorPanel reviewPanel;
     private final VerticalLayout reviewSection = new VerticalLayout();
+    private final H1 title = new H1();
     private final Paragraph message = new Paragraph();
     private final VerticalLayout todayList = new VerticalLayout();
 
     public TodayView(EntriesClient entries, TranscriptionsClient transcriptions) {
         this.entries = entries;
+        title.setText(getTranslation("entries.today.title"));
         setMaxWidth("48rem");
 
         language.setLabel(getTranslation("entries.language.label"));
@@ -66,21 +68,24 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
         reviewPanel = new EntryEditorPanel(entries, transcriptions, this::getTranslation, language::getValue,
                 this::onReviewChanged);
         reviewSection.setPadding(false);
-        reviewSection.add(new H3(getTranslation("entries.review.title")), reviewPanel);
+        reviewSection.add(new H2(getTranslation("entries.review.title")), reviewPanel);
         reviewSection.setVisible(false);
 
         message.getElement().setAttribute("role", "status");
         todayList.setPadding(false);
         todayList.setSpacing(false);
+        todayList.getElement().setAttribute("role", "list");
+        todayList.getElement().setAttribute("aria-label", getTranslation("entries.today.list"));
 
-        add(new H2(getTranslation("entries.today.title")),
+        title.getElement().setAttribute("tabindex", "-1");
+        add(title,
                 language,
                 recorder,
                 reviewSection,
-                new H3(getTranslation("entries.write.title")),
+                new H2(getTranslation("entries.write.title")),
                 writeEditor, finishText,
                 message,
-                new H3(getTranslation("entries.today.list")),
+                new H2(getTranslation("entries.today.list")),
                 todayList);
         refreshToday();
     }
@@ -113,6 +118,8 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
         if (entry.status() == EntryStatus.FINISHED) {
             reviewSection.setVisible(false);
             message.setText(getTranslation("entries.finished"));
+            // the finish button just disappeared: keep keyboard focus on the page instead of losing it to <body>
+            title.getElement().executeJs("this.focus()");
         }
         refreshToday();
     }
@@ -148,7 +155,9 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
             for (EntryDto e : today) {
                 var row = EntryListPresenter.row(e, getLocale());
                 String label = row.preview().isBlank() ? row.date() : row.date() + " · " + row.preview();
-                todayList.add(EntryDetailView.link(label, e.id()));
+                com.vaadin.flow.component.html.Div item = new com.vaadin.flow.component.html.Div(EntryDetailView.link(label, e.id()));
+                item.getElement().setAttribute("role", "listitem");
+                todayList.add(item);
             }
         } catch (RuntimeException e) {
             todayList.add(new Paragraph(getTranslation("entries.journal.loadFailed")));
