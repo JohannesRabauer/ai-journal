@@ -50,3 +50,10 @@ Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acc
 Incident 2026-11-24: W3a started a frontend jar with the main repo as working directory; Vaadin generated node_modules, package.json etc. there. Removed by the orchestrator (only files timestamped in the incident window); rule added to CONVENTIONS.
 
 Wave 3 closed: main green (405 backend, 170 frontend, 88 JS tests). All twelve acceptance criteria have passed at least once. Next: Wave 4 (e2e on profiles A/B/lite with mocked OpenAI, accessibility pass, ACCEPTANCE mapping, security/privacy review).
+
+## Wave 4 — in progress (started 2026-11-24)
+| Worker | Branch | Worktree | Status |
+|---|---|---|---|
+| W4a e2e smoke: profile B (plain Java) + lite-cloud with mocked OpenAI | feat/w4a-e2e | ../wt-w4a | running |
+| W4b accessibility pass (axe + keyboard + reduced motion) | feat/w4b-a11y | ../wt-w4b | running |
+| Security/privacy review (read-only, independent) | – | main | running |
