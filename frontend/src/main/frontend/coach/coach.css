@@ -13,7 +13,7 @@
 .coach-message__actions { margin-top: .25rem; }
 .coach-current { padding: 1rem 1.25rem; border-radius: 12px; border: 2px solid var(--diary-accent, #2c5f66);
   background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
-.coach-current h3 { margin: 0 0 .35rem; font-size: var(--lumo-font-size-s, .875rem); font-weight: 600; color: var(--diary-muted, #575d64); }
+.coach-current h2 { margin: 0 0 .35rem; font-size: var(--lumo-font-size-s, .875rem); font-weight: 600; color: var(--diary-muted, #575d64); }
 .coach-current p { margin: 0; font-size: 1.2rem; line-height: 1.5; overflow-wrap: anywhere; }
 .coach-thinking { color: var(--diary-muted, #575d64); padding: .5rem 0; }
 .coach-error { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-error, #a4262c);

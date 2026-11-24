@@ -58,3 +58,6 @@ dismissed. It is hidden in local profiles.
 `DiaryI18NProvider` merges `i18n/<feature>_<lang>.properties` (shell, settings, today, recorder, entries, coach, memory,
 gym, weekly; missing files are fine), fallback en, then the key. Keys are prefixed by feature. UI locale comes from
 `settings.uiLanguage` unless AUTO, else the browser locale.
+
+## Accessibility additions (W4b, details in docs/A11Y.md)
+Focus rings use the solid accent (`--lumo-primary-color-50pct` is redefined); form controls get a 1px `--diary-border` boundary; `--lumo-error-contrast-color` on `--diary-error` is covered by `ThemeContrastTest`. Every page has one `h1`.

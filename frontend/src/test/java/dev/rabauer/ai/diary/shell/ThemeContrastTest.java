@@ -35,7 +35,17 @@ class ThemeContrastTest {
                 assertThat(ratio(t.get("--diary-border"), t.get(bg))).as("border on " + bg).isGreaterThanOrEqualTo(3.0);
             }
             assertThat(ratio(t.get("--diary-on-accent"), t.get("--diary-accent"))).as("text on accent").isGreaterThanOrEqualTo(4.5);
+            // destructive primary buttons: Lumo error contrast colour on the error fill
+            assertThat(ratio(t.get("--lumo-error-contrast-color"), t.get("--diary-error"))).as("text on error fill")
+                    .isGreaterThanOrEqualTo(4.5);
         }
+    }
+
+    /** Lumo draws focus rings with --lumo-primary-color-50pct; a translucent ring would drop below 3:1 (WCAG 1.4.11). */
+    @Test
+    void focusRingTokenIsTheSolidAccent() throws IOException {
+        String css = Files.readString(CSS, StandardCharsets.UTF_8);
+        assertThat(css).containsPattern("--lumo-primary-color-50pct:\\s*var\\(--diary-accent\\);");
     }
 
     private static String block(String css, String start) {
@@ -46,7 +56,7 @@ class ThemeContrastTest {
 
     private static Map<String, String> tokens(String block) {
         Map<String, String> out = new HashMap<>();
-        Matcher m = Pattern.compile("(--diary-[a-z-]+):\\s*(#[0-9a-fA-F]{6});").matcher(block);
+        Matcher m = Pattern.compile("(--diary-[a-z-]+|--lumo-error-contrast-color):\\s*(#[0-9a-fA-F]{6});").matcher(block);
         while (m.find()) {
             out.put(m.group(1), m.group(2));
         }
