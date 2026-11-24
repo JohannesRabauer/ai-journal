@@ -39,3 +39,10 @@ Wave 1 closed 2026-11-24: main green (180 backend, 77 frontend, 47 JS tests). Ne
 | W2c coach UI (voice answers, TTS, recording guard) | feat/w2c-coach-ui | ../wt-w2c | merged (113 frontend, 88 JS tests on main) |
 
 Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acceptance: D-026. Next: Wave 3 (W3a memory + SM-2, W3b thinking gym, W3c weekly insights).
+
+## Wave 3 — in progress (started 2026-11-24)
+| Worker | Branch | Worktree | Status |
+|---|---|---|---|
+| W3a memory + SM-2 + lessons | feat/w3a-memory | ../wt-w3a | running |
+| W3b thinking gym | feat/w3b-gym | ../wt-w3b | running |
+| W3c weekly reflection | feat/w3c-weekly | ../wt-w3c | running |

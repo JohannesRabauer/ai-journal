@@ -42,3 +42,10 @@ Translations: one bundle per feature, `frontend/src/main/resources/i18n/<feature
 
 Shared hot spots resolved by the orchestrator at merge time: `backend/pom.xml`, `frontend/pom.xml`,
 `application.properties` (each worker only appends its own keys under a `# ---- <worker>` header).
+
+## Ownership (Wave 3, vertical slices)
+| Worker | Owns |
+|---|---|
+| W3a | backend `memory/**` (implements `MemoryApi`, `MemoryStats`), `spi/scheduler/**` (SM-2 "sm2"), migrations V60–V69; frontend `views/memory/**`, `client/MemoryClient`, `i18n/memory_*`; deletes `MemoryApiStub` |
+| W3b | backend `gym/**` (implements `GymApi`), migrations V70–V79; frontend `views/gym/**`, `client/GymClient`, `i18n/gym_*`; deletes `GymApiStub` |
+| W3c | backend `insights/**` (implements `WeeklyReportsApi`, consumes `MemoryStats`), migrations V80–V89; frontend `views/weekly/**`, `client/WeeklyClient`, `i18n/weekly_*`; deletes `WeeklyReportsApiStub` |
