@@ -1,4 +1,4 @@
-# Profile B: run the backend with plain Java against services you run yourself (Ollama, Whisper, Piper; the database is embedded H2 in data/journal.mv.db).
+# Profile B: run the backend (REST API and web pages, browser: http://127.0.0.1:8080) with plain Java against services you run yourself (Ollama, Whisper, Piper; the database is embedded H2 in data/journal.mv.db).
 # Usage: scripts\run-backend.ps1 [-Build]      (-Build forces a Maven build; it also runs when the jar is missing)
 # Reads .env in the repository root; variables already set in the environment win. See docs/CONFIG.md.
 param([switch]$Build)

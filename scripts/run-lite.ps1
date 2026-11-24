@@ -1,4 +1,4 @@
-# Profile C (lite-cloud): runs backend + frontend with the tuned low-memory JVM flags (docs/PI.md).
+# Profile C (lite-cloud): runs the backend (API and web pages, http://127.0.0.1:8080) with the tuned low-memory JVM flags (docs/PI.md).
 # Entry text and audio are SENT TO OPENAI in this profile. It refuses to start without OPENAI_API_KEY and
 # JOURNAL_CLOUD_CONSENT=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE. Run scripts\build-lite.ps1 first.
 . (Join-Path $PSScriptRoot 'run-common.ps1')
@@ -19,9 +19,7 @@ if ($problems.Count -gt 0) {
 }
 
 $backendJar = Join-Path $RepoRoot 'backend/target/lite-app/quarkus-run.jar'
-$frontendJar = Join-Path $RepoRoot 'frontend/target/app.jar'
 Assert-File $backendJar 'Run scripts\build-lite.ps1 first.'
-Assert-File $frontendJar 'Run scripts\build-lite.ps1 first.'
 
 $env:QUARKUS_PROFILE = 'lite-cloud'
 Set-DefaultEnv JOURNAL_STT_PROVIDER 'openai'
@@ -38,15 +36,8 @@ Set-DefaultEnv JOURNAL_DB_URL "jdbc:h2:file:$dbPath;DB_CLOSE_ON_EXIT=FALSE"
 
 $common = '-XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=32m -XX:TieredStopAtLevel=1 -XX:MaxDirectMemorySize=32m -Xms32m'
 $beOpts = if ($env:LITE_BACKEND_JVM_OPTS) { $env:LITE_BACKEND_JVM_OPTS } else { "-Xmx128m -XX:MaxMetaspaceSize=96m $common" }
-$feOpts = if ($env:LITE_FRONTEND_JVM_OPTS) { $env:LITE_FRONTEND_JVM_OPTS } else { "-Xmx160m -XX:MaxMetaspaceSize=128m $common" }
 $java = Get-JavaExe
 
-Write-Host '==> lite-cloud: data leaves this device (OpenAI). Starting backend, then frontend (Ctrl+C stops both).'
-$backend = Start-Process -FilePath $java -ArgumentList (@($beOpts -split ' ') + @('-jar', $backendJar)) -NoNewWindow -PassThru
-try {
-    $feArgs = @($feOpts -split ' ') + @('-jar', $frontendJar)
-    & $java @feArgs
-}
-finally {
-    if (-not $backend.HasExited) { Stop-Process -Id $backend.Id -Force }
-}
+Write-Host "==> lite-cloud: data leaves this device (OpenAI). Starting on http://127.0.0.1:$(if ($env:JOURNAL_HTTP_PORT) { $env:JOURNAL_HTTP_PORT } else { '8080' }) (Ctrl+C stops it)."
+& $java @($beOpts -split ' ') -jar $backendJar
+exit $LASTEXITCODE

@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Profile C (lite-cloud): runs backend + frontend with the tuned low-memory JVM flags (docs/PI.md).
+# Profile C (lite-cloud): runs the backend (API and web pages, http://127.0.0.1:8080) with the tuned low-memory JVM flags (docs/PI.md).
 # Entry text and audio are SENT TO OPENAI in this profile. It refuses to start without OPENAI_API_KEY and
 # JOURNAL_CLOUD_CONSENT=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE. Run scripts/build-lite.sh first.
 # On a Pi use the systemd units instead (deploy/systemd, docs/PI.md).
@@ -27,9 +27,7 @@ MSG
 fi
 
 BACKEND_JAR="$REPO_ROOT/backend/target/lite-app/quarkus-run.jar"
-FRONTEND_JAR="$REPO_ROOT/frontend/target/app.jar"
 need_file "$BACKEND_JAR" "Run scripts/build-lite.sh first."
-need_file "$FRONTEND_JAR" "Run scripts/build-lite.sh first."
 
 export QUARKUS_PROFILE=lite-cloud
 set_default JOURNAL_STT_PROVIDER openai
@@ -45,13 +43,8 @@ set_default JOURNAL_DB_URL "jdbc:h2:file:$DATA/journal;DB_CLOSE_ON_EXIT=FALSE"
 
 COMMON="-XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=32m -XX:TieredStopAtLevel=1 -XX:MaxDirectMemorySize=32m -Xms32m"
 BE_OPTS="${LITE_BACKEND_JVM_OPTS:--Xmx128m -XX:MaxMetaspaceSize=96m $COMMON}"
-FE_OPTS="${LITE_FRONTEND_JVM_OPTS:--Xmx160m -XX:MaxMetaspaceSize=128m $COMMON}"
 JAVA="$(java_bin)"
 
-echo "==> lite-cloud: data leaves this device (OpenAI). Starting backend, then frontend (Ctrl+C stops both)."
+echo "==> lite-cloud: data leaves this device (OpenAI). Starting on http://127.0.0.1:${JOURNAL_HTTP_PORT:-8080} (Ctrl+C stops it)."
 # shellcheck disable=SC2086
-"$JAVA" $BE_OPTS -jar "$BACKEND_JAR" &
-BE_PID=$!
-trap 'kill "$BE_PID" 2>/dev/null || true' EXIT INT TERM
-# shellcheck disable=SC2086
-"$JAVA" $FE_OPTS -jar "$FRONTEND_JAR"
+exec "$JAVA" $BE_OPTS -jar "$BACKEND_JAR"

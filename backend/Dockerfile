@@ -5,7 +5,6 @@ WORKDIR /src
 COPY pom.xml ./
 COPY api/pom.xml api/
 COPY backend/pom.xml backend/
-COPY frontend/pom.xml frontend/
 COPY api/src api/src
 COPY backend/src backend/src
 
@@ -16,7 +15,7 @@ FROM eclipse-temurin:25.0.3_9-jre-alpine
 WORKDIR /app
 COPY --from=build /src/backend/target/quarkus-app/ /app/
 
-# Inside the container network only; the port is published on 127.0.0.1 by compose.
+# Serves the REST API and the web pages (static assets are in the jar). Published on 127.0.0.1 by compose.
 ENV JOURNAL_HTTP_HOST=0.0.0.0
 EXPOSE 8080
 USER 1001
