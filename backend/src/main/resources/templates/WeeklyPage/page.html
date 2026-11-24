@@ -1,0 +1,223 @@
+{#include base}
+{#title}{t.get('weekly.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/forms.css"><link rel="stylesheet" href="/css/weekly.css">{/head}
+<div class="weekly-view" id="weekly-root" data-week="{v.weekCode}" data-iso-year="{v.isoYear}" data-iso-week="{v.isoWeek}" data-view-href="{v.viewHref}"
+     data-creating="{t.get('weekly.creating')}" data-cancel="{t.get('weekly.cancel')}" data-retry="{t.get('weekly.retry')}"
+     data-remove="{t.get('weekly.edit.remove')}" data-remove-label="{t.get('weekly.edit.removeLabel')}"
+     data-err-unreachable="{t.get('weekly.error.unreachable')}" data-err-provider="{t.get('weekly.error.provider')}"
+     data-err-invalid="{t.get('weekly.error.invalid')}" data-err-noentries="{t.get('weekly.error.noEntries')}"
+     data-err-badweek="{t.get('weekly.error.badWeek')}" data-err-invalidedit="{t.get('weekly.error.invalidEdit')}"
+     data-err-notfound="{t.get('weekly.error.notFound')}" data-err-unavailable="{t.get('weekly.error.unavailable')}">
+  <div class="weekly-header">
+    {#if v.prevHref}<a class="diary-button diary-button-quiet weekly-nav-button" href="{v.prevHref}" aria-label="{t.get('weekly.nav.previous')}">{#icon 'chevron-left' /}</a>{#else}<span class="weekly-nav-button" aria-hidden="true"></span>{/if}
+    <div class="weekly-heading">
+      <p class="diary-eyebrow weekly-range">{v.range}</p>
+      <h1 class="weekly-title" id="weekly-title" tabindex="-1">{v.title}</h1>
+    </div>
+    {#if v.nextHref}<a class="diary-button diary-button-quiet weekly-nav-button" href="{v.nextHref}" aria-label="{t.get('weekly.nav.next')}">{#icon 'chevron-right' /}</a>{#else}<span class="weekly-nav-button" aria-hidden="true"></span>{/if}
+  </div>
+  <p class="weekly-lead">{t.get('weekly.intro')}</p>
+
+  <form class="weekly-picker" id="weekly-picker" method="get" action="/weekly">
+    <div class="diary-field">
+      <label for="weekly-week">{t.get('weekly.picker.label')}</label>
+      <select class="diary-input" id="weekly-week" name="week">
+        {#for w in v.weeks}<option value="{w.code}"{#if w.selected} selected{/if}>{w.label}</option>{/for}
+      </select>
+    </div>
+    <button type="submit" class="diary-button" id="weekly-go">{t.get('weekly.picker.go')}</button>
+  </form>
+
+  <p class="weekly-status" id="weekly-status" role="status"></p>
+  <div class="diary-problem" id="weekly-error" role="alert"></div>
+  <p class="diary-flash" id="weekly-flash" role="status"{#if v.flash.error} data-kind="error"{/if}>{v.flash.text}</p>
+
+  <div class="weekly-report" id="weekly-report">
+  {#if v.editing}
+    <form class="weekly-editor" id="weekly-edit-form" method="post" action="/weekly/save">
+      {#csrf /}
+      <input type="hidden" name="week" value="{v.weekCode}">
+      <p class="weekly-muted">{t.get('weekly.edit.help')}</p>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-themes" id="weekly-edit-themes">
+        <h2 id="weekly-s-themes">{t.get('weekly.section.themes')}</h2>
+        {#for r in v.edit.themes}
+        <div class="weekly-edit-item" data-row>
+          <div class="diary-field"><label for="weekly-theme-title-{r_count}">{t.get('weekly.edit.theme.title')}</label>
+            <input class="diary-input" type="text" id="weekly-theme-title-{r_count}" name="themeTitle" value="{r.title}"></div>
+          <div class="diary-field"><label for="weekly-theme-desc-{r_count}">{t.get('weekly.edit.theme.description')}</label>
+            <textarea class="diary-input" id="weekly-theme-desc-{r_count}" name="themeDescription" rows="3">{r.description}</textarea></div>
+          <input type="hidden" name="themeEntries" value="{r.entries}">
+        </div>
+        {/for}
+        <button type="button" class="diary-button diary-button-quiet diary-js-only" data-add="theme" hidden>{t.get('weekly.edit.addTheme')}</button>
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-quotes" id="weekly-edit-quotes">
+        <h2 id="weekly-s-quotes">{t.get('weekly.section.quotes')}</h2>
+        {#for q in v.edit.quotes}
+        <div class="weekly-edit-item" data-row>
+          <div class="diary-field"><label for="weekly-quote-{q_count}">{t.get('weekly.edit.quote')}</label>
+            <textarea class="diary-input" id="weekly-quote-{q_count}" name="quoteText" rows="3">{q.text}</textarea></div>
+          <input type="hidden" name="quoteEntry" value="{q.entryId}">
+        </div>
+        {/for}
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-threads" id="weekly-edit-threads">
+        <h2 id="weekly-s-threads">{t.get('weekly.section.threads')}</h2>
+        {#for s in v.edit.threads}
+        <div class="weekly-edit-item" data-row>
+          <div class="diary-field"><label for="weekly-thread-{s_count}">{t.get('weekly.edit.thread')}</label>
+            <input class="diary-input" type="text" id="weekly-thread-{s_count}" name="thread" value="{s}"></div>
+        </div>
+        {/for}
+        <button type="button" class="diary-button diary-button-quiet diary-js-only" data-add="thread" hidden>{t.get('weekly.edit.addThread')}</button>
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-learned">
+        <h2 id="weekly-s-learned">{t.get('weekly.section.learned')}</h2>
+        <div class="weekly-counters">
+          <div class="diary-field"><label for="weekly-items">{t.get('weekly.edit.itemsCreated')}</label>
+            <input class="diary-input" type="number" min="0" id="weekly-items" name="itemsCreated" value="{v.edit.itemsCreated}"></div>
+          <div class="diary-field"><label for="weekly-reviews">{t.get('weekly.edit.reviewsDone')}</label>
+            <input class="diary-input" type="number" min="0" id="weekly-reviews" name="reviewsDone" value="{v.edit.reviewsDone}"></div>
+        </div>
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-patterns" id="weekly-edit-patterns">
+        <h2 id="weekly-s-patterns">{t.get('weekly.section.patterns')}</h2>
+        {#for s in v.edit.patterns}
+        <div class="weekly-edit-item" data-row>
+          <div class="diary-field"><label for="weekly-pattern-{s_count}">{t.get('weekly.edit.pattern')}</label>
+            <input class="diary-input" type="text" id="weekly-pattern-{s_count}" name="pattern" value="{s}"></div>
+        </div>
+        {/for}
+        <button type="button" class="diary-button diary-button-quiet diary-js-only" data-add="pattern" hidden>{t.get('weekly.edit.addPattern')}</button>
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-question">
+        <h2 id="weekly-s-question">{t.get('weekly.section.question')}</h2>
+        <div class="diary-field"><label for="weekly-question">{t.get('weekly.edit.question')}</label>
+          <textarea class="diary-input" id="weekly-question" name="question" rows="3">{v.edit.question}</textarea></div>
+      </section>
+
+      <div class="weekly-actions">
+        <button type="submit" class="diary-button diary-button-primary">{t.get('weekly.save')}</button>
+        <a class="diary-button diary-button-quiet" href="{v.viewHref}">{t.get('weekly.cancel')}</a>
+      </div>
+    </form>
+  {#else if v.report}
+    <article class="weekly-article" data-report-id="{v.report.id}">
+      <p class="weekly-muted">{v.report.meta}</p>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-themes">
+        <h2 id="weekly-s-themes">{t.get('weekly.section.themes')}</h2>
+        {#if v.report.themes.isEmpty}<p class="weekly-muted">{t.get('weekly.section.none')}</p>{/if}
+        <div class="weekly-themes">
+          {#for th in v.report.themes}
+          <div class="weekly-theme diary-card">
+            <span class="weekly-theme__title">{th.title}</span>
+            <p>{th.description}</p>
+            {#if !th.links.isEmpty}
+            <div class="weekly-links"><span>{t.get('weekly.entries.label')}:</span>{#for l in th.links}<a class="weekly-entry-link" href="{l.href}">{l.text}</a>{/for}</div>
+            {/if}
+          </div>
+          {/for}
+        </div>
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-quotes">
+        <h2 id="weekly-s-quotes">{t.get('weekly.section.quotes')}</h2>
+        {#if v.report.quotes.isEmpty}<p class="weekly-muted">{t.get('weekly.section.none')}</p>{/if}
+        {#for q in v.report.quotes}
+        <blockquote class="weekly-quote">{q.text}</blockquote>
+        <div class="weekly-quote__source"><a class="weekly-entry-link" href="{q.source.href}">{q.source.text}</a></div>
+        {/for}
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-threads">
+        <h2 id="weekly-s-threads">{t.get('weekly.section.threads')}</h2>
+        {#if v.report.threads.isEmpty}<p class="weekly-muted">{t.get('weekly.section.none')}</p>
+        {#else}<ul class="weekly-list">{#for s in v.report.threads}<li>{s}</li>{/for}</ul>{/if}
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-learned">
+        <h2 id="weekly-s-learned">{t.get('weekly.section.learned')}</h2>
+        {#if v.report.hasLearned}
+        <p>{v.report.learnedSummary}</p>
+        {#if !v.report.learnedPrompts.isEmpty}
+        <span>{t.get('weekly.learned.prompts')}:</span>
+        <ul class="weekly-list">{#for s in v.report.learnedPrompts}<li>{s}</li>{/for}</ul>
+        {/if}
+        {#else}<p>{t.get('weekly.learned.none')}</p>{/if}
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-patterns">
+        <h2 id="weekly-s-patterns">{t.get('weekly.section.patterns')}</h2>
+        {#if v.report.patterns.isEmpty}<p class="weekly-muted">{t.get('weekly.section.none')}</p>
+        {#else}<ul class="weekly-list">{#for s in v.report.patterns}<li>{s}</li>{/for}</ul>{/if}
+      </section>
+
+      <section class="weekly-section" aria-labelledby="weekly-s-question">
+        <h2 id="weekly-s-question">{t.get('weekly.section.question')}</h2>
+        {#if v.report.question}<p class="weekly-question">{v.report.question}</p>
+        {#else}<p class="weekly-muted">{t.get('weekly.section.none')}</p>{/if}
+      </section>
+
+      <div class="weekly-actions">
+        <a class="diary-button" href="{v.viewHref}&amp;edit=1" id="weekly-edit">{t.get('weekly.edit')}</a>
+        <details class="weekly-confirm">
+          <summary class="diary-button diary-button-quiet">{t.get('weekly.regenerate')}</summary>
+          <div class="weekly-confirm__body">
+            <p>{t.get('weekly.regenerate.text')}</p>
+            <form method="post" action="/weekly/create" data-weekly-action="create" data-confirm-title="{t.get('weekly.regenerate.title')}"
+                  data-confirm-text="{t.get('weekly.regenerate.text')}" data-confirm-label="{t.get('weekly.regenerate.confirm')}">
+              {#csrf /}
+              <input type="hidden" name="week" value="{v.weekCode}">
+              <button type="submit" class="diary-button diary-button-primary">{t.get('weekly.regenerate.confirm')}</button>
+            </form>
+          </div>
+        </details>
+        <details class="weekly-confirm">
+          <summary class="diary-button diary-button-quiet">{t.get('weekly.delete')}</summary>
+          <div class="weekly-confirm__body">
+            <p>{t.get('weekly.delete.text')}</p>
+            <form method="post" action="/weekly/delete" data-weekly-action="delete" data-report-id="{v.report.id}"
+                  data-confirm-title="{t.get('weekly.delete.title')}" data-confirm-text="{t.get('weekly.delete.text')}"
+                  data-confirm-label="{t.get('weekly.delete.confirm')}">
+              {#csrf /}
+              <input type="hidden" name="week" value="{v.weekCode}">
+              <button type="submit" class="diary-button diary-button-danger">{t.get('weekly.delete.confirm')}</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </article>
+  {#else}
+    <div class="weekly-empty">
+      <p>{t.get('weekly.empty.text')}</p>
+      <form method="post" action="/weekly/create" data-weekly-action="create">
+        {#csrf /}
+        <input type="hidden" name="week" value="{v.weekCode}">
+        <button type="submit" class="diary-button diary-button-primary">{t.get('weekly.create')}</button>
+      </form>
+    </div>
+  {/if}
+  </div>
+
+  <section class="weekly-history" aria-labelledby="weekly-history-title">
+    <h2 id="weekly-history-title">{t.get('weekly.history.title')}</h2>
+    {#if v.history.isEmpty}
+    <p class="weekly-muted">{t.get('weekly.history.empty')}</p>
+    {#else}
+    <ul class="weekly-history-list">
+      {#for h in v.history}
+      <li class="weekly-history-item diary-card"><a class="diary-button diary-button-quiet" href="{h.href}"{#if h.current} aria-current="true"{/if}>{h.label}</a> <span class="weekly-muted">{h.meta}</span></li>
+      {/for}
+    </ul>
+    {/if}
+  </section>
+</div>
+{#scripts}<script type="module" src="/js/weekly.js"></script>{/scripts}
+{/include}
