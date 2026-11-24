@@ -5,12 +5,15 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.NativeButton;
+import com.vaadin.flow.component.html.Section;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
@@ -29,10 +32,12 @@ import dev.rabauer.ai.diary.client.BackendException;
 import dev.rabauer.ai.diary.client.PrivacyClient;
 import dev.rabauer.ai.diary.client.SettingsClient;
 import dev.rabauer.ai.diary.client.SystemClient;
+import dev.rabauer.ai.diary.shell.DiaryIcons;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.shell.ThemeMode;
 import dev.rabauer.ai.diary.shell.UiLocaleResolver;
 
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
  * ({@link IntervalsParser}, {@link SettingsDiff}, {@link DeleteConfirmation}).
  */
 @Route(value = "settings", layout = MainLayout.class)
+@CssImport("./settings/settings.css")
 public class SettingsView extends Div implements HasDynamicTitle {
 
     private final SettingsClient settingsClient;
@@ -54,7 +60,8 @@ public class SettingsView extends Div implements HasDynamicTitle {
     private final Checkbox keepAudio = new Checkbox();
     private final Checkbox ttsAutoPlay = new Checkbox();
     private final TextField intervals = new TextField();
-    private final Select<ThemeMode> theme = new Select<>();
+    private final Map<ThemeMode, NativeButton> themeButtons = new EnumMap<>(ThemeMode.class);
+    private ThemeMode themeMode = ThemeMode.SYSTEM;
     private final Button save = new Button();
     private final Div saveStatus = new Div();
 
@@ -76,10 +83,19 @@ public class SettingsView extends Div implements HasDynamicTitle {
         this.systemClient = systemClient;
         this.privacyClient = privacyClient;
 
+        addClassName("settings-view");
         add(new H1(getTranslation("settings.title")));
-        add(buildForm());
-        add(buildPrivacy());
-        add(buildProfile());
+        Paragraph intro = new Paragraph(getTranslation("settings.intro"));
+        intro.addClassName("diary-muted");
+        add(intro);
+        buildFields();
+        add(card("settings.section.appearance", buildAppearance()));
+        add(card("settings.section.language", new Div(uiLanguage, entryLanguage)));
+        add(card("settings.section.voice", new Div(ttsAutoPlay, keepAudio)));
+        add(card("settings.section.reminders", new Div(intervals)));
+        add(buildSave());
+        add(card("settings.section.privacy", buildPrivacy()));
+        add(card("settings.section.profile", buildProfile()));
     }
 
     @Override
@@ -89,10 +105,20 @@ public class SettingsView extends Div implements HasDynamicTitle {
 
     // ---- build ---------------------------------------------------------------------------------
 
-    private Div buildForm() {
-        Div section = new Div();
-        section.add(new H2(getTranslation("settings.section.general")));
+    /** A grouped settings card: h2 heading plus its content, in the shared card look. */
+    private Section card(String headingKey, Div content) {
+        Section card = new Section();
+        card.addClassNames("settings-card", "diary-card");
+        String id = headingKey.replace('.', '-');
+        H2 heading = new H2(getTranslation(headingKey));
+        heading.setId(id);
+        card.getElement().setAttribute("aria-labelledby", id);
+        content.addClassName("settings-fields");
+        card.add(heading, content);
+        return card;
+    }
 
+    private void buildFields() {
         uiLanguage.setLabel(getTranslation("settings.uiLanguage"));
         uiLanguage.setItems(Language.AUTO, Language.DE, Language.EN);
         uiLanguage.setItemLabelGenerator(l -> getTranslation("settings.lang." + l.code()));
@@ -102,16 +128,6 @@ public class SettingsView extends Div implements HasDynamicTitle {
         entryLanguage.setItems(Language.AUTO, Language.DE, Language.EN);
         entryLanguage.setItemLabelGenerator(l -> getTranslation("settings.entryLang." + l.code()));
         entryLanguage.setHelperText(getTranslation("settings.entryLanguage.help"));
-
-        theme.setLabel(getTranslation("settings.theme"));
-        theme.setItems(ThemeMode.values());
-        theme.setItemLabelGenerator(m -> getTranslation("settings.theme." + m.code()));
-        theme.setHelperText(getTranslation("settings.theme.help"));
-        theme.addValueChangeListener(e -> {
-            if (e.isFromClient() && e.getValue() != null) {
-                UI.getCurrent().getPage().executeJs("window.diaryTheme && window.diaryTheme.set($0)", e.getValue().code());
-            }
-        });
 
         keepAudio.setLabel(getTranslation("settings.keepAudio"));
         keepAudio.setHelperText(getTranslation("settings.keepAudio.help"));
@@ -129,16 +145,51 @@ public class SettingsView extends Div implements HasDynamicTitle {
         save.setEnabled(false);
 
         statusRegion(saveStatus);
+    }
 
-        Div form = new Div(uiLanguage, entryLanguage, theme, keepAudio, ttsAutoPlay, intervals, save);
-        form.addClassName("diary-form");
-        section.add(form, saveStatus);
-        return section;
+    /** Theme as a segmented control of real buttons (aria-pressed); applied immediately, stored in this browser only. */
+    private Div buildAppearance() {
+        Span label = new Span(getTranslation("settings.theme"));
+        label.setId("settings-theme-label");
+        label.addClassName("settings-label");
+        Div group = new Div();
+        group.addClassName("settings-seg");
+        group.getElement().setAttribute("role", "group");
+        group.getElement().setAttribute("aria-labelledby", "settings-theme-label");
+        for (ThemeMode mode : ThemeMode.values()) {
+            NativeButton button = new NativeButton();
+            button.getElement().setAttribute("type", "button");
+            button.add(DiaryIcons.create(switch (mode) {
+                case LIGHT -> "sun";
+                case DARK -> "moon";
+                default -> "cog";
+            }), new Span(getTranslation("settings.theme." + mode.code())));
+            button.addClickListener(e -> {
+                setThemeMode(mode);
+                UI.getCurrent().getPage().executeJs("window.diaryTheme && window.diaryTheme.set($0)", mode.code());
+            });
+            themeButtons.put(mode, button);
+            group.add(button);
+        }
+        setThemeMode(themeMode);
+        Span help = new Span(getTranslation("settings.theme.help"));
+        help.addClassName("diary-muted");
+        return new Div(label, group, help);
+    }
+
+    private void setThemeMode(ThemeMode mode) {
+        themeMode = mode;
+        themeButtons.forEach((m, b) -> b.getElement().setAttribute("aria-pressed", String.valueOf(m == mode)));
+    }
+
+    private Div buildSave() {
+        Div row = new Div(save, saveStatus);
+        row.addClassName("settings-save");
+        return row;
     }
 
     private Div buildPrivacy() {
         Div section = new Div();
-        section.add(new H2(getTranslation("settings.section.privacy")));
         section.add(new Paragraph(getTranslation("settings.privacy.intro")));
 
         section.add(new H3(getTranslation("settings.export.title")));
@@ -150,6 +201,7 @@ public class SettingsView extends Div implements HasDynamicTitle {
         exportHost.getElement().getStyle().set("display", "none");
         Div exportForm = new Div(includeAudio, export);
         exportForm.addClassName("diary-form");
+        export.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         section.add(exportForm, exportStatus, exportHost);
 
         Div danger = new Div();
@@ -182,7 +234,6 @@ public class SettingsView extends Div implements HasDynamicTitle {
 
     private Div buildProfile() {
         Div section = new Div();
-        section.add(new H2(getTranslation("settings.section.profile")));
         section.add(new Paragraph(getTranslation("settings.profile.intro")));
         section.add(profile);
         return section;
@@ -200,7 +251,7 @@ public class SettingsView extends Div implements HasDynamicTitle {
     protected void onAttach(AttachEvent event) {
         UI ui = event.getUI();
         ui.getPage().executeJs("return window.diaryTheme ? window.diaryTheme.get() : 'system'")
-                .then(String.class, v -> theme.setValue(ThemeMode.fromCode(v)));
+                .then(String.class, v -> setThemeMode(ThemeMode.fromCode(v)));
         CompletableFuture.supplyAsync(this::fetchSettings).thenAccept(r -> ui.access(() -> showSettings(r)));
         CompletableFuture.supplyAsync(this::fetchInfo).thenAccept(r -> ui.access(() -> showProfile(r)));
     }

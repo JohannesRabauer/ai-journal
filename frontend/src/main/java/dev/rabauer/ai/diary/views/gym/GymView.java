@@ -2,6 +2,7 @@ package dev.rabauer.ai.diary.views.gym;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasEnabled;
 import com.vaadin.flow.component.HtmlContainer;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.UI;
@@ -14,6 +15,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.NativeButton;
 import com.vaadin.flow.component.html.OrderedList;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -27,6 +29,7 @@ import dev.rabauer.ai.diary.api.gym.ExerciseDto;
 import dev.rabauer.ai.diary.api.gym.GymCategory;
 import dev.rabauer.ai.diary.client.GymClient;
 import dev.rabauer.ai.diary.client.SystemClient;
+import dev.rabauer.ai.diary.shell.DiaryIcons;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.views.entries.BrowserZone;
 import dev.rabauer.ai.diary.views.entries.EntryDetailView;
@@ -70,7 +73,7 @@ public class GymView extends Div implements HasDynamicTitle {
     private final Div historyList = new Div();
     private final Button historyMore = new Button();
     private final Select<Option> historyFilter = new Select<>();
-    private final List<Button> startButtons = new ArrayList<>();
+    private final List<HasEnabled> startButtons = new ArrayList<>();
 
     private boolean llmAvailable;
     private boolean busy;
@@ -118,28 +121,30 @@ public class GymView extends Div implements HasDynamicTitle {
         pickBox.addClassName("gym-pick");
         Button any = new Button(getTranslation("gym.pick.any"), e -> requestExercise(null));
         any.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        any.setIcon(DiaryIcons.create("sparkle"));
         startButtons.add(any);
         Paragraph help = new Paragraph(getTranslation("gym.pick.anyHelp"));
         help.addClassName("diary-muted");
         Div cards = new Div();
         cards.addClassName("gym-categories");
-        cards.getElement().setAttribute("role", "list");
+        cards.getElement().setAttribute("role", "group");
         cards.getElement().setAttribute("aria-label", getTranslation("gym.pick.categoriesLabel"));
         for (GymCategory category : GymCategory.values()) {
-            Div card = new Div();
-            card.addClassName("gym-card");
-            card.getElement().setAttribute("role", "listitem");
-            H3 name = new H3(getTranslation(GymPresenter.categoryKey(category)));
-            Paragraph description = new Paragraph(getTranslation(GymPresenter.descriptionKey(category)));
-            Button start = new Button(getTranslation("gym.category.start"), e -> requestExercise(category));
-            start.getElement().setAttribute("aria-label",
-                    getTranslation("gym.category.startLabel", getTranslation(GymPresenter.categoryKey(category))));
-            start.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            startButtons.add(start);
-            card.add(name, description, start);
+            // the whole tile is one real button: name and one-line description are its accessible name
+            NativeButton card = new NativeButton();
+            card.getElement().setAttribute("type", "button");
+            card.addClassNames("gym-card", "diary-card");
+            Span name = new Span(getTranslation(GymPresenter.categoryKey(category)));
+            name.addClassName("gym-card__title");
+            Span description = new Span(getTranslation(GymPresenter.descriptionKey(category)));
+            description.addClassName("gym-card__text");
+            card.add(name, description);
+            card.addClickListener(e -> requestExercise(category));
+            startButtons.add(card);
             cards.add(card);
         }
-        pickBox.add(new H2(getTranslation("gym.pick.title")), any, help, cards);
+        any.addClassName("gym-surprise");
+        pickBox.add(new H2(getTranslation("gym.pick.title")), cards, any, help);
     }
 
     private void requestExercise(GymCategory category) {
@@ -173,7 +178,7 @@ public class GymView extends Div implements HasDynamicTitle {
         meta.add(new Span(getTranslation(next.personalized() ? "gym.source.personalized" : "gym.source.template")));
 
         Paragraph prompt = new Paragraph(next.prompt());
-        prompt.addClassName("gym-prompt");
+        prompt.addClassNames("gym-prompt", "diary-card");
 
         exerciseBox.add(back, title, meta, prompt);
         if (next.sourceExcerpt() != null && !next.sourceExcerpt().isBlank()) {
@@ -295,6 +300,7 @@ public class GymView extends Div implements HasDynamicTitle {
         message.getElement().setAttribute("tabindex", "-1");
         Div feedbackBox = new Div();
         feedbackBox.addClassName("gym-feedback");
+        feedbackBox.setVisible(false);
         exerciseBox.add(message);
         if (llmAvailable) {
             Paragraph hint = new Paragraph(getTranslation("gym.feedback.hint"));
@@ -328,9 +334,11 @@ public class GymView extends Div implements HasDynamicTitle {
             }
             ask.setVisible(false);
             feedbackBox.removeAll();
+            feedbackBox.setVisible(true);
             H3 title = new H3(getTranslation("gym.feedback.title"));
             title.getElement().setAttribute("tabindex", "-1");
             OrderedList questions = new OrderedList();
+            questions.addClassName("gym-questions");
             updated.feedbackQuestions().forEach(q -> questions.add(new ListItem(q)));
             feedbackBox.add(title, questions);
             title.getElement().executeJs("this.focus()");
@@ -418,7 +426,7 @@ public class GymView extends Div implements HasDynamicTitle {
         Div snippet = new Div(new Span(GymPresenter.snippet(attempt.answer(), 140)));
         snippet.addClassName("gym-history__snippet");
         Details details = new Details(new Div(head, snippet), new Div());
-        details.addClassName("gym-history__item");
+        details.addClassNames("gym-history__item", "diary-card");
         boolean[] filled = {false};
         details.addOpenedChangeListener(e -> {
             if (e.isOpened() && !filled[0]) {
@@ -442,6 +450,7 @@ public class GymView extends Div implements HasDynamicTitle {
         if (GymPresenter.hasFeedback(attempt)) {
             H3 title = new H3(getTranslation("gym.feedback.title"));
             OrderedList questions = new OrderedList();
+            questions.addClassName("gym-questions");
             attempt.feedbackQuestions().forEach(q -> questions.add(new ListItem(q)));
             body.add(title, questions);
         }
