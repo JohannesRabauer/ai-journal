@@ -64,7 +64,7 @@ continues, marks it `failed` in the manifest and sets `complete=false`; check th
 Settings page -> Delete all (you type `DELETE EVERYTHING`), or:
 
 ```
-curl -X POST -H "Content-Type: application/json" -d "{\"confirmation\":\"DELETE EVERYTHING\"}" http://127.0.0.1:8080/api/data/delete-all
+curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d "{\"confirmation\":\"DELETE EVERYTHING\"}" http://127.0.0.1:8080/api/data/delete-all
 ```
 
 This removes entries, transcripts, conversations, memory items, reviews, reports, settings, the old pre-v1 tables,

@@ -35,7 +35,7 @@ echo "==> start db, backend, frontend (fake providers, throwaway data)"
 docker compose up -d --wait --wait-timeout 300 db backend frontend
 
 echo "==> POST and GET an entry through the backend"
-curl -fsS -X POST -H 'Content-Type: application/json' -d '{"text":"smoke test entry"}' http://127.0.0.1:$JOURNAL_BACKEND_HOST_PORT/api/entries | grep -q '"id"'
+curl -fsS -X POST -H 'X-AI-Diary: 1' -H 'Content-Type: application/json' -d '{"text":"smoke test entry"}' http://127.0.0.1:$JOURNAL_BACKEND_HOST_PORT/api/entries | grep -q '"id"'
 curl -fsS http://127.0.0.1:$JOURNAL_BACKEND_HOST_PORT/api/entries | grep -q '"total":1'
 echo "==> export and frontend"
 curl -fsS -o "$TMP/export.zip" http://127.0.0.1:$JOURNAL_BACKEND_HOST_PORT/api/data/export
