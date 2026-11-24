@@ -15,8 +15,17 @@ public final class ConfigValidator {
                         Optional<String> cloudConsent,
                         boolean openAiKeyPresent,
                         String dbKind,
-                        boolean dbPasswordPresent) {
+                        boolean dbPasswordPresent,
+                        boolean dbPasswordIsPlaceholder) {
+
+        public Input(String profile, List<ProviderSelection> selections, Optional<String> cloudConsent,
+                     boolean openAiKeyPresent, String dbKind, boolean dbPasswordPresent) {
+            this(profile, selections, cloudConsent, openAiKeyPresent, dbKind, dbPasswordPresent, false);
+        }
     }
+
+    /** The example value of .env.example: a database with this password is not protected. */
+    public static final String PLACEHOLDER_DB_PASSWORD = "change-me-to-a-long-random-value";
 
     private ConfigValidator() {
     }
@@ -62,6 +71,10 @@ public final class ConfigValidator {
         }
         if ("postgresql".equals(in.dbKind()) && !in.dbPasswordPresent()) {
             errors.add("No database password configured: set JOURNAL_DB_PASSWORD (property quarkus.datasource.password).");
+        }
+        if ("postgresql".equals(in.dbKind()) && in.dbPasswordIsPlaceholder()) {
+            errors.add("JOURNAL_DB_PASSWORD still has the example value from .env.example. Choose your own long random password "
+                    + "(for a database that already exists see scripts/secure-existing-db.*).");
         }
         return errors;
     }

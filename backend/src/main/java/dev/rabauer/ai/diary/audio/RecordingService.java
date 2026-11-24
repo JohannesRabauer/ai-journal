@@ -44,6 +44,9 @@ public class RecordingService {
 
     private static final Logger LOG = Logger.getLogger(RecordingService.class);
     static final String DEFAULT_MIME = "audio/webm";
+    /** Only audio containers a browser recorder produces (optionally with a codecs parameter). */
+    private static final Pattern ALLOWED_MIME = Pattern.compile(
+            "(?i)audio/(webm|ogg|mp4|mpeg|wav|x-wav|flac)(\\s*;\\s*codecs\\s*=\\s*\"?[a-z0-9.,+ -]+\"?)?");
     /** type/subtype with optional parameters such as ;codecs=opus (no control characters, no quotes). */
     private static final Pattern MIME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9.+-]*/[A-Za-z0-9][A-Za-z0-9.+-]*(\\s*;\\s*[A-Za-z0-9=._+, -]+)?");
     private static final int MAX_LISTED_MISSING = 20;
@@ -66,6 +69,9 @@ public class RecordingService {
         String mime = req.mimeType() == null || req.mimeType().isBlank() ? DEFAULT_MIME : req.mimeType().strip();
         if (mime.length() > 100 || !MIME.matcher(mime).matches()) {
             throw ApiException.badRequest("INVALID_MIME_TYPE", "The audio format is not valid.");
+        }
+        if (!ALLOWED_MIME.matcher(mime).matches()) {
+            throw ApiException.badRequest("UNSUPPORTED_MIME_TYPE", "This audio format is not supported.");
         }
         RecordingEntity r = QuarkusTransaction.requiringNew().call(() -> {
             long entryId;
@@ -163,6 +169,7 @@ public class RecordingService {
         return Response.ok(stream, mediaType(r.mimeType))
                 .header("Content-Length", storage.audioSize(id))
                 .header("Cache-Control", "private, no-store")
+                .header("X-Content-Type-Options", "nosniff")
                 .build();
     }
 
