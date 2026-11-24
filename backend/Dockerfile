@@ -12,7 +12,7 @@ COPY backend/src backend/src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B -ntp -pl backend -am package -DskipTests
 
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25.0.3_9-jre-alpine
 WORKDIR /app
 COPY --from=build /src/backend/target/quarkus-app/ /app/
 
