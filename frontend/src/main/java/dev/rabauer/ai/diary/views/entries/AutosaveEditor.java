@@ -95,7 +95,7 @@ public class AutosaveEditor extends Composite<VerticalLayout> {
                 }
                 case CREATE -> {
                     Language lang = language.get();
-                    EntryDto created = entries.create(new CreateEntryRequest(text, null,
+                    EntryDto created = entries.create(new CreateEntryRequest(text, BrowserZone.current().now(),
                             lang == Language.AUTO ? null : lang, EntrySource.TEXT));
                     presenter.saved(created.id(), text);
                     onSaved(created);

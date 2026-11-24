@@ -21,11 +21,11 @@ import dev.rabauer.ai.diary.recorder.RecorderLabels;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.views.entries.AutosaveEditor;
 import dev.rabauer.ai.diary.views.entries.AutosavePresenter;
+import dev.rabauer.ai.diary.views.entries.BrowserZone;
 import dev.rabauer.ai.diary.views.entries.EntryDetailView;
 import dev.rabauer.ai.diary.views.entries.EntryListPresenter;
 import dev.rabauer.ai.diary.views.entries.EntryEditorPanel;
 
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -134,7 +134,7 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
     private void refreshToday() {
         todayList.removeAll();
         try {
-            List<EntryDto> today = TodayEntries.of(entries.list(0, 50).items(), LocalDate.now());
+            List<EntryDto> today = TodayEntries.of(entries.list(0, 50).items(), BrowserZone.current().today());
             if (today.isEmpty()) {
                 todayList.add(new Paragraph(getTranslation("entries.today.none")));
             }
