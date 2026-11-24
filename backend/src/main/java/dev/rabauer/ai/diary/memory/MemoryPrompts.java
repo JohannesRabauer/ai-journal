@@ -23,7 +23,12 @@ final class MemoryPrompts {
 
     static String user(Language lang, String text) {
         String intro = lang == Language.DE ? "Hier ist der Quelltext. Schlage Lernkarten vor." : "Here is the source text. Propose learning cards.";
-        return intro + "\n" + OPEN + "\n" + text + "\n" + CLOSE;
+        return intro + "\n" + OPEN + "\n" + neutralize(text) + "\n" + CLOSE;
+    }
+
+    /** Neutralizes the closing delimiter inside data ("</source" becomes "<\/source"); everything else stays verbatim. */
+    static String neutralize(String s) {
+        return s == null ? "" : s.replaceAll("(?i)</(source)", "<\\\\/$1");
     }
 
     private static final String EN = """
