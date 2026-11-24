@@ -110,6 +110,10 @@ public class WeeklyReportService {
         int week = request.isoWeek();
         LocalDate from = IsoWeeks.start(year, week);
         LocalDate toExclusive = IsoWeeks.endExclusive(year, week);
+        if (from.isAfter(LocalDate.now(clock))) {
+            // the current (partial) week is allowed; a week that has not started yet has nothing to reflect on
+            throw ApiException.badRequest("INVALID_WEEK", "This week has not started yet. Choose the current or an earlier week.");
+        }
 
         generation.lock();
         try {
@@ -124,6 +128,8 @@ public class WeeklyReportService {
 
             Map<Long, String> texts = new LinkedHashMap<>();
             input.entries().forEach(e -> texts.put(e.id(), e.text()));
+            String coachText = input.coach().stream().flatMap(c -> c.lines().stream()).map(WeeklyPrompts.CoachLine::text)
+                    .collect(Collectors.joining("\n"));
             List<LlmGateway.Message> prompt = List.of(
                     LlmGateway.Message.system(WeeklyPrompts.systemPrompt(lang)),
                     LlmGateway.Message.user(WeeklyPrompts.dataBlock(lang, from, toExclusive.minusDays(1), input.entries(),
@@ -131,7 +137,7 @@ public class WeeklyReportService {
             WeeklyLlmOutput out = structured.generate(StructuredRequest.of(prompt,
                             new LlmGateway.JsonSchema("weekly_reflection", WeeklyPrompts.SCHEMA), WeeklyLlmOutput.class)
                     .withTemperature(temperature)
-                    .withSemanticCheck(o -> WeeklyRules.check(o, texts)));
+                    .withSemanticCheck(o -> WeeklyRules.check(o, texts, coachText)));
 
             WeeklyContent content = new WeeklyContent(
                     out.recurringThemes().stream().map(t -> new WeeklyReportDto.Theme(t.title().strip(), t.description().strip(),

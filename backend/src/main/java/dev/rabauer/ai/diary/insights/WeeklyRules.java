@@ -26,26 +26,43 @@ final class WeeklyRules {
 
     static final int MIN_QUOTE_LENGTH = 8;
 
-    /** x/10, "out of 10", "score", "rating", numbers with points/stars, any percent sign, "Punkte", mood followed by a number. */
-    static final Pattern SCORE = Pattern.compile(
+    /**
+     * Score-like TERMS: x/10, "out of 10", score(s), rating(s), numbers with points/stars/Punkte, percentages, "Punkte".
+     * A term may be used by the model only if the same term occurs in the week's input (the user wrote it).
+     */
+    static final Pattern SCORE_TERM = Pattern.compile(
             "\\d+(?:[.,]\\d+)?\\s*/\\s*(?:10|100|5|7)\\b"
                     + "|\\b(?:out of|von)\\s+(?:10|100|5|7)\\b"
                     + "|\\b(?:score[sd]?|scoring|ratings?|punktzahl|bewertungsskala)\\b"
                     + "|\\b\\d+(?:[.,]\\d+)?\\s*(?:points?|punkte[n]?|stars?|sterne[n]?)\\b"
                     + "|\\bpunkte[n]?\\b"
-                    + "|%"
-                    + "|\\b(?:mood|stimmung|laune)\\w*\\s*(?:[:=]|of|von|bei)?\\s*\\d",
+                    + "|\\d+(?:[.,]\\d+)?\\s*%|%",
             FLAGS);
 
-    /** Stems that are never needed for a neutral description, plus claim forms of therapy/health words. */
-    static final Pattern HEALTH = Pattern.compile(
+    /** Mood or rating aimed at the user, e.g. "your mood: 4/10", "Stimmung bei 8": rejected even if the input has the words. */
+    static final Pattern SCORE_CLAIM = Pattern.compile(
+            "\\b(?:mood|stimmung|laune)\\w*\\s*(?:[:=]|of|von|bei)?\\s*\\d"
+                    + "|\\b(?:your|dein\\w*)\\s+(?:mood|stimmung|laune|energy|energie)\\b.{0,20}\\d",
+            FLAGS);
+
+    /** Health TERMS: stems never needed for a neutral description. Allowed only if the user used the same word. */
+    static final Pattern HEALTH_TERM = Pattern.compile(
             "\\bdepress(?!ing)\\w*|\\bdeprimier\\w*|\\bburn-?out\\b|\\bausgebrannt\\b|\\bdiagnos\\w*"
-                    + "|\\bmental (?:illness|disorder|health)\\b|\\bpsychische\\w* (?:erkrank|stör)\\w*"
-                    + "|\\bangststörung\\w*|\\banxiety disorder\\b|\\bpanic attack\\w*|\\bpanikattacke\\w*"
-                    + "|\\btraumatis\\w*|\\bposttraumatic\\b"
-                    + "|(?:recommend|empfehl|brauch|need|should|sollt|solltest)\\w*\\b.{0,40}\\b(?:therap|medikat|medicat|behandl|treatment)\\w*"
+                    + "|\\bmental (?:illness|disorder|health)\\b|\\bpsychische\\w* (?:erkrank|st\u00f6r)\\w*"
+                    + "|\\bangstst\u00f6rung\\w*|\\banxiety disorder\\b|\\bpanic attack\\w*|\\bpanikattacke\\w*"
+                    + "|\\btraumatis\\w*|\\bposttraumatic\\b",
+            FLAGS);
+
+    /**
+     * Health CLAIMS, rejected even if the words occur in the input: therapy/treatment advice ("you should start
+     * therapy"), "you are/du bist/wirkst ... healthy/sick/krank", "your health", and a condition attributed to the user
+     * ("du hast ein Burnout", "you are depressed", "you suffer from anxiety").
+     */
+    static final Pattern HEALTH_CLAIM = Pattern.compile(
+            "(?:recommend|empfehl|brauch|need|should|sollt|solltest)\\w*\\b.{0,40}\\b(?:therap|medikat|medicat|behandl|treatment)\\w*"
                     + "|\\b(?:you|du)\\b.{0,25}\\b(?:are|bist|seem|wirkst|scheinst|look|sound|klingst)\\b.{0,15}\\b(?:healthy|gesund|ungesund|unhealthy|sick|ill|krank)\\b"
-                    + "|\\b(?:your|dein|deine[nmrs]?)\\s+(?:mental\\s+|psychische\\w*\\s+)?(?:health|gesundheit)\\b",
+                    + "|\\b(?:your|dein|deine[nmrs]?)\\s+(?:mental\\s+|psychische\\w*\\s+)?(?:health|gesundheit)\\b"
+                    + "|\\b(?:you|du|dir|dich)\\b.{0,30}\\b(?:depress\\w*|deprimier\\w*|burn-?out|ausgebrannt|diagnos\\w*|angstst\u00f6r\\w*|anxiety disorder|panic|panik\\w*|trauma\\w*)",
             FLAGS);
 
     static final Pattern PRAISE = Pattern.compile(
@@ -69,6 +86,16 @@ final class WeeklyRules {
 
     /** @param entryTexts the week's input: entry id to its full text */
     static List<String> check(WeeklyLlmOutput out, Map<Long, String> entryTexts) {
+        return check(out, entryTexts, "");
+    }
+
+    /**
+     * @param entryTexts the week's input: entry id to its full text
+     * @param moreInput  further input text of the week (coach lines); together with the entries it decides which score
+     *                   and health terms the user used themselves and the model may therefore repeat
+     */
+    static List<String> check(WeeklyLlmOutput out, Map<Long, String> entryTexts, String moreInput) {
+        String input = flat(String.join(" ", entryTexts.values()) + " " + moreInput);
         List<String> problems = new ArrayList<>();
         Set<Long> ids = entryTexts.keySet();
 
@@ -79,8 +106,8 @@ final class WeeklyRules {
                     problems.add("theme " + (i + 1) + " references entry id " + id + " which is not part of this week's entries");
                 }
             }
-            textProblems("theme " + (i + 1) + " title", t.title(), false, problems);
-            textProblems("theme " + (i + 1) + " description", t.description(), true, problems);
+            textProblems("theme " + (i + 1) + " title", t.title(), false, input, problems);
+            textProblems("theme " + (i + 1) + " description", t.description(), true, input, problems);
         }
 
         for (int i = 0; i < out.inYourOwnWords().size(); i++) {
@@ -101,10 +128,10 @@ final class WeeklyRules {
         }
 
         for (int i = 0; i < out.openThreads().size(); i++) {
-            textProblems("open thread " + (i + 1), out.openThreads().get(i), false, problems);
+            textProblems("open thread " + (i + 1), out.openThreads().get(i), false, input, problems);
         }
         for (int i = 0; i < out.noticedPatterns().size(); i++) {
-            textProblems("noticed pattern " + (i + 1), out.noticedPatterns().get(i), true, problems);
+            textProblems("noticed pattern " + (i + 1), out.noticedPatterns().get(i), true, input, problems);
         }
 
         String question = out.questionForNextWeek().strip();
@@ -113,15 +140,15 @@ final class WeeklyRules {
         } else if (question.chars().filter(c -> c == '?').count() != 1) {
             problems.add("questionForNextWeek must be exactly one question");
         }
-        textProblems("questionForNextWeek", question, false, problems);
+        textProblems("questionForNextWeek", question, false, input, problems);
         return problems;
     }
 
-    private static void textProblems(String label, String text, boolean checkAdvice, List<String> problems) {
-        if (SCORE.matcher(text).find()) {
-            problems.add(label + " contains a score, rating, percentage or number-of-points; describe without numbers of that kind");
+    private static void textProblems(String label, String text, boolean checkAdvice, String input, List<String> problems) {
+        if (SCORE_CLAIM.matcher(text).find() || unusedTerm(SCORE_TERM, text, input, false)) {
+            problems.add(label + " contains a score, rating, percentage or number-of-points that the entries do not use; describe without numbers of that kind");
         }
-        if (HEALTH.matcher(text).find()) {
+        if (HEALTH_CLAIM.matcher(text).find() || unusedTerm(HEALTH_TERM, text, input, true)) {
             problems.add(label + " contains a health, medical or therapy statement; describe only what the entries say");
         }
         if (PRAISE.matcher(text).find()) {
@@ -130,6 +157,29 @@ final class WeeklyRules {
         if (checkAdvice && ADVICE.matcher(text).find()) {
             problems.add(label + " contains advice; describe only, give no advice");
         }
+    }
+
+    /**
+     * True if {@code text} has a match of {@code terms} that does not occur in the (flattened) input. For stems
+     * (health words) the first six letters count, so "depressed" in the input allows "depression".
+     */
+    private static boolean unusedTerm(Pattern terms, String text, String input, boolean stem) {
+        var m = terms.matcher(text);
+        while (m.find()) {
+            String term = flat(m.group());
+            if (stem && term.length() > 6) {
+                term = term.substring(0, 6);
+            }
+            if (!input.contains(term)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Normalized like quotes, with all whitespace and hyphens removed ("50 %" equals "50%", "Burn-out" equals "burnout"). */
+    static String flat(String s) {
+        return normalize(s).replaceAll("[\\s-]+", "");
     }
 
     /** Whitespace collapsed, case folded, typographic quotes unified. */

@@ -124,4 +124,31 @@ class WeeklyRulesTest {
         assertThat(problems).isNotEmpty();
         assertThat(String.join(" ", problems)).doesNotContain("Burnout").doesNotContain("99%").doesNotContain("100%");
     }
+
+    @Test
+    void termsTheUserUsedMayBeRepeatedButNotIntroduced() {
+        Map<Long, String> input = Map.of(1L, "I worry about Burn-out. 50 % of my days are meetings. It felt unsure about it.",
+                2L, "Walked along the river. It is quiet here.");
+        WeeklyLlmOutput base = out(OK_THEME, OK_PATTERN, OK_QUESTION);
+        WeeklyLlmOutput reuse = new WeeklyLlmOutput(base.recurringThemes(),
+                List.of(new WeeklyLlmOutput.Quote("I worry about Burn-out", 1L), new WeeklyLlmOutput.Quote("It is quiet here", 2L)),
+                List.of("The burnout worry"), List.of("About 50% of the days are meetings."), OK_QUESTION);
+        assertThat(WeeklyRules.check(reuse, input)).isEmpty();
+        // a different number or word is still the model's own
+        WeeklyLlmOutput other = new WeeklyLlmOutput(reuse.recurringThemes(), reuse.inYourOwnWords(),
+                List.of("The depression worry"), List.of("About 60% of the days are meetings."), OK_QUESTION);
+        assertThat(WeeklyRules.check(other, input)).hasSize(2);
+        // coach lines count as input as well
+        assertThat(WeeklyRules.check(other, input, "depressed and 60 percent: 60%")).isEmpty();
+    }
+
+    @Test
+    void claimsStayRejectedEvenIfTheWordIsInTheInput() {
+        Map<Long, String> input = Map.of(1L, "I worry about burnout and depression. My mood is low. I felt unsure about the numbers.",
+                2L, "Walked along the river. It is quiet here.");
+        for (String claim : List.of("Du hast ein Burnout.", "You are depressed.", "Your mood: 4/10.", "Du solltest eine Therapie machen.",
+                "Stimmung bei 4.")) {
+            assertThat(WeeklyRules.check(out(OK_THEME, claim, OK_QUESTION), input)).as(claim).isNotEmpty();
+        }
+    }
 }
