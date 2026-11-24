@@ -54,7 +54,7 @@ Wave 3 closed: main green (405 backend, 170 frontend, 88 JS tests). All twelve a
 ## Wave 4 — in progress (started 2026-11-24)
 | Worker | Branch | Worktree | Status |
 |---|---|---|---|
-| W4a e2e smoke: profile B (plain Java) + lite-cloud with mocked OpenAI | feat/w4a-e2e | ../wt-w4a | running |
+| W4a e2e smoke: profile B (plain Java) + lite-cloud with mocked OpenAI | feat/w4a-e2e | ../wt-w4a | merged (both smoke tests green; lite working set 390 MB on Windows) |
 | W4b accessibility pass (axe + keyboard + reduced motion) | feat/w4b-a11y | ../wt-w4b | running |
 | Security/privacy review (read-only, independent) | – | main | done: 1 critical (cross-site writes), 1 high (DNS rebinding), 3 medium, 11 low |
 | W4c security fixes for the review | fix/w4c-security | ../wt-w4c | running |
