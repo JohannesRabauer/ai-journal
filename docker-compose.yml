@@ -5,15 +5,16 @@
 #   docker compose --profile cpu --profile tts up --build -d    # + Piper text-to-speech (also set JOURNAL_TTS_PROVIDER=piper in .env)
 #   docker compose up --build -d                                # only db, backend, frontend (AI services external)
 #
-# Pick exactly one of gpu / cpu. All published ports bind to 127.0.0.1. Secrets come from .env only.
+# Pick exactly one of gpu / cpu. All published ports (db, backend, frontend) bind to 127.0.0.1; the AI services
+# (ollama, whisper, piper) publish nothing and are reachable only from the other containers. Secrets come from .env only.
 # Directories under ./data are created on first start; on Linux create them first
 # (mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
 # if your user id is not 1001 (backend and piper containers must be able to write there).
 
 x-ollama: &ollama
   image: ollama/ollama:0.20.0
-  ports:
-    - "127.0.0.1:11434:11434"
+  # No published ports: the backend reaches it as http://ollama:11434 inside the compose network.
+  # To debug from the host see docs/CONFIG.md (docker-compose.override.yml).
   volumes:
     - ./data/ollama:/root/.ollama
     - ./ollama/init:/init:ro
@@ -32,8 +33,7 @@ x-ollama: &ollama
   restart: unless-stopped
 
 x-whisper: &whisper
-  ports:
-    - "127.0.0.1:8000:8000"
+  # No published ports (backend uses http://whisper:8000), see docs/CONFIG.md to expose it for debugging.
   volumes:
     # Model cache: downloaded once from Hugging Face, then offline.
     - ./data/whisper:/home/ubuntu/.cache/huggingface/hub
@@ -81,6 +81,8 @@ services:
       - JOURNAL_DB_URL=jdbc:postgresql://db:5432/ai-diary
       - JOURNAL_DB_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env}
       - JOURNAL_HTTP_HOST=0.0.0.0
+      # Extra Host names accepted besides localhost/127.0.0.1/[::1]/backend (LAN opt-in, docs/PI.md)
+      - JOURNAL_ALLOWED_HOSTS=${JOURNAL_ALLOWED_HOSTS:-}
       # Providers (docs/CONFIG.md). TTS defaults to none (D-021); with the tts profile set JOURNAL_TTS_PROVIDER=piper in .env.
       - JOURNAL_STT_PROVIDER=${JOURNAL_STT_PROVIDER:-whisper}
       - JOURNAL_LLM_PROVIDER=${JOURNAL_LLM_PROVIDER:-ollama}
@@ -118,6 +120,7 @@ services:
     environment:
       - BACKEND_URL=http://backend:8080
       - JOURNAL_HTTP_HOST=0.0.0.0
+      - JOURNAL_ALLOWED_HOSTS=${JOURNAL_ALLOWED_HOSTS:-}
     ports:
       - "127.0.0.1:${JOURNAL_FRONTEND_HOST_PORT:-8081}:8081"
     healthcheck:
@@ -189,6 +192,5 @@ services:
       - PIPER_VOICES=${PIPER_VOICES:-de_DE-thorsten-medium en_US-lessac-medium}
     volumes:
       - ./data/piper:/voices
-    ports:
-      - "127.0.0.1:5000:5000"
+    # No published ports (backend uses http://piper:5000), see docs/CONFIG.md to expose it for debugging.
     restart: unless-stopped

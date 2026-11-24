@@ -14,8 +14,8 @@ import java.util.Map;
 
 /**
  * Pre-v1 tables that v1 no longer writes: {@code chat_history} (LLM memory of the removed auto-analysis) and the
- * pgvector table {@code diary} (PostgreSQL only, may not exist). Kept for data continuity; covered by export and
- * delete-all.
+ * pgvector table {@code diary} (PostgreSQL only, may not exist). Kept for data continuity; covered by export
+ * ("legacy/chat_history.json", "legacy/diary.json") and delete-all.
  */
 @ApplicationScoped
 public class LegacyDataOwner implements UserDataOwner {
@@ -59,9 +59,37 @@ public class LegacyDataOwner implements UserDataOwner {
             throw new IOException("Exporting legacy data failed: " + e.getSQLState(), e);
         }
         sink.json("legacy/chat_history.json", rows);
+        sink.json("legacy/diary.json", exportDiary());
     }
 
-    private static boolean tableExists(Connection c, String table) throws SQLException {
+    /**
+     * The pre-v1 pgvector table {@code diary} (PostgreSQL only, may not exist): text and metadata of each row (the
+     * embedding itself is derived data and not exported). The metadata may identify the source entry; rows whose
+     * metadata does not are only removed by delete-all (docs/PRIVACY.md).
+     */
+    private List<Map<String, Object>> exportDiary() throws IOException {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        try (Connection c = dataSource.getConnection()) {
+            if (!tableExists(c, "diary")) {
+                return rows;
+            }
+            try (var st = c.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT CAST(embedding_id AS VARCHAR(64)), text, CAST(metadata AS VARCHAR(100000)) FROM diary ORDER BY 1")) {
+                while (rs.next()) {
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("embeddingId", rs.getString(1));
+                    row.put("text", rs.getString(2));
+                    row.put("metadata", rs.getString(3));
+                    rows.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Exporting legacy diary rows failed: " + e.getSQLState(), e);
+        }
+        return rows;
+    }
+
+    static boolean tableExists(Connection c, String table) throws SQLException {
         try (ResultSet rs = c.getMetaData().getTables(null, null, null, new String[]{"TABLE"})) {
             while (rs.next()) {
                 if (table.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {

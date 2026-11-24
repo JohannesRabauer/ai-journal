@@ -69,8 +69,10 @@ def synthesize():
         return error(400, "empty_text", "text is required")
     if len(text) > MAX_TEXT_CHARS:
         return error(400, "text_too_long", "text exceeds %d characters" % MAX_TEXT_CHARS)
-    name = data.get("voice") or DEFAULT_VOICE
-    voice = load_voice(str(name))
+    name = str(data.get("voice") or DEFAULT_VOICE)
+    if name not in available_voices():  # exact match against the installed files: no path tricks
+        return error(400, "unknown_voice", "voice is not installed; see GET /voices")
+    voice = load_voice(name)
     if voice is None:
         return error(400, "unknown_voice", "voice is not installed; see GET /voices")
     try:

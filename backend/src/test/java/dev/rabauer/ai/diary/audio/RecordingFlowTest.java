@@ -148,6 +148,7 @@ class RecordingFlowTest {
         chunk(id, 2, "C", 200);
         complete(id, 3).statusCode(200);
         assertThat(new String(given().get("/api/recordings/" + id + "/audio").asByteArray())).isEqualTo("ABC");
+        given().get("/api/recordings/" + id + "/audio").then().statusCode(200).header("X-Content-Type-Options", "nosniff");
     }
 
     @Test
@@ -160,6 +161,13 @@ class RecordingFlowTest {
 
         given().contentType(ContentType.JSON).body("{\"entryId\":999999}").post("/api/recordings").then().statusCode(404);
         given().contentType(ContentType.JSON).body("{\"mimeType\":\"not a mime\"}").post("/api/recordings").then().statusCode(400);
+        for (String bad : new String[]{"text/html", "application/octet-stream", "image/png", "audio/x-evil", "audio/webm;boundary=x"}) {
+            given().contentType(ContentType.JSON).body("{\"mimeType\":\"" + bad + "\"}").post("/api/recordings").then().statusCode(400);
+        }
+        for (String ok : new String[]{"audio/webm", "audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/mpeg",
+                "audio/wav", "audio/x-wav", "audio/flac"}) {
+            given().contentType(ContentType.JSON).body("{\"mimeType\":\"" + ok + "\"}").post("/api/recordings").then().statusCode(200);
+        }
         given().get("/api/recordings/" + UUID.randomUUID()).then().statusCode(404);
         chunk(UUID.fromString(p.getString("id")), -1, "x", 400);
         given().contentType(ContentType.JSON).body("{\"totalChunks\":0,\"durationMs\":0}")

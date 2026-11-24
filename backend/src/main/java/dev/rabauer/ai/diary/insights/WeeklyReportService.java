@@ -18,6 +18,7 @@ import dev.rabauer.ai.diary.entry.EntryRepository;
 import dev.rabauer.ai.diary.llm.StructuredOutputService;
 import dev.rabauer.ai.diary.llm.StructuredRequest;
 import dev.rabauer.ai.diary.memory.MemoryStats;
+import dev.rabauer.ai.diary.privacy.PurgeGeneration;
 import dev.rabauer.ai.diary.settings.SettingsService;
 import dev.rabauer.ai.diary.spi.LlmGateway;
 import dev.rabauer.ai.diary.web.ApiException;
@@ -89,6 +90,8 @@ public class WeeklyReportService {
     ObjectMapper mapper;
     @Inject
     Clock clock;
+    @Inject
+    PurgeGeneration purge;
 
     @ConfigProperty(name = "journal.weekly.max-entry-chars", defaultValue = "4000")
     int maxEntryChars;
@@ -117,6 +120,7 @@ public class WeeklyReportService {
 
         generation.lock();
         try {
+            long purgeGeneration = purge.current(); // delete-all while the model is working: the result is dropped
             Input input = QuarkusTransaction.requiringNew().call(() -> loadInput(from, toExclusive));
             if (input.entries().isEmpty()) {
                 throw ApiException.conflict("NO_ENTRIES_IN_WEEK",
@@ -147,7 +151,7 @@ public class WeeklyReportService {
                     learned(from, toExclusive),
                     out.noticedPatterns().stream().map(String::strip).toList(),
                     out.questionForNextWeek().strip());
-            return QuarkusTransaction.requiringNew().call(() -> store(year, week, lang, content));
+            return QuarkusTransaction.requiringNew().call(() -> store(year, week, lang, content, purgeGeneration));
         } finally {
             generation.unlock();
         }
@@ -223,7 +227,11 @@ public class WeeklyReportService {
         }
     }
 
-    private WeeklyReportDto store(int year, int week, Language lang, WeeklyContent content) {
+    WeeklyReportDto store(int year, int week, Language lang, WeeklyContent generated, long purgeGeneration) {
+        if (purge.changedSince(purgeGeneration)) {
+            throw ApiException.conflict("DATA_DELETED", "Your data was deleted while the reflection was being created. Nothing was saved.");
+        }
+        WeeklyContent content = dropDeletedEntries(generated);
         WeeklyReportEntity e = reports.forWeek(year, week);
         if (e == null) {
             e = new WeeklyReportEntity();
@@ -236,6 +244,32 @@ public class WeeklyReportService {
         e.editedAt = null;
         reports.persist(e);
         return toDto(e);
+    }
+
+    /**
+     * The model worked on entries that may have been deleted meanwhile: drop theme links and quotes that point to
+     * entries that no longer exist; when no theme and no quote remains, nothing is stored.
+     */
+    private WeeklyContent dropDeletedEntries(WeeklyContent c) {
+        Set<Long> referenced = new LinkedHashSet<>();
+        c.recurringThemes().forEach(t -> referenced.addAll(t.entryIds()));
+        c.inYourOwnWords().forEach(q -> referenced.add(q.entryId()));
+        if (referenced.isEmpty()) {
+            return c;
+        }
+        Set<Long> existing = entries.list("id in ?1", List.copyOf(referenced)).stream().map(e -> e.id)
+                .collect(Collectors.toSet());
+        WeeklyContent result = c;
+        for (Long id : referenced) {
+            if (!existing.contains(id)) {
+                result = redact(result, id);
+            }
+        }
+        if (!result.equals(c) && result.recurringThemes().stream().allMatch(t -> t.entryIds().isEmpty())
+                && result.inYourOwnWords().isEmpty()) {
+            throw ApiException.conflict("DATA_DELETED", "The entries of this reflection were deleted while it was being created. Nothing was saved.");
+        }
+        return result;
     }
 
     // ------------------------------------------------------------------ read

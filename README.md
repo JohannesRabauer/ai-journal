@@ -41,7 +41,7 @@ docker compose --profile cpu --profile tts up --build -d
 ```
 Open http://127.0.0.1:8081. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
 Piper voices); the Whisper service becomes healthy once its model is cached. Check with `docker compose ps`. Stop with
-`docker compose --profile cpu --profile tts down`. All ports are published on `127.0.0.1` only. On Linux set
+`docker compose --profile cpu --profile tts down`. The database, backend and frontend ports are published on `127.0.0.1` only; Ollama, Whisper and Piper publish none (docs/CONFIG.md shows how to expose them for debugging). On Linux set
 `JOURNAL_UID`/`JOURNAL_GID` in `.env` to your user if it is not 1001.
 
 Existing database from an earlier version? Read "Securing an existing database" in [docs/PRIVACY.md](docs/PRIVACY.md).
@@ -82,7 +82,9 @@ sh scripts/build-lite.sh && sh scripts/run-lite.sh
 ## Privacy in short
 - Profiles A and B: all data and all AI stay on your machine; ports bind to `127.0.0.1`; logs never contain journal content.
 - Export everything as a zip (Settings, or `GET /api/data/export?includeAudio=true`) and delete everything with a
-  typed confirmation (Settings, or `POST /api/data/delete-all`).
+  typed confirmation (Settings, or `POST /api/data/delete-all`). Direct API writes (curl, scripts) must send the header
+  `X-AI-Diary: 1`, for example `curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d '{"text":"hi"}' http://127.0.0.1:8080/api/entries`
+  (CSRF protection, docs/PRIVACY.md).
 - Profile C relaxes this: see the caveat in [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Development

@@ -2,6 +2,7 @@ package dev.rabauer.ai.diary.entry;
 
 import dev.rabauer.ai.diary.api.entry.EntrySource;
 import dev.rabauer.ai.diary.api.entry.EntryStatus;
+import dev.rabauer.ai.diary.privacy.PurgeGeneration;
 import dev.rabauer.ai.diary.spi.EmbeddingGateway;
 import dev.rabauer.ai.diary.spi.ProviderException;
 import dev.rabauer.ai.diary.spi.fake.FakeEmbeddingGateway;
@@ -29,6 +30,8 @@ class EntryBackfillTest {
     EntryRepository repository;
     @Inject
     EntryIndexState state;
+    @Inject
+    PurgeGeneration purge;
 
     /** Deterministic embeddings that can be switched to "provider down" or "reject texts containing X". */
     static final class ControlledEmbeddings implements EmbeddingGateway {
@@ -74,6 +77,7 @@ class EntryBackfillTest {
         indexer.vectors = Fakes.vectors();
         indexer.repository = repository;
         indexer.state = state;
+        indexer.purge = purge;
         backfill = new EntryBackfill();
         backfill.embeddings = embeddings;
         backfill.indexer = indexer;

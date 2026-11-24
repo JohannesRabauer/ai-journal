@@ -33,10 +33,6 @@ import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.shell.ThemeMode;
 import dev.rabauer.ai.diary.shell.UiLocaleResolver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -313,56 +309,11 @@ public class SettingsView extends Div implements HasDynamicTitle {
     // ---- export --------------------------------------------------------------------------------
 
     private void export() {
-        UI ui = UI.getCurrent();
-        boolean audio = includeAudio.getValue();
-        export.setEnabled(false);
-        showInfo(exportStatus, getTranslation("settings.export.preparing"));
-        CompletableFuture.supplyAsync(() -> {
-            Path tmp = null;
-            try {
-                tmp = Files.createTempFile("ai-diary-export-", ".zip");
-                try (var out = Files.newOutputStream(tmp)) {
-                    privacyClient.export(audio, out);
-                }
-                return (Object) tmp;
-            } catch (IOException | RuntimeException e) {
-                deleteQuietly(tmp);
-                return e;
-            }
-        }).thenAccept(r -> ui.access(() -> {
-            export.setEnabled(true);
-            if (r instanceof Path tmp) {
-                offerDownload(tmp);
-                showInfo(exportStatus, getTranslation("settings.export.ready"));
-            } else if (r instanceof RuntimeException re && PrivacyClient.isNotImplemented(re)) {
-                showError(exportStatus, getTranslation("settings.notAvailable"));
-            } else if (r instanceof BackendException be) {
-                showError(exportStatus, be.error().message());
-            } else {
-                showError(exportStatus, getTranslation("settings.error.unreachable"));
-            }
-        }));
-    }
-
-    private void offerDownload(Path tmp) {
-        StreamResource resource = new StreamResource("ai-diary-export.zip", () -> {
-            try {
-                InputStream in = Files.newInputStream(tmp);
-                return new java.io.FilterInputStream(in) {
-                    @Override
-                    public void close() throws IOException {
-                        try {
-                            super.close();
-                        } finally {
-                            deleteQuietly(tmp);
-                        }
-                    }
-                };
-            } catch (IOException e) {
-                throw new java.io.UncheckedIOException(e);
-            }
-        });
+        // The zip is streamed from the backend straight into the download: no temp file on this host.
+        StreamResource resource = new StreamResource("ai-diary-export.zip",
+                ExportDownload.writer(privacyClient, includeAudio.getValue()));
         resource.setContentType("application/zip");
+        resource.setCacheTime(0);
         Anchor a = new Anchor(resource, "");
         a.getElement().setAttribute("download", "ai-diary-export.zip");
         a.getElement().setAttribute("tabindex", "-1");
@@ -370,16 +321,7 @@ public class SettingsView extends Div implements HasDynamicTitle {
         exportHost.removeAll();
         exportHost.add(a);
         a.getElement().executeJs("this.click()");
-    }
-
-    private static void deleteQuietly(Path p) {
-        if (p != null) {
-            try {
-                Files.deleteIfExists(p);
-            } catch (IOException ignored) {
-                // temp file; the OS cleans it eventually
-            }
-        }
+        showInfo(exportStatus, getTranslation("settings.export.started"));
     }
 
     // ---- delete everything ---------------------------------------------------------------------

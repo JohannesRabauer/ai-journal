@@ -52,7 +52,7 @@ public class TtsResource implements TtsApi {
                 audio = tts.synthesize(new TextToSpeech.Request(text, language, voice));
                 cache.put(key, audio);
             }
-            return Response.ok(audio.data(), audio.contentType()).build();
+            return Response.ok(audio.data(), audio.contentType()).header("X-Content-Type-Options", "nosniff").build();
         } catch (ProviderException e) {
             LOG.infof("speech output unavailable: provider=%s kind=%s", providerName, e.kind());
             return Response.noContent().build();

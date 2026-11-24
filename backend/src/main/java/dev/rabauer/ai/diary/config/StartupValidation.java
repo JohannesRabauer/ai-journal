@@ -43,7 +43,8 @@ public class StartupValidation {
                 config.cloud().consent(),
                 config.openai().apiKey().filter(k -> !k.isBlank()).isPresent(),
                 dbKind,
-                dbPassword.filter(p -> !p.isBlank()).isPresent())));
+                dbPassword.filter(p -> !p.isBlank()).isPresent(),
+                dbPassword.filter(ConfigValidator.PLACEHOLDER_DB_PASSWORD::equals).isPresent())));
         if (errors.isEmpty()) {
             for (Capability c : Capability.values()) {
                 providers.selectedInstance(c)

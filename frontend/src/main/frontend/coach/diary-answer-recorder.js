@@ -122,7 +122,7 @@ export class DiaryAnswerRecorder extends HTMLElement {
     const base = this.getAttribute('transcribe-url') ?? '/upload/transcribe';
     const response = await fetch(`${base}?language=${encodeURIComponent(language)}`, {
       method: 'POST',
-      headers: { 'Content-Type': type.split(';')[0] },
+      headers: { 'Content-Type': type.split(';')[0], 'X-AI-Diary': '1' },
       body: blob,
     });
     if (!response.ok) {

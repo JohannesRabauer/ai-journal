@@ -47,6 +47,7 @@ class RecordingsProxyControllerTest {
     void startForwardsJsonBodyAndReturnsBackendAnswer() throws Exception {
         backend.expect(requestTo("http://backend/api/recordings")).andExpect(method(HttpMethod.POST))
                 .andExpect(MockRestRequestMatchers.header("Content-Type", "application/json"))
+                .andExpect(MockRestRequestMatchers.header("X-AI-Diary", "1"))
                 .andExpect(MockRestRequestMatchers.content().json("{\"mimeType\":\"audio/webm\"}"))
                 .andRespond(withSuccess("{\"id\":\"" + ID + "\"}", MediaType.APPLICATION_JSON));
         mvc.perform(post("/upload/recordings").contentType(MediaType.APPLICATION_JSON).content("{\"mimeType\":\"audio/webm\"}"))

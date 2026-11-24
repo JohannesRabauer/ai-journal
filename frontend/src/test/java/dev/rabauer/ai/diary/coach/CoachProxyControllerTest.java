@@ -42,6 +42,7 @@ class CoachProxyControllerTest {
         byte[] audio = {1, 2, 3};
         backend.expect(requestTo("http://backend/api/tts")).andExpect(method(HttpMethod.POST))
                 .andExpect(MockRestRequestMatchers.header("Content-Type", "application/json"))
+                .andExpect(MockRestRequestMatchers.header("X-AI-Diary", "1"))
                 .andExpect(MockRestRequestMatchers.content().json("{\"text\":\"Hallo\",\"language\":\"DE\"}"))
                 .andRespond(withSuccess(audio, MediaType.parseMediaType("audio/wav")));
         mvc.perform(post("/upload/tts").contentType(MediaType.APPLICATION_JSON)

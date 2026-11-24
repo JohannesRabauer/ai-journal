@@ -36,7 +36,7 @@ try {
     Run-Docker compose up -d --wait --wait-timeout 300 db backend frontend
 
     Step 'POST and GET an entry through the backend'
-    $created = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$bePort/api/entries" -ContentType 'application/json' -Body '{"text":"smoke test entry"}'
+    $created = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$bePort/api/entries" -ContentType 'application/json' -Headers @{ 'X-AI-Diary' = '1' } -Body '{"text":"smoke test entry"}'
     if (-not $created.id) { throw 'POST /api/entries returned no id' }
     $list = Invoke-RestMethod -Uri "http://127.0.0.1:$bePort/api/entries"
     if ($list.total -lt 1) { throw 'GET /api/entries does not list the entry' }

@@ -109,7 +109,7 @@ final class GymPrompts {
 
     static String exerciseUserPrompt(Language lang, String entryText) {
         String intro = lang == Language.DE ? "Tagebucheintrag:" : "Journal entry:";
-        return intro + "\n" + ENTRY_OPEN + "\n" + truncate(entryText, MAX_ENTRY_CHARS) + "\n" + ENTRY_CLOSE;
+        return intro + "\n" + ENTRY_OPEN + "\n" + neutralize(truncate(entryText, MAX_ENTRY_CHARS)) + "\n" + ENTRY_CLOSE;
     }
 
     // ------------------------------------------------------------------ feedback
@@ -151,11 +151,16 @@ final class GymPrompts {
         }
         if (exercise.sourceExcerpt != null && !exercise.sourceExcerpt.isBlank()) {
             sb.append(de ? "Passage aus dem Tagebuch:\n" : "Passage from the journal:\n")
-                    .append(ENTRY_OPEN).append('\n').append(exercise.sourceExcerpt).append('\n').append(ENTRY_CLOSE).append('\n');
+                    .append(ENTRY_OPEN).append('\n').append(neutralize(exercise.sourceExcerpt)).append('\n').append(ENTRY_CLOSE).append('\n');
         }
         sb.append(de ? "Antwort der Person:\n" : "The user's answer:\n")
-                .append(ANSWER_OPEN).append('\n').append(truncate(answer, MAX_ENTRY_CHARS)).append('\n').append(ANSWER_CLOSE);
+                .append(ANSWER_OPEN).append('\n').append(neutralize(truncate(answer, MAX_ENTRY_CHARS))).append('\n').append(ANSWER_CLOSE);
         return sb.toString();
+    }
+
+    /** Neutralizes closing delimiters inside data ("</journal_entry" becomes "<\/journal_entry"); everything else stays verbatim. */
+    static String neutralize(String s) {
+        return s == null ? "" : s.replaceAll("(?i)</(journal_entry|user_answer)", "<\\\\/$1");
     }
 
     static String truncate(String s, int max) {

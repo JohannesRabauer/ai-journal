@@ -90,4 +90,12 @@ class ConfigValidatorTest {
         var in = new ConfigValidator.Input("full", local(), Optional.empty(), false, "postgresql", false);
         assertThat(ConfigValidator.validate(in)).singleElement().asString().contains("JOURNAL_DB_PASSWORD");
     }
+
+    @Test
+    void examplePasswordFromEnvExampleIsRejected() {
+        var in = new ConfigValidator.Input("full", local(), Optional.empty(), false, "postgresql", true, true);
+        assertThat(ConfigValidator.validate(in)).singleElement().asString()
+                .contains("example value").contains(".env.example");
+        assertThat(ConfigValidator.PLACEHOLDER_DB_PASSWORD).isEqualTo("change-me-to-a-long-random-value");
+    }
 }

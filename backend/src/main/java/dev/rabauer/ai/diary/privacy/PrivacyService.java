@@ -46,6 +46,8 @@ public class PrivacyService {
     JournalConfig config;
     @Inject
     Clock clock;
+    @Inject
+    PurgeGeneration purge;
 
     public void export(OutputStream out, boolean includeAudio) throws IOException {
         List<Map<String, Object>> ownerStatus = new ArrayList<>();
@@ -87,6 +89,8 @@ public class PrivacyService {
     }
 
     public DeleteAllResultDto deleteAll() {
+        // Background writers that captured an older generation drop their results (see PurgeGeneration).
+        purge.advance();
         Map<String, Long> deleted = new LinkedHashMap<>();
         List<String> failed = new ArrayList<>();
         for (UserDataOwner owner : sorted()) {
@@ -97,6 +101,7 @@ public class PrivacyService {
                 LOG.errorf("Delete-all failed for owner=%s kind=%s", owner.name(), e.getClass().getSimpleName());
             }
         }
+        purge.advance(); // also covers writers that started while the deletion was running
         LOG.infof("Delete-all finished deleted=%s failed=%s", deleted, failed);
         if (!failed.isEmpty()) {
             throw new DeleteIncompleteException(failed);

@@ -55,10 +55,13 @@ scp frontend/target/app.jar pi@raspberrypi:/tmp/app.jar
 sudo rm -rf /opt/ai-diary/backend && sudo mv /tmp/backend /opt/ai-diary/backend
 sudo mkdir -p /opt/ai-diary/frontend && sudo mv /tmp/app.jar /opt/ai-diary/frontend/app.jar
 
-# 4. Secrets: root-owned, mode 0600
-scp deploy/env.example pi@raspberrypi:/tmp/env
-sudo install -m 0600 -o root -g root /tmp/env /etc/ai-diary/env && rm /tmp/env
-sudoedit /etc/ai-diary/env      # OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT
+# 4. Secrets: root-owned, mode 0600, read by the BACKEND unit only (the frontend never sees the OpenAI key)
+scp deploy/backend.env.example pi@raspberrypi:/tmp/backend.env
+sudo install -m 0600 -o root -g root /tmp/backend.env /etc/ai-diary/backend.env && rm /tmp/backend.env
+sudoedit /etc/ai-diary/backend.env      # OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT
+# Optional frontend settings (no secrets), only for the LAN opt-in below:
+# scp deploy/frontend.env.example pi@raspberrypi:/tmp/frontend.env
+# sudo install -m 0640 -o root -g ai-diary /tmp/frontend.env /etc/ai-diary/frontend.env
 
 # 5. Units
 scp deploy/systemd/*.service pi@raspberrypi:/tmp/
@@ -69,8 +72,19 @@ journalctl -u ai-diary-backend -f      # no journal content in the logs
 ```
 The first start of each JVM takes 30 to 120 seconds on a Pi 3. Both units bind `127.0.0.1` by default (no authentication in v1).
 Reach the UI with an SSH tunnel: `ssh -L 8081:127.0.0.1:8081 pi@raspberrypi`, then open `http://localhost:8081`.
-To use it from phones in your home network, set `JOURNAL_HTTP_HOST=0.0.0.0` in the frontend unit deliberately;
-anyone on that network can then read your journal. Never expose the port to the internet.
+
+### Opening the UI to your home network (LAN opt-in)
+Off by default. Anyone on that network can then read your journal (there is no login in v1); never expose the port to
+the internet. Two settings are needed, both in `/etc/ai-diary/frontend.env` (see `deploy/frontend.env.example`), then
+`sudo systemctl restart ai-diary-frontend`:
+
+```
+JOURNAL_HTTP_HOST=0.0.0.0
+JOURNAL_ALLOWED_HOSTS=raspberrypi,raspberrypi.local,192.168.1.50     # the name(s) or IP you type into the browser
+```
+
+Without `JOURNAL_ALLOWED_HOSTS` the Host check (DNS rebinding protection) answers `421` for every name except
+`localhost`, `127.0.0.1` and `[::1]`. The backend stays on `127.0.0.1`; only the frontend talks to it.
 
 ## Update and backup
 - Update: build on the PC, copy as in step 3, `sudo systemctl restart ai-diary-backend ai-diary-frontend` (Flyway migrates
@@ -81,9 +95,9 @@ anyone on that network can then read your journal. Never expose the port to the 
 
 ## Manual verification checklist
 - [ ] `uname -m` says `aarch64`; `java -version` says 25.
-- [ ] `ls -l /etc/ai-diary/env` shows `-rw------- root root`.
+- [ ] `ls -l /etc/ai-diary/backend.env` shows `-rw------- root root`; the frontend unit does not read it.
 - [ ] Without `OPENAI_API_KEY` or the consent value the backend unit fails with a clear message in `journalctl`.
-- [ ] With both set: both units are `active (running)`; `curl -s http://127.0.0.1:8080/api/system/info` shows profile `lite-cloud`.
+- [ ] With both set: both units are `active (running)`; `curl -s http://127.0.0.1:8080/api/system/info` (writes need `-H "X-AI-Diary: 1"`) shows profile `lite-cloud`.
 - [ ] The UI shows the cloud banner on every route.
 - [ ] A text entry saves; a voice entry is transcribed (OpenAI); the coach asks questions.
 - [ ] `ps -o rss,cmd -C java` : sum of both RSS values is at most 750 MB after browsing every page. `free -m` shows no sustained swap use.
