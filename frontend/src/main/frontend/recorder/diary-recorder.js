@@ -35,33 +35,41 @@ const DEFAULT_LABELS = {
   finish: 'Finish recording',
 };
 
+const MIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></g></svg>';
+const STOP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>';
+
 const TEMPLATE = `
 <style>
-  :host { display: block; }
-  .root { display: flex; flex-direction: column; gap: .75rem; align-items: stretch; }
-  .wave { position: relative; height: 64px; border-radius: 12px; overflow: hidden;
-          background: var(--lumo-contrast-5pct, rgba(0,0,0,.05)); }
+  :host { display: block; color: var(--diary-text); font-family: inherit; }
+  .root { display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center; padding: 1.5rem 0 .5rem; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+  .big { width: 6.5rem; height: 6.5rem; min-width: 6.5rem; min-height: 6.5rem; padding: 0; border-radius: 50%; border: 0; cursor: pointer;
+         display: grid; place-items: center; background: var(--diary-accent); color: var(--diary-on-accent);
+         box-shadow: 0 0 0 10px var(--diary-accent-soft), var(--diary-shadow); }
+  .big svg { width: 2.4rem; height: 2.4rem; }
+  .big.stop { background: var(--diary-error); color: var(--diary-on-accent);
+              box-shadow: 0 0 0 10px color-mix(in srgb, var(--diary-error) 18%, transparent), var(--diary-shadow); }
+  .big:disabled { opacity: .5; cursor: not-allowed; }
+  .big:focus-visible, button:focus-visible { outline: 3px solid var(--diary-text); outline-offset: 4px; }
+  .cap { font-size: .9rem; font-weight: 600; color: var(--diary-muted); min-height: 1.3em; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .wave { position: relative; height: 2.5rem; width: min(100%, 22rem); overflow: hidden; }
+  :host(:not([data-state="recording"]):not([data-state="paused"])) .wave { display: none; }
   canvas { width: 100%; height: 100%; display: block; }
   .level { display: none; height: 100%; align-items: center; padding: 0 .75rem; }
-  .level-track { width: 100%; height: 10px; border-radius: 5px; background: var(--lumo-contrast-20pct, rgba(0,0,0,.2)); overflow: hidden; }
-  .level-fill { height: 100%; width: 0%; background: var(--lumo-primary-color, #1a5fb4); }
+  .level-track { width: 100%; height: 10px; border-radius: 5px; background: var(--diary-rule); overflow: hidden; }
+  .level-fill { height: 100%; width: 0%; background: var(--diary-accent); }
   :host(.reduced) canvas { display: none; }
   :host(.reduced) .level { display: flex; }
-  .row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+  .row { display: flex; align-items: center; justify-content: center; gap: .75rem; flex-wrap: wrap; }
   .time { font-variant-numeric: tabular-nums; font-size: 1.5rem; min-width: 5ch; }
-  button { font: inherit; min-height: 44px; min-width: 44px; padding: 0 1.1rem; border-radius: 22px; cursor: pointer;
-           border: 1px solid var(--lumo-contrast-60pct, #777); background: var(--lumo-base-color, #fff);
-           color: var(--lumo-body-text-color, #1b1b1b); }
-  button.primary { background: var(--lumo-primary-color, #1a5fb4); color: var(--lumo-primary-contrast-color, #fff); border-color: transparent; }
-  button:focus-visible { outline: 3px solid var(--lumo-primary-color, #1a5fb4); outline-offset: 2px; }
+  button.pill { font: inherit; font-weight: 550; min-height: 44px; min-width: 44px; padding: 0 1.1rem; border-radius: 999px; cursor: pointer;
+           border: 1px solid var(--diary-border); background: var(--diary-surface); color: var(--diary-text); }
+  button.primary { background: var(--diary-accent); color: var(--diary-on-accent); border-color: transparent; }
   button[hidden] { display: none; }
-  .dot { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em;
-         background: var(--lumo-error-color, #c01c28); vertical-align: baseline; }
-  :host([data-state="recording"]) .dot { animation: pulse 1.4s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
-  @keyframes pulse { 50% { opacity: .35; } }
-  .status { min-height: 1.4em; color: var(--lumo-secondary-text-color, #4a4a4a); }
-  .recover { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--lumo-contrast-60pct, #777); }
+  .status { min-height: 1.4em; color: var(--diary-muted); max-width: 32rem; }
+  .recover { padding: .75rem 1rem; border-radius: var(--diary-radius-md); border: 1px solid var(--diary-border);
+             background: var(--diary-surface-2); text-align: start; align-self: stretch; }
   .recover[hidden] { display: none; }
   .recover p { margin: 0 0 .5rem; }
 </style>
@@ -70,8 +78,13 @@ const TEMPLATE = `
     <p><strong id="rt"></strong></p>
     <p id="rx"></p>
     <div class="row">
-      <button type="button" class="primary" id="rfinish"></button>
+      <button type="button" class="pill primary" id="rfinish"></button>
     </div>
+  </div>
+  <div class="stage">
+    <button type="button" class="big" id="record">${MIC_ICON}<span class="sr t"></span></button>
+    <button type="button" class="big stop" id="stop" hidden>${STOP_ICON}<span class="sr t"></span></button>
+    <div class="cap" id="cap" aria-hidden="true"></div>
   </div>
   <div class="wave" aria-hidden="true">
     <canvas width="600" height="64"></canvas>
@@ -79,10 +92,8 @@ const TEMPLATE = `
   </div>
   <div class="row">
     <output class="time" id="time" role="timer" aria-label="" aria-live="off">00:00</output>
-    <button type="button" class="primary" id="record"><span class="dot" aria-hidden="true"></span><span class="t"></span></button>
-    <button type="button" id="pause" hidden></button>
-    <button type="button" id="stop" hidden></button>
-    <button type="button" id="retry" hidden></button>
+    <button type="button" class="pill" id="pause" hidden></button>
+    <button type="button" class="pill" id="retry" hidden></button>
   </div>
   <div class="status" id="status" role="status" aria-live="polite"></div>
 </div>`;
@@ -130,7 +141,7 @@ export class DiaryRecorder extends HTMLElement {
       host: this,
       raf: (cb) => requestAnimationFrame(cb),
       caf: (id) => cancelAnimationFrame(id),
-      color: () => getComputedStyle(this).getPropertyValue('--lumo-primary-color').trim() || '#1a5fb4',
+      color: () => getComputedStyle(this).getPropertyValue('--diary-accent').trim() || getComputedStyle(this).color,
     });
     this.#session = new RecorderSession({
       mediaDevices: navigator.mediaDevices,
@@ -299,7 +310,10 @@ export class DiaryRecorder extends HTMLElement {
     pause.hidden = !live;
     pause.textContent = state === State.PAUSED ? L.resume : L.pause;
     stop.hidden = !live;
-    stop.textContent = L.stop;
+    stop.querySelector('.t').textContent = L.stop;
+    stop.setAttribute('aria-label', L.stop);
+    // Visible caption under the big button (the button itself carries the accessible name).
+    this.shadowRoot.querySelector('#cap').textContent = live ? L.stop : (busy ? '' : L.record);
     retry.hidden = state !== State.ERROR;
     retry.textContent = L.retry;
     time.setAttribute('aria-label', L.elapsed);
