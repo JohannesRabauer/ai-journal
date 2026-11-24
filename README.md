@@ -24,19 +24,19 @@ Every setting: [docs/CONFIG.md](docs/CONFIG.md).
 ### Profile A: docker compose
 
 Needs Docker with Compose, about 8 GB RAM, about 8 GB disk for models. Choose **one** of `gpu` (NVIDIA GPU with
-the container toolkit) or `cpu`; add `tts` for spoken questions.
+the container toolkit) or `cpu`; add `tts` for spoken questions and set `JOURNAL_TTS_PROVIDER=piper` in `.env` (default is `none`).
 
 Windows PowerShell:
 ```powershell
 Copy-Item .env.example .env          # then edit .env: set JOURNAL_DB_PASSWORD
 docker compose --profile cpu --profile tts up --build -d
 # GPU instead:  docker compose --profile gpu --profile tts up --build -d
-# without speech output (add JOURNAL_TTS_PROVIDER=none to .env):  docker compose --profile cpu up --build -d
+# without speech output (keep the default JOURNAL_TTS_PROVIDER=none):  docker compose --profile cpu up --build -d
 ```
 sh (Linux/macOS):
 ```sh
 cp .env.example .env                 # then edit .env: set JOURNAL_DB_PASSWORD
-mkdir -p data/audio data/whisper data/piper data/ollama
+mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama
 docker compose --profile cpu --profile tts up --build -d
 ```
 Open http://127.0.0.1:8081. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
