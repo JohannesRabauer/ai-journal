@@ -29,4 +29,5 @@
 ## Process
 - Work only in your worktree/branch and only in your owned paths.
 - `scripts/verify.ps1` (or `.sh`) must pass before you report back.
+- Stop every server, container or watcher you started (dev servers, docker compose projects) before you report back.
 - Commits: small, conventional (`feat(stt): …`, `test(coach): …`), trailer `Assisted-by: Claude`. Never `Co-authored-by` for Claude.

@@ -78,3 +78,9 @@ deliberate opt-in; default access is via SSH tunnel.
 
 **D-023 Privacy failure policy (W1d):** export and delete-all continue past a failing owner; export marks it in
 `manifest.json` (`complete=false`), delete-all answers 500 `DELETE_INCOMPLETE` naming the owners and is safe to rerun.
+
+**D-024 No "continue" after a reload.** Two MediaRecorder sessions concatenated into one file are not reliably
+decodable; a recovered recording can only be finished. To say more, start a new recording.
+
+**D-025 Transcribe-only endpoint for voice answers** (`POST /api/transcribe`, synchronous, nothing persisted). The
+recording API attaches audio to an entry and appends to its text, which is wrong for coach answers.
