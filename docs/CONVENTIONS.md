@@ -29,5 +29,7 @@
 ## Process
 - Work only in your worktree/branch and only in your owned paths.
 - `scripts/verify.ps1` (or `.sh`) must pass before you report back.
+- Run the frontend only from inside your worktree's `frontend/` folder (`mvnw.cmd spring-boot:run` there). A jar
+  started from another working directory runs Vaadin's dev-mode setup in that directory.
 - Stop every server, container or watcher you started (dev servers, docker compose projects) before you report back.
 - Commits: small, conventional (`feat(stt): …`, `test(coach): …`), trailer `Assisted-by: Claude`. Never `Co-authored-by` for Claude.

@@ -100,3 +100,7 @@ least recently practiced category.
 confirmation); user edits get structural validation only. Entry deletion redacts that entry's ids and quotes from
 stored reports. Health/percentage words are allowed only when they occur in the user's own week text; claims about
 the user stay forbidden.
+
+**D-030 Memory policies (W3a).** SM-2 with the configured ladder, then interval x EF; scheduler `sm2` is the default
+everywhere. Lessons unlock by usage only. Deleting an entry deletes its candidates; approved items stay but lose
+quote and source. Deleting an item keeps an anonymous review log (time, grade, interval) so lessons never re-lock.

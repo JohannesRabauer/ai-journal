@@ -43,6 +43,8 @@ Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acc
 ## Wave 3 — in progress (started 2026-11-24)
 | Worker | Branch | Worktree | Status |
 |---|---|---|---|
-| W3a memory + SM-2 + lessons | feat/w3a-memory | ../wt-w3a | running |
+| W3a memory + SM-2 + lessons | feat/w3a-memory | ../wt-w3a | merged (405 backend, 170 frontend, 88 JS on main) |
 | W3b thinking gym | feat/w3b-gym | ../wt-w3b | merged |
 | W3c weekly reflection | feat/w3c-weekly | ../wt-w3c | merged (358 backend, 152 frontend on main) |
+
+Incident 2026-11-24: W3a started a frontend jar with the main repo as working directory; Vaadin generated node_modules, package.json etc. there. Removed by the orchestrator (only files timestamped in the incident window); rule added to CONVENTIONS.

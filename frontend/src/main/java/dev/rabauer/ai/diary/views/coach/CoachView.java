@@ -249,6 +249,8 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         send.setText(getTranslation("coach.answer.send"));
         send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         send.addClickListener(e -> sendAnswer());
+        // EAGER so Ctrl+Enter sends the text as typed (with ON_CHANGE the value is not yet synced; found in W3a's memory view)
+        answer.setValueChangeMode(com.vaadin.flow.data.value.ValueChangeMode.EAGER);
         send.addClickShortcut(Key.ENTER, KeyModifier.CONTROL).listenOn(answer);
         recorder.addTranscribedListener(e -> {
             answer.setValue(draft.transcribed(e.text()));
