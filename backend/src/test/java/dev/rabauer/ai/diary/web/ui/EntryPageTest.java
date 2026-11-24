@@ -104,7 +104,7 @@ class EntryPageTest {
         entries.finish(e.id());
         String body = html("/journal/" + e.id());
         assertThat(body).doesNotContain("entries-chip-status").doesNotContain("formaction=");
-        assertThat(body).contains("href=\"/journal/" + e.id() + "/reflect\"").contains("Answer a few open questions");
+        assertThat(body).contains("href=\"/journal/" + e.id() + "/reflect\"").contains("Start reflecting");
         assertThat(body).contains("href=\"/memory?source=entry&amp;id=" + e.id() + "\"").contains("Extract learnings");
         assertThat(body).contains("Delete entry").doesNotContain("Delete audio");
     }
@@ -114,7 +114,7 @@ class EntryPageTest {
         EntryDto e = create("Not yet.");
         String body = html("/journal/" + e.id());
         assertThat(body).doesNotContain("href=\"/journal/" + e.id() + "/reflect\"").contains("You can reflect on an entry once you have finished it.");
-        assertThat(body).containsPattern("<button type=\"button\" class=\"entries-primary\" disabled>");
+        assertThat(body).doesNotContain("data-coach-form=\"start\"");
     }
 
     @Test

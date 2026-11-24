@@ -39,28 +39,8 @@ class ShellPageTest {
     }
 
     @Test
-    void everyNavigationTargetAnswersWithAPageWithOneH1AndTheRightCurrentItem() {
-        String[][] routes = {{"/journal/12/reflect", "Journal"}};
-        for (String[] r : routes) {
-            String body = html(r[0]);
-            assertThat(Pattern.compile("<h1").matcher(body).results().count()).as(r[0]).isEqualTo(1);
-            assertThat(body).as(r[0]).contains("<h1>" + r[1] + "</h1>").contains("This page has not moved to the new interface yet.");
-            assertThat(body).as(r[0]).contains("<main id=\"main-content\"");
-            assertThat(Pattern.compile("aria-current=\"page\"").matcher(body).results().count()).as(r[0]).isGreaterThanOrEqualTo(1);
-        }
-    }
-
-    @Test
-    void notMovedPagesLinkToThePreviousInterfaceOnTheSameHost() {
-        assertThat(html("/journal/12/reflect")).contains("href=\"http://127.0.0.1:8081/entries/12/coach\"");
-        // the Host header was already checked by the guard; a non-numeric id is no entry route at all
+    void aNonNumericEntryIdIsNoRoute() {
         given().get("/journal/abc").then().statusCode(404);
-    }
-
-    @Test
-    void notMovedPagesAreGerman() {
-        String body = given().header("Accept-Language", "de").get("/journal/12/reflect").then().statusCode(200).extract().asString();
-        assertThat(body).contains("Diese Seite ist noch nicht in die neue Oberfläche umgezogen.").contains("lang=\"de\"");
     }
 
     @Test
