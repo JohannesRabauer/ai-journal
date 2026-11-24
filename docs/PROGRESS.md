@@ -31,9 +31,11 @@ Compose smoke (scripts/smoke-compose.ps1) green on main after the W1a/W1c/W1d/W1
 
 Wave 1 closed 2026-11-24: main green (180 backend, 77 frontend, 47 JS tests). Next: Wave 2 (W2a coach backend, W2b TTS, W2c coach UI).
 
-## Wave 2 — in progress (started 2026-11-24)
+## Wave 2 — done 2026-11-24; acceptance 4–6 pass on the real stack (docs/ACCEPTANCE.md)
 | Worker | Branch | Worktree | Status |
 |---|---|---|---|
 | W2a coach backend + /api/transcribe | feat/w2a-coach | ../wt-w2a | merged (277 backend tests on main; retry made idempotent on review) |
 | W2b TTS (Piper, OpenAI, cache) | feat/w2b-tts | ../wt-w2b | merged (218 backend tests on main; live Piper de/en checked by worker) |
 | W2c coach UI (voice answers, TTS, recording guard) | feat/w2c-coach-ui | ../wt-w2c | merged (113 frontend, 88 JS tests on main) |
+
+Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acceptance: D-026. Next: Wave 3 (W3a memory + SM-2, W3b thinking gym, W3c weekly insights).

@@ -84,3 +84,10 @@ decodable; a recovered recording can only be finished. To say more, start a new 
 
 **D-025 Transcribe-only endpoint for voice answers** (`POST /api/transcribe`, synchronous, nothing persisted). The
 recording API attaches audio to an entry and appends to its text, which is wrong for coach answers.
+
+**D-026 An explicit request gets an explanation.** When the user explicitly asks (deterministic de/en detection), the
+turn schema allows only EXPLANATION, which must contain a statement before its single closing question. Otherwise
+explanations stay impossible (SPEC 5.3). Small models dodged explicit requests with another question.
+
+**D-027 Idempotent answer retry (W2a review).** Re-posting the same answer after a failed coach turn generates the turn
+for the stored answer instead of storing a duplicate.
