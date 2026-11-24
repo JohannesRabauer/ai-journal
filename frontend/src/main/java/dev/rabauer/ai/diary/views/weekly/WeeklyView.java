@@ -189,19 +189,20 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
         }
         long id = summary.get().id();
         current = null;
-        run("weekly.loading", () -> load(id), loaded -> {
+        Locale locale = getLocale();
+        run("weekly.loading", () -> load(id, locale), loaded -> {
             current = loaded;
             render();
         }, () -> select(week));
     }
 
-    private Loaded load(long id) {
+    private Loaded load(long id, Locale locale) {
         WeeklyReportDto report = weekly.get(id);
         Map<Long, String> dates = new HashMap<>();
         for (Long entryId : WeeklyPresenter.referencedEntries(report)) {
             try {
                 EntryDto entry = entries.get(entryId);
-                String date = WeeklyPresenter.entryDate(entry.entryTimestamp(), localeOrEnglish());
+                String date = WeeklyPresenter.entryDate(entry.entryTimestamp(), locale);
                 if (date != null) {
                     dates.put(entryId, date);
                 }
@@ -210,11 +211,6 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
             }
         }
         return new Loaded(report, dates);
-    }
-
-    private Locale localeOrEnglish() {
-        Locale locale = UI.getCurrent() == null ? null : UI.getCurrent().getLocale();
-        return locale == null ? Locale.ENGLISH : locale;
     }
 
     // ------------------------------------------------------------------ actions
@@ -228,7 +224,8 @@ public class WeeklyView extends VerticalLayout implements HasDynamicTitle {
             loadSummaries();
             rebuildPicker(week);
             // links need the entry dates: load them like for a stored report
-            run("weekly.loading", () -> load(report.id()), loaded -> {
+            Locale locale = getLocale();
+            run("weekly.loading", () -> load(report.id(), locale), loaded -> {
                 current = loaded;
                 notice("weekly.announce.created");
                 render();
