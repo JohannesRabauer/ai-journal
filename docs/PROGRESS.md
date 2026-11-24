@@ -34,6 +34,6 @@ Wave 1 closed 2026-11-24: main green (180 backend, 77 frontend, 47 JS tests). Ne
 ## Wave 2 — in progress (started 2026-11-24)
 | Worker | Branch | Worktree | Status |
 |---|---|---|---|
-| W2a coach backend + /api/transcribe | feat/w2a-coach | ../wt-w2a | running |
+| W2a coach backend + /api/transcribe | feat/w2a-coach | ../wt-w2a | merged (277 backend tests on main; retry made idempotent on review) |
 | W2b TTS (Piper, OpenAI, cache) | feat/w2b-tts | ../wt-w2b | merged (218 backend tests on main; live Piper de/en checked by worker) |
 | W2c coach UI (voice answers, TTS, recording guard) | feat/w2c-coach-ui | ../wt-w2c | running |
