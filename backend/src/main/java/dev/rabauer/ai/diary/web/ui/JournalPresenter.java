@@ -18,7 +18,87 @@ public final class JournalPresenter {
 
     public static final int PREVIEW_CHARS = 140;
 
+    /** Longest search text the page uses (same limit as the API). */
+    public static final int MAX_QUERY_CHARS = 200;
+
     private JournalPresenter() {
+    }
+
+    /** The segmented filter of the toolbar; {@code param} is the value of the {@code filter} query parameter. */
+    public enum Filter {
+        ALL("all"), VOICE("voice"), REFLECTED("reflected");
+
+        private final String param;
+
+        Filter(String param) {
+            this.param = param;
+        }
+
+        public String param() {
+            return param;
+        }
+
+        /** Unknown or missing values mean "all". */
+        public static Filter parse(String value) {
+            if (value != null) {
+                for (Filter f : values()) {
+                    if (f.param.equalsIgnoreCase(value.strip())) {
+                        return f;
+                    }
+                }
+            }
+            return ALL;
+        }
+
+        /** API {@code source} filter. */
+        public EntrySource source() {
+            return this == VOICE ? EntrySource.VOICE : null;
+        }
+
+        /** API {@code reflected} filter. */
+        public Boolean reflected() {
+            return this == REFLECTED ? Boolean.TRUE : null;
+        }
+    }
+
+    /** Trimmed, at most {@link #MAX_QUERY_CHARS} characters, never null. */
+    public static String normalizeQuery(String q) {
+        if (q == null) {
+            return "";
+        }
+        String t = q.strip();
+        return t.length() <= MAX_QUERY_CHARS ? t : t.substring(0, MAX_QUERY_CHARS).stripTrailing();
+    }
+
+    /** Journal URL for a state; defaults (empty q, filter all, page 0) are left out. Mirrors buildUrl() in journal-search.js. */
+    public static String href(String q, Filter filter, int page) {
+        StringBuilder sb = new StringBuilder("/journal");
+        char sep = '?';
+        String text = normalizeQuery(q);
+        if (!text.isEmpty()) {
+            sb.append(sep).append("q=").append(java.net.URLEncoder.encode(text, java.nio.charset.StandardCharsets.UTF_8));
+            sep = '&';
+        }
+        if (filter != Filter.ALL) {
+            sb.append(sep).append("filter=").append(filter.param());
+            sep = '&';
+        }
+        if (page > 0) {
+            sb.append(sep).append("page=").append(page);
+        }
+        return sb.toString();
+    }
+
+    public record FilterOption(String param, String labelKey, String href, boolean current) {
+    }
+
+    /** The three filter links; they keep the (normalized) search text. */
+    public static List<FilterOption> filterOptions(String q, Filter active) {
+        List<FilterOption> out = new ArrayList<>();
+        for (Filter f : Filter.values()) {
+            out.add(new FilterOption(f.param, "entries.filter." + f.param, href(q, f, 0), f == active));
+        }
+        return out;
     }
 
     public record Card(long id, String href, String time, boolean voice, boolean coach, String statusLabel,

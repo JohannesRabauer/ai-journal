@@ -44,8 +44,9 @@ public class JournalResource {
     }
 
     /** View model; progress and eyebrow are formatted here to keep the template free of logic. */
-    public record Journal(boolean empty, String eyebrow, List<JournalPresenter.DaySection> days, String progress,
-                          String nextHref) {
+    public record Journal(boolean empty, boolean noMatch, String eyebrow, List<JournalPresenter.DaySection> days,
+                          String progress, String nextHref, String q, String filter,
+                          List<JournalPresenter.FilterOption> filters, String clearHref) {
     }
 
     @Inject
@@ -74,15 +75,21 @@ public class JournalResource {
     @GET
     public TemplateInstance journal(@QueryParam("page") @DefaultValue("0") int page,
                                     @QueryParam("fragment") String fragment,
+                                    @QueryParam("q") String qParam, @QueryParam("filter") String filterParam,
                                     @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
         Messages t = Messages.forAcceptable(headers.getAcceptableLanguages());
         int last = Math.max(0, Math.min(page, MAX_PAGE));
         boolean fragmentOnly = fragment != null && !fragment.isEmpty() && !"0".equals(fragment);
 
+        String q = JournalPresenter.normalizeQuery(qParam);
+        JournalPresenter.Filter filter = JournalPresenter.Filter.parse(filterParam);
+        boolean filtered = !q.isEmpty() || filter != JournalPresenter.Filter.ALL;
+
         List<EntryDto> items = new ArrayList<>();
         PageDto<EntryDto> result = null;
         for (int p = fragmentOnly ? last : 0; p <= last; p++) {
-            result = entries.list(p, PAGE_SIZE);
+            result = entries.list(p, PAGE_SIZE, q, filter.source() == null ? null : filter.source().name(),
+                    filter.reflected());
             items.addAll(result.items());
             if (result.items().isEmpty()) {
                 break;
@@ -95,12 +102,18 @@ public class JournalResource {
 
         // "Today" follows the browser's time zone (diary-tz cookie), not the server clock.
         LocalDate today = LocalDate.now(clock.withZone(ClientZone.resolve(zoneCookie, clock.getZone())));
+        String eyebrow = total == 0 ? ""
+                : filtered ? t.get(total == 1 ? "entries.search.matches.one" : "entries.search.matches", total)
+                : t.get(total == 1 ? "entries.journal.count.one" : "entries.journal.count", total);
         Journal j = new Journal(
-                total == 0 && items.isEmpty(),
-                total == 0 ? "" : t.get(total == 1 ? "entries.journal.count.one" : "entries.journal.count", total),
+                total == 0 && items.isEmpty() && !filtered,
+                total == 0 && items.isEmpty() && filtered,
+                eyebrow,
                 JournalPresenter.sections(items, today, t),
                 total == 0 ? "" : t.get("entries.journal.loaded", shown, total),
-                more ? "/journal?page=" + (last + 1) : null);
+                more ? JournalPresenter.href(q, filter, last + 1) : null,
+                q, filter.param(), JournalPresenter.filterOptions(q, filter),
+                JournalPresenter.href("", JournalPresenter.Filter.ALL, 0));
         Shell shell = shells.create(t, "/journal");
         return fragmentOnly ? Templates.journal$chunk(shell, t, j) : Templates.journal(shell, t, j);
     }

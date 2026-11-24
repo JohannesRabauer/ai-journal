@@ -142,6 +142,102 @@ class JournalPageTest {
         assertThat(given().get("/api/entries").getHeader("Content-Security-Policy")).isNull();
     }
 
+    // ---- Search and filters (phase 2) ----------------------------------------------------------
+
+    private EntryDto createVoice(String text, LocalDateTime when) {
+        return entries.create(new CreateEntryRequest(text, when, null, dev.rabauer.ai.diary.api.entry.EntrySource.VOICE));
+    }
+
+    @Test
+    void toolbarIsLabelledAndWorksAsGetFormWithoutJavaScript() {
+        create("hello", LocalDate.now().atTime(8, 0));
+        String body = html("/journal");
+        assertThat(body).contains("role=\"search\"").contains("method=\"get\"").contains("action=\"/journal\"");
+        assertThat(body).contains("<label class=\"entries-search__label\" for=\"entries-q\">Search your entries</label>");
+        assertThat(body).contains("type=\"search\"").contains("name=\"q\"").contains("name=\"filter\"");
+        assertThat(count(body, "aria-current=\"true\"")).isEqualTo(1);
+        assertThat(body).containsPattern("data-filter=\"all\" aria-current=\"true\"");
+        assertThat(body).contains("href=\"/journal?filter=voice\"").contains("href=\"/journal?filter=reflected\"");
+        assertThat(body).contains("<script type=\"module\" src=\"/js/journal.js\">").doesNotContain("<script>");
+    }
+
+    @Test
+    void searchTextFiltersAndIsEscapedWhenEchoedBack() {
+        LocalDate today = LocalDate.now();
+        create("a quiet walk", today.atTime(8, 0));
+        create("grocery list", today.atTime(9, 0));
+        String body = html("/journal?q=walk");
+        assertThat(body).contains("1 entry matches").contains("a quiet walk").doesNotContain("grocery list");
+        assertThat(body).contains("value=\"walk\"");
+        assertThat(count(body, "class=\"diary-card entries-card\"")).isEqualTo(1);
+
+        String evil = "\"><script>alert(1)</script>";
+        String escaped = given().header("Accept-Language", "en").queryParam("q", evil).get("/journal")
+                .then().statusCode(200).extract().asString();
+        assertThat(escaped).doesNotContain("<script>alert").contains("No entries match your search.");
+        assertThat(escaped).contains("value=\"&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;\"");
+        assertThat(escaped).contains("href=\"/journal\"").contains("Clear search");
+    }
+
+    @Test
+    void filterLinksReflectStateAndFilterTheList() {
+        LocalDate today = LocalDate.now();
+        create("typed thought", today.atTime(8, 0));
+        createVoice("spoken thought", today.atTime(9, 0));
+        String body = html("/journal?filter=voice");
+        assertThat(body).contains("1 entry matches").contains("spoken thought").doesNotContain("typed thought");
+        assertThat(body).containsPattern("data-filter=\"voice\" aria-current=\"true\"");
+        assertThat(count(body, "aria-current=\"true\"")).isEqualTo(1);
+
+        String unknown = html("/journal?filter=bogus");
+        assertThat(unknown).contains("typed thought").contains("spoken thought").contains("2 entries");
+
+        String reflected = html("/journal?filter=reflected");
+        assertThat(reflected).contains("No entries match your search.").doesNotContain("spoken thought");
+    }
+
+    @Test
+    void combinedFilterKeepsSearchTextInLinksAndPaging() {
+        LocalDate day = LocalDate.now().minusDays(30);
+        for (int i = 0; i < 25; i++) {
+            createVoice("river " + i, day.atTime(0, 0).plusMinutes(i));
+        }
+        create("river text", day.atTime(5, 0));
+        String first = html("/journal?q=river&filter=voice");
+        assertThat(count(first, "entries-card\"")).isEqualTo(20);
+        assertThat(first).contains("25 entries match").contains("Showing 20 of 25 entries.")
+                .contains("href=\"/journal?q=river&amp;filter=voice&amp;page=1\"")
+                .contains("href=\"/journal?q=river&amp;filter=reflected\"");
+        String fragment = html("/journal?q=river&filter=voice&page=1&fragment=1");
+        assertThat(fragment).doesNotContain("<html").doesNotContain("<form");
+        assertThat(count(fragment, "entries-card\"")).isEqualTo(5);
+        assertThat(fragment).contains("Showing 25 of 25 entries.");
+    }
+
+    @Test
+    void fragmentModeCarriesTheResultsWrapperAndNoMatchState() {
+        create("something", LocalDate.now().atTime(8, 0));
+        String fragment = html("/journal?q=zzz&fragment=1");
+        assertThat(fragment).contains("class=\"entries-results\"").contains("entries-nomatch-text")
+                .contains("No entries match your search.").contains("class=\"entries-clear\"")
+                .doesNotContain("<h1").doesNotContain("No entries yet.");
+    }
+
+    @Test
+    void germanSearchTexts() {
+        create("hallo welt", LocalDate.now().atTime(8, 0));
+        String body = given().header("Accept-Language", "de").queryParam("q", "hallo").get("/journal")
+                .then().statusCode(200).extract().asString();
+        assertThat(body).contains("Einträge durchsuchen").contains("1 Eintrag gefunden").contains("Sprache")
+                .contains("Reflektiert");
+    }
+
+    @Test
+    void overlongSearchTextIsTruncatedNotAnError() {
+        create("x", LocalDate.now().atTime(8, 0));
+        html("/journal?q=" + "a".repeat(500));
+    }
+
     @Test
     void guardStillAppliesToJournalAndApi() {
         given().header("Origin", "https://evil.example").get("/journal").then().statusCode(403);

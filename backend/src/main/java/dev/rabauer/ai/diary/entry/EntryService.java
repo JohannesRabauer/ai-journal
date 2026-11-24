@@ -104,10 +104,35 @@ public class EntryService {
 
     @Transactional
     public PageDto<EntryDto> list(int page, int size) {
+        return list(page, size, null, null, null);
+    }
+
+    /** Longest accepted search text (after trimming). */
+    public static final int MAX_QUERY_CHARS = 200;
+
+    /**
+     * Filtered list. {@code q}: case-insensitive substring of the entry text (trimmed, blank = no filter);
+     * {@code source}: VOICE or TEXT (case-insensitive); {@code reflected}: has / has no coach conversation.
+     * The search text is never logged. {@code total} counts the matching entries.
+     */
+    @Transactional
+    public PageDto<EntryDto> list(int page, int size, String q, String source, Boolean reflected) {
         int p = Math.max(0, page);
         int s = size <= 0 ? 20 : Math.min(size, MAX_PAGE_SIZE);
-        List<EntryDto> items = repository.newestFirst(p, s).stream().map(this::toDto).toList();
-        return new PageDto<>(items, p, s, repository.count());
+        String text = q == null ? "" : q.strip();
+        if (text.length() > MAX_QUERY_CHARS) {
+            throw ApiException.badRequest("QUERY_TOO_LONG", "The search text is longer than " + MAX_QUERY_CHARS + " characters.");
+        }
+        EntrySource src = null;
+        if (source != null && !source.isBlank()) {
+            try {
+                src = EntrySource.valueOf(source.strip().toUpperCase(java.util.Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                throw ApiException.badRequest("INVALID_SOURCE", "source must be VOICE or TEXT.");
+            }
+        }
+        List<EntryDto> items = repository.newestFirst(p, s, text, src, reflected).stream().map(this::toDto).toList();
+        return new PageDto<>(items, p, s, repository.countFiltered(text, src, reflected));
     }
 
     @Inject

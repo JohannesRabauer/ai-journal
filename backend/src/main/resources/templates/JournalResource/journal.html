@@ -2,11 +2,27 @@
 {#title}{t.get('entries.journal.title')} - {t.get('app.name')}{/title}
 {#head}<link rel="stylesheet" href="/css/journal.css">{/head}
 <div class="entries-journal">
-  {#if !j.empty}<p class="diary-eyebrow">{j.eyebrow}</p>{/if}
   <h1>{t.get('entries.journal.title')}</h1>
+  <form class="entries-toolbar" method="get" action="/journal" role="search" data-error-text="{t.get('entries.journal.loadFailed')}">
+    <div class="entries-search">
+      <label class="entries-search__label" for="entries-q">{t.get('entries.search.label')}</label>
+      <div class="entries-search__field">
+        {#icon 'search' /}
+        <input id="entries-q" class="entries-search__input" type="search" name="q" value="{j.q}" maxlength="200" autocomplete="off" enterkeyhint="search">
+      </div>
+    </div>
+    <input type="hidden" name="filter" value="{j.filter}">
+    <button type="submit" class="diary-button entries-search__submit">{t.get('entries.search.submit')}</button>
+    <div class="entries-filter" role="group" aria-label="{t.get('entries.filter.label')}">
+      {#for f in j.filters}<a class="entries-filter__option" href="{f.href}" data-filter="{f.param}"{#if f.current} aria-current="true"{/if}>{t.get(f.labelKey)}</a>{/for}
+    </div>
+  </form>
   {#fragment id=chunk}
+  <div class="entries-results">
+  {#if j.eyebrow}<p class="diary-eyebrow entries-count">{j.eyebrow}</p>{/if}
   <div class="entries-days">
     {#if j.empty}<p class="diary-muted" role="status">{t.get('entries.journal.empty')}</p>{/if}
+    {#if j.noMatch}<p class="diary-muted entries-nomatch" role="status"><span class="entries-nomatch-text">{t.get('entries.search.none')}</span> <a class="entries-clear" href="{j.clearHref}">{t.get('entries.search.clear')}</a></p>{/if}
     {#for day in j.days}
     <section class="entries-day" data-day="{day.isoDay}">
       <h2 class="entries-day__heading"><span>{day.label}</span>{#if day.detail}<span class="entries-day__detail diary-muted">{day.detail}</span>{/if}</h2>
@@ -35,5 +51,5 @@
   <div class="entries-more">{#if j.nextHref}<a class="diary-button entries-load-older" href="{j.nextHref}">{t.get('entries.journal.loadOlder')}</a>{/if}</div>
   {/fragment}
 </div>
-{#scripts}<script src="/js/journal.js" defer></script>{/scripts}
+{#scripts}<script type="module" src="/js/journal.js"></script>{/scripts}
 {/include}

@@ -18,8 +18,8 @@ public class EntryResource implements EntriesApi {
     }
 
     @Override
-    public PageDto<EntryDto> list(int page, int size) {
-        return service.list(page, size);
+    public PageDto<EntryDto> list(int page, int size, String q, String source, Boolean reflected) {
+        return service.list(page, size, q, source, reflected);
     }
 
     @Override

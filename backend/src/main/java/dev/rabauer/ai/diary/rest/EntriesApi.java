@@ -31,9 +31,16 @@ public interface EntriesApi {
     EntryDto create(CreateEntryRequest request);
 
     @GET
-    @Operation(summary = "List entries, newest first (entry timestamp desc, id desc).")
+    @Operation(summary = "List entries, newest first (entry timestamp desc, id desc). Optional filters, all combined with AND: "
+            + "q = case-insensitive substring of the entry text (trimmed, at most 200 characters, blank = no filter), "
+            + "source = VOICE or TEXT, reflected = true (has a coach conversation) or false (has none). "
+            + "total counts the matching entries.")
+    @APIResponse(responseCode = "400", description = "Invalid source or q too long")
     PageDto<EntryDto> list(@QueryParam("page") @DefaultValue("0") int page,
-                           @QueryParam("size") @DefaultValue("20") int size);
+                           @QueryParam("size") @DefaultValue("20") int size,
+                           @QueryParam("q") String q,
+                           @QueryParam("source") String source,
+                           @QueryParam("reflected") Boolean reflected);
 
     @GET
     @Path("/{id}")
