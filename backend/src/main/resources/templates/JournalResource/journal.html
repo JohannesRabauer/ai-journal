@@ -1,0 +1,39 @@
+{#include base}
+{#title}{t.get('entries.journal.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/journal.css">{/head}
+<div class="entries-journal">
+  {#if !j.empty}<p class="diary-eyebrow">{j.eyebrow}</p>{/if}
+  <h1>{t.get('entries.journal.title')}</h1>
+  {#fragment id=chunk}
+  <div class="entries-days">
+    {#if j.empty}<p class="diary-muted" role="status">{t.get('entries.journal.empty')}</p>{/if}
+    {#for day in j.days}
+    <section class="entries-day" data-day="{day.isoDay}">
+      <h2 class="entries-day__heading"><span>{day.label}</span>{#if day.detail}<span class="entries-day__detail diary-muted">{day.detail}</span>{/if}</h2>
+      <ul class="entries-list">
+        {#for c in day.cards}
+        <li class="diary-card entries-card" data-id="{c.id}">
+          <a class="entries-card__link" href="{c.href}">
+            <div class="entries-meta">
+              <span class="entries-time diary-muted">{c.time}</span>
+              {#if c.voice}<span class="diary-chip">{#icon 'mic' /}<span>{t.get('entries.badge.voice')}</span></span>{/if}
+              {#if c.coach}<span class="diary-chip diary-chip-accent">{#icon 'chat' /}<span>{t.get('entries.badge.coach')}</span></span>{/if}
+              {#if c.statusLabel}<span class="diary-chip entries-chip-status"><span>{c.statusLabel}</span></span>{/if}
+            </div>
+            {#if c.preview}<p class="entries-excerpt">{c.preview}</p>{/if}
+          </a>
+          {#if c.legacyRemark}
+          <details class="entries-remark"><summary>{t.get('entries.legacyRemark')}</summary><p>{c.legacyRemark}</p></details>
+          {/if}
+        </li>
+        {/for}
+      </ul>
+    </section>
+    {/for}
+  </div>
+  <p class="entries-progress diary-muted" role="status">{j.progress}</p>
+  <div class="entries-more">{#if j.nextHref}<a class="diary-button entries-load-older" href="{j.nextHref}">{t.get('entries.journal.loadOlder')}</a>{/if}</div>
+  {/fragment}
+</div>
+{#scripts}<script src="/js/journal.js" defer></script>{/scripts}
+{/include}

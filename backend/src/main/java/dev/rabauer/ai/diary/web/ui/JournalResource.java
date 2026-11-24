@@ -1,0 +1,86 @@
+package dev.rabauer.ai.diary.web.ui;
+
+import dev.rabauer.ai.diary.api.common.PageDto;
+import dev.rabauer.ai.diary.api.entry.EntryDto;
+import dev.rabauer.ai.diary.entry.EntryService;
+import io.quarkus.qute.CheckedTemplate;
+import io.quarkus.qute.TemplateInstance;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Journal page, server-rendered. {@code ?page=N} shows pages 0..N cumulatively (what the Vaadin "Load older entries"
+ * button builds up), so the no-JavaScript link is a plain GET. {@code &fragment=1} returns only page N's entries
+ * for the progressive-enhancement script.
+ */
+@Path("/journal")
+@Produces(MediaType.TEXT_HTML)
+public class JournalResource {
+
+    static final int PAGE_SIZE = 20;
+    /** Keeps the cumulative no-JS view bounded. */
+    static final int MAX_PAGE = 200;
+
+    @CheckedTemplate
+    static class Templates {
+        static native TemplateInstance journal(Shell shell, Messages t, Journal j);
+
+        static native TemplateInstance journal$chunk(Shell shell, Messages t, Journal j);
+    }
+
+    /** View model; progress and eyebrow are formatted here to keep the template free of logic. */
+    public record Journal(boolean empty, String eyebrow, List<JournalPresenter.DaySection> days, String progress,
+                          String nextHref) {
+    }
+
+    @Inject
+    EntryService entries;
+    @Inject
+    ShellFactory shells;
+    @Inject
+    Clock clock;
+
+    @GET
+    public TemplateInstance journal(@QueryParam("page") @DefaultValue("0") int page,
+                                    @QueryParam("fragment") String fragment, @Context HttpHeaders headers) {
+        Messages t = Messages.forAcceptable(headers.getAcceptableLanguages());
+        int last = Math.max(0, Math.min(page, MAX_PAGE));
+        boolean fragmentOnly = fragment != null && !fragment.isEmpty() && !"0".equals(fragment);
+
+        List<EntryDto> items = new ArrayList<>();
+        PageDto<EntryDto> result = null;
+        for (int p = fragmentOnly ? last : 0; p <= last; p++) {
+            result = entries.list(p, PAGE_SIZE);
+            items.addAll(result.items());
+            if (result.items().isEmpty()) {
+                break;
+            }
+        }
+        long total = result.total();
+        // Entries shown on this page and all before it.
+        long shown = Math.min(total, fragmentOnly ? (long) last * PAGE_SIZE + items.size() : items.size());
+        boolean more = !result.items().isEmpty() && (long) (last + 1) * PAGE_SIZE < total;
+
+        LocalDate today = LocalDate.now(clock);
+        Journal j = new Journal(
+                total == 0 && items.isEmpty(),
+                total == 0 ? "" : t.get(total == 1 ? "entries.journal.count.one" : "entries.journal.count", total),
+                JournalPresenter.sections(items, today, t),
+                total == 0 ? "" : t.get("entries.journal.loaded", shown, total),
+                more ? "/journal?page=" + (last + 1) : null);
+        Shell shell = shells.create(t, "/journal");
+        return fragmentOnly ? Templates.journal$chunk(shell, t, j) : Templates.journal(shell, t, j);
+    }
+}

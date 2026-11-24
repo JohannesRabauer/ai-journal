@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="{shell.lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{#insert title}AI Diary{/insert}</title>
+<link rel="icon" href="data:,">
+<script src="/js/theme-init.js"></script>
+<link rel="stylesheet" href="/css/styles.css">
+{#insert head}{/insert}
+</head>
+<body>
+<div class="diary-shell">
+  <a class="skip-link" href="#main-content">{t.get('nav.skip')}</a>
+  <nav class="diary-nav" aria-label="{t.get('nav.label')}">
+    <div class="diary-brand" aria-hidden="true"><span class="diary-brand-mark">{#icon 'feather' /}</span><span>{t.get('app.name')}</span></div>
+    <ul>
+      {#for item in shell.nav}
+      <li{#if item.secondary} class="diary-nav-secondary"{/if}><a href="{item.href}"{#if item.active} aria-current="page"{/if}>{#icon item.icon /}<span>{t.get(item.labelKey)}</span></a></li>
+      {/for}
+    </ul>
+    <div class="diary-nav-status" data-kind="{shell.statusKind}">{#icon shell.statusIcon /}<span>{t.get(shell.statusKey)}</span></div>
+  </nav>
+  <div class="diary-body">
+    <div class="diary-topbar">
+      <div class="diary-brand" aria-hidden="true"><span class="diary-brand-mark">{#icon 'feather' /}</span><span>{t.get('app.name')}</span></div>
+      <a class="diary-topbar-action" href="{shell.settings.href}" aria-label="{t.get(shell.settings.labelKey)}"{#if shell.settings.active} aria-current="page"{/if}>{#icon shell.settings.icon /}</a>
+    </div>
+    {#if shell.cloud}
+    <div class="diary-banner diary-banner-cloud" role="region" aria-label="{t.get('banner.cloud.label')}">
+      <div class="diary-banner-inner"><strong>{t.get('banner.cloud.title')}</strong> <span>{t.get('banner.cloud.default')}</span></div>
+    </div>
+    {/if}
+    <main id="main-content" class="diary-main" tabindex="-1">
+      {#insert /}
+    </main>
+  </div>
+</div>
+{#insert scripts}{/insert}
+</body>
+</html>
