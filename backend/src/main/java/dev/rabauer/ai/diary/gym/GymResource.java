@@ -17,7 +17,7 @@ public class GymResource implements GymApi {
     @Inject
     GymService service;
 
-    /** The frontend sends its UI language so that template exercises match it. */
+    /** The pages send the UI language so that template exercises match it. */
     @HeaderParam("Accept-Language")
     String acceptLanguage;
 

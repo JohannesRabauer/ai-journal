@@ -1,10 +1,7 @@
-/frontend/src/main/frontend/generated
 /db/data
 /ollama/data
 /db/data_personal
 .env
 /data
-/frontend/src/main/frontend/node_modules
 target/
-/frontend/src/main/bundles
 /backups

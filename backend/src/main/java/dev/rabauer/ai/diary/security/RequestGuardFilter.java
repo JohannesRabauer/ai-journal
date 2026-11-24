@@ -51,7 +51,7 @@ public class RequestGuardFilter {
     }
 
     /**
-     * HTTP/1.1 sends a Host header. HTTP/2 (the Java client of the frontend upgrades to h2c) sends the authority
+     * HTTP/1.1 sends a Host header. HTTP/2 (some HTTP clients upgrade to h2c) sends the authority
      * as a pseudo header and no Host header, so fall back to the host of the request URI, which is that authority.
      */
     static String effectiveHost(String hostHeader, java.net.URI requestUri) {

@@ -1,8 +1,0 @@
-{#include base}
-{#title}{t.get(page.titleKey)} - {t.get('app.name')}{/title}
-<div class="notmoved">
-  <h1>{t.get(page.titleKey)}</h1>
-  <p>{t.get('notmoved.text')}</p>
-  {#if page.legacyUrl}<p><a href="{page.legacyUrl}">{t.get('notmoved.link')}</a></p>{/if}
-</div>
-{/include}

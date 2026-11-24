@@ -24,8 +24,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * Chunked, resumable audio upload (SPEC section 4.1). Owner: W1a (backend). The browser reaches these through the
- * frontend's same-origin proxy; the backend is never exposed to the browser directly.
+ * Chunked, resumable audio upload (SPEC section 4.1). Owner: W1a (backend). The browser calls these directly
+ * (same origin: the backend also serves the pages, D-033).
  */
 @Path("/api/recordings")
 @Tag(name = "recordings")

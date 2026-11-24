@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!--
-      Shared REST contract: plain Java records and enums used by backend (server) and frontend (client).
+      Shared REST contract: plain Java records and enums used by the backend (server side of the REST API and the pages).
       No runtime dependencies. Changing anything here is a contract change owned by the orchestrator.
     -->
     <groupId>dev.rabauer.ai.diary</groupId>
@@ -16,7 +16,7 @@
     </properties>
 
     <dependencies>
-        <!-- Annotations only; absent at runtime in the frontend, which is fine for annotations. -->
+        <!-- Annotations only; absent at runtime where only the records are used, which is fine for annotations. -->
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>

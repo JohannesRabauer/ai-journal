@@ -7,6 +7,5 @@ ollama/data
 data
 **/target
 **/node_modules
-frontend/src/main/frontend/generated
 **/.idea
 **/.vscode
