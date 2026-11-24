@@ -24,12 +24,14 @@ import dev.rabauer.ai.diary.api.common.Language;
 import dev.rabauer.ai.diary.api.entry.EntryDto;
 import dev.rabauer.ai.diary.api.entry.EntrySource;
 import dev.rabauer.ai.diary.api.entry.EntryStatus;
+import dev.rabauer.ai.diary.api.memory.SourceType;
 import dev.rabauer.ai.diary.client.BackendException;
 import dev.rabauer.ai.diary.client.EntriesClient;
 import dev.rabauer.ai.diary.client.RecordingsClient;
 import dev.rabauer.ai.diary.client.TranscriptionsClient;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.views.coach.CoachView;
+import dev.rabauer.ai.diary.views.memory.MemoryView;
 
 /**
  * Entry detail: text edit with autosave, audio playback through the proxy, delete audio / delete entry (with
@@ -140,6 +142,13 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         footer.add(reflect);
         if (finished && entry.hasCoachConversation()) {
             footer.add(new Span(getTranslation("coach.entry.hasConversation")));
+        }
+        if (finished && !blank(entry.text())) {
+            Button extract = new Button(getTranslation("memory.extractLearnings"),
+                    e -> MemoryView.openWithExtraction(UI.getCurrent(), SourceType.ENTRY, entry.id()));
+            extract.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            extract.getElement().setAttribute("title", getTranslation("memory.extractLearnings.title"));
+            footer.add(extract);
         }
         if (actions.deleteEntry()) {
             Button delete = new Button(getTranslation("entries.delete"),

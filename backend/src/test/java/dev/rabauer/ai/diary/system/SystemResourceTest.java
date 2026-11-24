@@ -27,7 +27,18 @@ class SystemResourceTest {
     }
 
     @Test
-    void unimplementedFeaturesAnswer501WithErrorBody() {
-        given().get("/api/memory/items").then().statusCode(501).body("code", equalTo("NOT_IMPLEMENTED"));
+    void notImplementedMapsTo501WithErrorBody() {
+        // All REST stubs are implemented since Wave 3; check the mapping itself.
+        var response = new dev.rabauer.ai.diary.web.ErrorMappers().api(dev.rabauer.ai.diary.web.ApiException.notImplemented("X"));
+        org.assertj.core.api.Assertions.assertThat(response.getStatus()).isEqualTo(501);
+        org.assertj.core.api.Assertions.assertThat(((dev.rabauer.ai.diary.api.common.ErrorDto) response.getEntity()).code())
+                .isEqualTo("NOT_IMPLEMENTED");
+    }
+
+    @Test
+    void everyFeatureRouteIsImplemented() {
+        given().get("/api/memory/lessons").then().statusCode(200);
+        given().get("/api/gym/attempts").then().statusCode(200);
+        given().get("/api/weekly-reports").then().statusCode(200);
     }
 }
