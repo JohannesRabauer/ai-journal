@@ -7,3 +7,10 @@ export function formatElapsed(ms) {
   const two = (n) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${two(m)}:${two(s)}`;
 }
+
+/** Browser-local wall-clock time as ISO local date-time (no zone), e.g. 2026-03-05T00:46:30, for entryTimestamp. */
+export function localIsoDateTime(date) {
+  const two = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`
+    + `T${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}`;
+}

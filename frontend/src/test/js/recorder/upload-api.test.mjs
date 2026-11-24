@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { UploadError, createUploadApi, isRetryableStatus } from '../../../main/frontend/recorder/upload-api.js';
-import { formatElapsed } from '../../../main/frontend/recorder/format.js';
+import { formatElapsed, localIsoDateTime } from '../../../main/frontend/recorder/format.js';
 import { computeLevel, drawWaveform } from '../../../main/frontend/recorder/waveform.js';
 import { MemoryStorage } from '../../../main/frontend/recorder/storage.js';
 
@@ -51,6 +51,11 @@ test('errors: network failure is retryable, 4xx is not, backend message is kept'
 test('retryable statuses', () => {
   for (const s of [undefined, 408, 429, 500, 502, 503]) assert.equal(isRetryableStatus(s), true, String(s));
   for (const s of [400, 404, 409, 413]) assert.equal(isRetryableStatus(s), false, String(s));
+});
+
+test('localIsoDateTime uses the browser local wall-clock fields', () => {
+  assert.equal(localIsoDateTime(new Date(2026, 2, 5, 0, 46, 3)), '2026-03-05T00:46:03');
+  assert.equal(localIsoDateTime(new Date(2026, 11, 31, 23, 59, 59)), '2026-12-31T23:59:59');
 });
 
 test('formatElapsed', () => {

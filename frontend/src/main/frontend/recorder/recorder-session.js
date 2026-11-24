@@ -1,6 +1,7 @@
 import { ChunkQueue } from './chunk-queue.js';
 import { Emitter } from './emitter.js';
 import { withRetry } from './retry.js';
+import { localIsoDateTime } from './format.js';
 import { finishRecovered, recover } from './resume.js';
 import { RecorderStateMachine, State } from './state-machine.js';
 
@@ -100,7 +101,11 @@ export class RecorderSession extends Emitter {
       this.#recorder = new MediaRecorder(this.#stream, mimeType ? { mimeType } : undefined);
       const actualMime = this.#recorder.mimeType || mimeType || 'audio/webm';
 
-      const dto = await api.start({ entryId, mimeType: actualMime, language, entryTimestamp });
+      const dto = await api.start({
+        entryId, mimeType: actualMime, language,
+        // the browser's local wall-clock time; the server may run in another time zone (e.g. UTC in containers)
+        entryTimestamp: entryTimestamp ?? localIsoDateTime(new Date(now())),
+      });
       this.#meta = {
         recordingId: dto.id,
         entryId: dto.entryId,

@@ -54,6 +54,15 @@ test('full recording: chunks are uploaded and persisted, then completed with chu
   assert.deepEqual(events(t.log, 'completed'), [{ recordingId: 'rec-1', entryId: started.entryId, durationMs: 23_000 }]);
 });
 
+test('start sends the browser-local entry timestamp', async () => {
+  const t = setup();
+  let sent;
+  const original = t.server.api.start;
+  t.server.api.start = (req) => { sent = req; return original(req); };
+  await t.session.start();
+  assert.match(sent.entryTimestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+});
+
 test('pause stops the clock; elapsed excludes paused time', async () => {
   const t = setup();
   await t.session.start();
