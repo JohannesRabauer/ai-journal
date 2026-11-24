@@ -1,0 +1,31 @@
+/* Weekly reflection screen. Calm, text first, theme tokens only (docs/DESIGN.md). No charts, no counters, no animation. */
+.weekly-view { gap: 1rem; }
+.weekly-muted { color: var(--diary-muted, #575d64); margin: 0; }
+.weekly-status { color: var(--diary-muted, #575d64); padding: .5rem 0; }
+.weekly-notice { color: var(--diary-muted, #575d64); }
+.weekly-error { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-error, #a4262c);
+  color: var(--diary-error, #a4262c); background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
+.weekly-error p { margin: 0 0 .5rem; }
+.weekly-empty { max-width: var(--diary-measure, 65ch); display: flex; flex-direction: column; gap: .75rem; align-items: flex-start; }
+.weekly-report h2, .weekly-editor h2 { margin-bottom: .25rem; }
+.weekly-report h2:focus { outline: none; }
+.weekly-section { margin-top: 1.5rem; max-width: var(--diary-measure, 65ch); }
+.weekly-section h3 { font-size: var(--lumo-font-size-l, 1.125rem); margin: 0 0 .5rem; }
+.weekly-theme { margin-bottom: 1rem; }
+.weekly-theme__title { font-weight: 600; }
+.weekly-theme p { margin: .25rem 0; overflow-wrap: anywhere; }
+.weekly-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--diary-muted, #575d64); font-size: var(--lumo-font-size-s, .875rem); }
+.weekly-quote { margin: 1rem 0 .25rem; padding: .25rem 0 .25rem 1rem; border-left: 3px solid var(--diary-accent, #2c5f66);
+  font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.weekly-quote__source { font-size: var(--lumo-font-size-s, .875rem); padding-left: 1rem; margin-bottom: .75rem; }
+.weekly-list { margin: 0; padding-left: 1.25rem; }
+.weekly-list li { margin-bottom: .35rem; overflow-wrap: anywhere; }
+.weekly-question { font-size: 1.2rem; line-height: 1.5; overflow-wrap: anywhere; }
+.weekly-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; }
+.weekly-edit-item { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; margin-bottom: 1rem; }
+.weekly-edit-item vaadin-text-field, .weekly-edit-item vaadin-text-area { width: 100%; }
+.weekly-counters { display: flex; flex-wrap: wrap; gap: 1rem; }
+.weekly-history { margin-top: 2rem; }
+.weekly-history h2 { font-size: var(--lumo-font-size-l, 1.125rem); }
+.weekly-history-list { list-style: none; margin: 0; padding: 0; }
+.weekly-history-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .75rem; margin-bottom: .25rem; }
