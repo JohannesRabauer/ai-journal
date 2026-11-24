@@ -47,3 +47,52 @@ Browser: /memory, /gym, /weekly render with the real data, no console errors.
 Model quality (qwen3:1.7b): technically valid but often clumsy output (first-person phrasing in exercises, open threads and
 the weekly question; gym steps phrased as questions). The validators keep it safe, not good. Recommendation for the owner:
 a larger local model (e.g. qwen3:4b/8b on the GPU, `JOURNAL_LLM_OLLAMA_MODEL`).
+
+## Wave 4 — security review, smoke tests, accessibility (2026-11-24)
+
+### Independent security/privacy review and fixes
+A read-only reviewer (separate agent, no stake in the implementation) found 1 critical, 1 high, 3 medium and 11 low
+issues. All were fixed on `fix/w4c-security` (decision D-031); details of each fix are in the commit messages.
+
+| Finding | Fix | Evidence |
+|---|---|---|
+| C1 cross-site writes to the backend (typeless simple POST skips `@Consumes`) | `X-AI-Diary: 1` required on every non-GET request, foreign `Origin` and `Sec-Fetch-Site: cross-site` refused; same on frontend `/upload/**` | `RequestGuardTest` (5 tests), `RequestGuardFiltersTest`; replayed against a real backend on PostgreSQL: delete-all without header 403 (typeless, JSON, text/plain, form), foreign Origin 403, cross-site fetch metadata 403; a real browser page on `localhost` fired the no-cors Blob POST and `sendBeacon` at `127.0.0.1`: both entries survived, the cross-origin read was blocked |
+| H1 DNS rebinding | Host allowlist (localhost, 127.0.0.1, [::1], `backend`, `JOURNAL_ALLOWED_HOSTS`) on both servers, 421 otherwise | `Host: attacker.example` → 421 for entries and export; `localhost` and `127.0.0.1` still 200 |
+| M1 races keep deleted text; M2 export temp file | purge generation + existence re-checks in indexer and weekly store; export streams without a temp file, startup sweep | `EntryIndexerRaceTest`, `WeeklyReportRaceTest`, `ExportDownloadTest` |
+| L1–L11 | prompt closing tags neutralised, legacy `diary` exported and both vector tables cleared, audio MIME allowlist, anti-framing headers, no model downloads on every start, AI ports unpublished, images pinned, Pi frontend without the API key, docs corrected, placeholder DB password rejected | named tests per fix in the W4c commits; `docker compose config` valid for default, cpu+tts, gpu+tts |
+
+Whisper offline start (L6) verified on the real image: the entrypoint logs "cached, not contacting Hugging Face",
+transcription of a German sample works, and works again after a restart.
+
+### Smoke tests (opt-in, rerunnable)
+`scripts/smoke-compose.ps1`, `smoke-plain.ps1` (profile B, fake AI) and `smoke-lite.ps1` (profile C against a local mock
+of the OpenAI API: refusal without consent and without key, cloud banner, every feature, export, delete-all) all ran
+green. The `.sh` mirrors are syntax-checked only.
+
+### Accessibility
+`docs/A11Y.md`: pages × themes × viewports, 9 defect classes fixed (headings, solid focus ring, control borders, lost
+keyboard focus, list semantics, 375 px reflow, reduced motion, ARIA on the recorder), `I18nKeysTest` and extended
+`ThemeContrastTest` guard them. Not checked: screen readers, an automated axe scan, a live microphone session.
+
+## Final criterion → test map
+
+| # | Criterion | Named automated tests | Manual evidence in this file |
+|---|---|---|---|
+| 1 | voice entry, chunks, resume, transcript | `RecordingFlowTest`, `TranscriptionJobTest`, `WhisperHttpSpeechToTextTest`, JS `recorder/*.test.mjs` | Wave 1 |
+| 2 | saved before AI, failure keeps audio | `EntryResourceTest.entryIsPersistedImmediatelyWithoutAnyAiCall`, `RecordingFlowTest`, `TranscriptionJobTest` | Wave 1 |
+| 3 | text entries, newest first, legacy | `EntryResourceTest`, `LegacyDatabaseMigrationTest` | Wave 1 |
+| 4 | no AI during capture, coach after finish | `CoachFlowTest`, `CoachPromptContractTest` | Wave 2 |
+| 5 | voice/text answers, pause/resume, language | `CoachFlowTest`, `TranscribeResourceTest`, `CoachPresenterTest` | Wave 2 |
+| 6 | questions over explanations, TTS fallback | `CoachRulesTest`, `TtsResourceTest`, JS `recording-guard`, `playback-queue` | Wave 2 |
+| 7 | validated extraction, approve-only | `MemoryFlowTest` | Wave 3 |
+| 8 | hidden source, SM-2, lessons | `Sm2SchedulerTest`, `MemoryFlowTest` | Wave 3 |
+| 9 | gym 7 categories, works without AI | `GymFlowTest`, template library tests | Wave 3 |
+| 10 | weekly reflection six sections | `WeeklyFlowTest`, `WeeklyRulesTest`, `WeeklyRaceTest` | Wave 3 |
+| 11 | privacy | `NoContentInLogsTest`, `PrivacyResourceTest`, `RequestGuardTest`, `EntryIndexerRaceTest` | Waves 1–4 |
+| 12 | profiles and fail-fast config | `ConfigValidatorTest`, `ProviderDefaultsTest`, `smoke-compose/plain/lite` | Waves 1, 4 |
+
+## Open items (not blockers, owner decisions or hardware)
+- Real Raspberry Pi 3 measurement (only emulated and Windows numbers exist; budget 750 MB RSS).
+- Real microphone in a real browser (recorder, answer recorder, recording guard); audible TTS playback.
+- Screen reader testing; automated axe scan.
+- Local model size: qwen3:1.7b is safe but clumsy; a larger model is one setting.
