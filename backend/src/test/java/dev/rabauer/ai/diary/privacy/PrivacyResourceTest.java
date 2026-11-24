@@ -136,6 +136,35 @@ class PrivacyResourceTest {
     }
 
     @Test
+    void deleteAllClearsBothVectorTablesAndExportCarriesLegacyDiaryRows() throws Exception {
+        try (Connection c = ds.getConnection(); var st = c.createStatement()) {
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS diary (embedding_id uuid PRIMARY KEY, text varchar(1000), metadata varchar(1000))");
+            st.executeUpdate("DELETE FROM diary");
+            st.executeUpdate("INSERT INTO diary VALUES (random_uuid(), 'legacy words " + MARKER + "', '{\"entry_id\":\"7\"}')");
+            st.executeUpdate("INSERT INTO vector_chunk (namespace, owner_id, chunk_index, chunk_text, model_id, dimension, vector_data) "
+                    + "VALUES ('entry','900',0,'t','m',1,X'00000000')");
+            // H2 has no pgvector table (the migration creates nothing); simulate the PostgreSQL twin
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS vector_chunk_pg (namespace varchar(50), owner_id varchar(50), chunk_text varchar(100))");
+            st.executeUpdate("INSERT INTO vector_chunk_pg VALUES ('entry','901','t')");
+        }
+        Map<String, byte[]> files = unzip(given().get("/api/data/export").then().statusCode(200).extract().asByteArray());
+        assertThat(files).containsKey("legacy/diary.json");
+        assertThat(new String(files.get("legacy/diary.json"))).contains(MARKER).contains("entry_id");
+
+        given().contentType(ContentType.JSON).body(DELETE_BODY).post("/api/data/delete-all").then().statusCode(200);
+        try (Connection c = ds.getConnection(); var st = c.createStatement()) {
+            for (String table : List.of("diary", "vector_chunk", "vector_chunk_pg")) {
+                try (ResultSet rs = st.executeQuery("SELECT count(*) FROM " + table)) {
+                    rs.next();
+                    assertThat(rs.getLong(1)).as(table).isZero();
+                }
+            }
+            st.executeUpdate("DROP TABLE diary");
+            st.executeUpdate("DROP TABLE vector_chunk_pg");
+        }
+    }
+
+    @Test
     void failureInOneOwnerContinuesWithOthersAndIsReported() {
         given().contentType(ContentType.JSON).body("{\"text\":\"to be deleted\"}").post("/api/entries").then().statusCode(200);
         FailingTestOwner.FAIL.set(true);
