@@ -30,6 +30,7 @@ import dev.rabauer.ai.diary.api.coach.CoachMessageKind;
 import dev.rabauer.ai.diary.api.coach.CoachRole;
 import dev.rabauer.ai.diary.api.coach.ConversationDto;
 import dev.rabauer.ai.diary.api.common.Language;
+import dev.rabauer.ai.diary.api.memory.SourceType;
 import dev.rabauer.ai.diary.api.entry.EntryDto;
 import dev.rabauer.ai.diary.api.entry.EntryStatus;
 import dev.rabauer.ai.diary.api.settings.SettingsDto;
@@ -45,6 +46,7 @@ import dev.rabauer.ai.diary.views.coach.CoachPresenter.AnswerDraft;
 import dev.rabauer.ai.diary.views.coach.CoachPresenter.ErrorInfo;
 import dev.rabauer.ai.diary.views.entries.BrowserZone;
 import dev.rabauer.ai.diary.views.entries.EntryDetailView;
+import dev.rabauer.ai.diary.views.memory.MemoryView;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -545,6 +547,12 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         }
         if (actions.end()) {
             controls.add(secondary("coach.end", e -> confirmEnd()));
+        }
+        if (conversation.messages().stream().anyMatch(m -> m.role() == CoachRole.USER)) {
+            Button extract = secondary("memory.extractLearnings",
+                    e -> MemoryView.openWithExtraction(UI.getCurrent(), SourceType.CONVERSATION, conversation.id()));
+            extract.getElement().setAttribute("title", getTranslation("memory.extractLearnings.title"));
+            controls.add(extract);
         }
         if (actions.startNew()) {
             Button again = new Button(getTranslation("coach.startNew.button"), e -> startNew());
