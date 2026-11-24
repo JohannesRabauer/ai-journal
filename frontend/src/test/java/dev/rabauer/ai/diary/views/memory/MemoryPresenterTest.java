@@ -121,4 +121,18 @@ class MemoryPresenterTest {
         assertThat(new ReviewSession(null).phase()).isEqualTo(Phase.DONE);
         assertThat(new ReviewSession(List.of()).remaining()).isZero();
     }
+
+    @Test
+    void positionCountsUpWithinTheSession() {
+        ReviewSession s = new ReviewSession(List.of(card(1), card(2), card(3)));
+        assertThat(s.total()).isEqualTo(3);
+        assertThat(s.position()).isEqualTo(1);
+        s.graded();
+        assertThat(s.position()).isEqualTo(2);
+        s.graded();
+        s.graded();
+        assertThat(s.total()).isEqualTo(3);
+        assertThat(s.position()).isEqualTo(3);
+        assertThat(new ReviewSession(null).position()).isZero();
+    }
 }

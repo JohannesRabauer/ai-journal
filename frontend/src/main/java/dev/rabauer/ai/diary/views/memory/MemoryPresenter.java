@@ -145,12 +145,24 @@ public final class MemoryPresenter {
     public static final class ReviewSession {
 
         private final List<ReviewCardDto> queue = new ArrayList<>();
+        private final int total;
         private RevealDto reveal;
 
         public ReviewSession(List<ReviewCardDto> cards) {
             if (cards != null) {
                 queue.addAll(cards);
             }
+            total = queue.size();
+        }
+
+        /** Cards this session started with (for "Card 2 of 3"); plain information, not a score. */
+        public int total() {
+            return total;
+        }
+
+        /** 1-based position of the current card within the session. */
+        public int position() {
+            return Math.min(total, total - queue.size() + 1);
         }
 
         public Phase phase() {
