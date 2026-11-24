@@ -40,10 +40,23 @@ public class RequestGuardFilter {
                 .map(o -> o.trim().toLowerCase(Locale.ROOT)).filter(o -> !o.isEmpty()).collect(Collectors.toSet());
     }
 
+    /**
+     * HTTP/1.1 sends a Host header. HTTP/2 (the Java client of the frontend upgrades to h2c) sends the authority
+     * as a pseudo header and no Host header, so fall back to the host of the request URI, which is that authority.
+     */
+    static String effectiveHost(String hostHeader, java.net.URI requestUri) {
+        if (hostHeader != null) {
+            return hostHeader;
+        }
+        return requestUri == null ? null : requestUri.getAuthority();
+    }
+
     @ServerRequestFilter(preMatching = true)
     public Optional<Response> guard(ContainerRequestContext ctx) {
-        if (!HostAllowlist.allowed(ctx.getHeaderString("Host"), hosts)) {
-            LOG.warn("Request rejected: unexpected Host header");
+        String hostHeader = effectiveHost(ctx.getHeaderString("Host"), ctx.getUriInfo().getRequestUri());
+        if (!HostAllowlist.allowed(hostHeader, hosts)) {
+            String h = String.valueOf(hostHeader);
+            LOG.warnf("Request rejected: unexpected Host header '%s'", h.length() > 80 ? h.substring(0, 80) : h);
             return Optional.of(Response.status(421).build());
         }
         if ("cross-site".equalsIgnoreCase(ctx.getHeaderString("Sec-Fetch-Site"))) {
