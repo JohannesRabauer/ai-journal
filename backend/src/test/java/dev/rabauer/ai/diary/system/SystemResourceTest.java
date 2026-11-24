@@ -28,6 +28,6 @@ class SystemResourceTest {
 
     @Test
     void unimplementedFeaturesAnswer501WithErrorBody() {
-        given().get("/api/memory/items").then().statusCode(501).body("code", equalTo("NOT_IMPLEMENTED"));
+        given().get("/api/gym/exercises/1").then().statusCode(501).body("code", equalTo("NOT_IMPLEMENTED"));
     }
 }
