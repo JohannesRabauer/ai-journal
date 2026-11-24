@@ -3,7 +3,7 @@
 // questions, and moves focus to the answer field once nothing is recording. It never creates content itself:
 // Java calls enqueue/play/announce only as a reaction to the user's own action (SPEC 5.8).
 // Attributes: labels (JSON: stop, playing), tts-url (default /upload/tts).
-// Events: speech-state {playingId, loadingId, queued} (bubbling, composed).
+// Events (bubbling, composed): speech-state {playingId, loadingId, queued}; recording-changed {recording}.
 
 import { createPlaybackQueue } from './playback-queue.js';
 import { pageGuard } from './page-guard.js';
@@ -25,6 +25,7 @@ export class DiaryCoachSpeech extends HTMLElement {
   #queue;
   #guard;
   #labels = { stop: 'Stop audio' };
+  #unsubscribe = null;
 
   connectedCallback() {
     if (this.shadowRoot) {
@@ -54,12 +55,17 @@ export class DiaryCoachSpeech extends HTMLElement {
       },
     });
     window.addEventListener('pagehide', this.#onPageHide);
+    this.#unsubscribe = this.#guard.onChange((recording) => {
+      this.dispatchEvent(new CustomEvent('recording-changed', { detail: { recording }, bubbles: true, composed: true }));
+    });
   }
 
   disconnectedCallback() {
     window.removeEventListener('pagehide', this.#onPageHide);
     this.#queue?.stop();
-    this.#guard?.cancelDeferred(this);
+    this.#unsubscribe?.();
+    this.#guard?.cancelDeferred(`${this.localName}-announce`);
+    this.#guard?.cancelDeferred(`${this.localName}-focus`);
   }
 
   #onPageHide = () => this.#queue?.stop();
@@ -89,6 +95,11 @@ export class DiaryCoachSpeech extends HTMLElement {
 
   stop() {
     this.#queue?.stop();
+  }
+
+  /** True while any recording (answer recorder or <diary-recorder>) is active. */
+  isRecording() {
+    return Boolean(this.#guard?.isRecording());
   }
 
   /** Polite announcement for screen readers; held back while a recording is active. */
