@@ -7,8 +7,9 @@ Wants=network-online.target
 [Service]
 User=ai-diary
 Group=ai-diary
-# /etc/ai-diary/env: mode 0600, owner root. Holds OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT (see deploy/env.example).
-EnvironmentFile=/etc/ai-diary/env
+# /etc/ai-diary/backend.env: mode 0600, owner root. Holds OPENAI_API_KEY and JOURNAL_CLOUD_CONSENT (see
+# deploy/backend.env.example). Only this unit reads it: the frontend never gets the secrets.
+EnvironmentFile=/etc/ai-diary/backend.env
 Environment=QUARKUS_PROFILE=lite-cloud
 Environment=JOURNAL_DB_URL=jdbc:h2:file:/var/lib/ai-diary/journal;DB_CLOSE_ON_EXIT=FALSE
 Environment=JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/var/lib/ai-diary/audio
