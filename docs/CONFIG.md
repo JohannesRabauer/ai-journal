@@ -1,7 +1,7 @@
 # Configuration reference
 
 Every key can be set as an environment variable: upper-case, `.` and `-` become `_` (`journal.stt.provider` ->
-`JOURNAL_STT_PROVIDER`). Docker compose, `scripts/run-*` and the systemd units read `.env` / `/etc/ai-diary/env`.
+`JOURNAL_STT_PROVIDER`). Docker compose, `scripts/run-*` and the systemd units read `.env` / `/etc/ai-diary/backend.env` (and the optional `frontend.env`).
 Template with all variables: [`.env.example`](../.env.example). Keys marked (W1a)/(W2b)... belong to a feature that
 another worker implements; names below are the agreed contract, check `backend/src/main/resources/application.properties`
 for the final defaults.
@@ -95,11 +95,44 @@ Logs contain the provider and failure kind only, never the text.
 | `server.address` | `JOURNAL_HTTP_HOST` | `127.0.0.1` |
 | `server.port` | `JOURNAL_FRONTEND_PORT` | `8081` |
 
+## Request guard (CSRF, DNS rebinding) and exposing services
+
+Both servers protect the unauthenticated API (docs/PRIVACY.md, "Protection of the local API"):
+
+| Key | Env | Default | Meaning |
+|---|---|---|---|
+| `journal.http.allowed-hosts` (backend), `journal.allowed-hosts` (frontend) | `JOURNAL_ALLOWED_HOSTS` | empty | Comma list of extra `Host` names accepted besides `localhost`, `127.0.0.1`, `[::1]` (and `backend` on the backend). Needed for the Pi/LAN opt-in |
+| `journal.http.allowed-origins` (backend) | none | empty | Browser origins allowed to call the backend. Leave empty: the browser only talks to the frontend |
+
+Every non-GET request to the backend (and to the frontend's `/upload/**`) needs the header `X-AI-Diary: 1`:
+
+```
+curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d '{"text":"hello"}' http://127.0.0.1:8080/api/entries
+Invoke-RestMethod -Method Post -Headers @{ 'X-AI-Diary' = '1' } -ContentType 'application/json' -Body '{"text":"hello"}' -Uri http://127.0.0.1:8080/api/entries
+```
+
+In compose, Ollama, Whisper and Piper publish no ports. To reach them from the host for debugging, create a
+`docker-compose.override.yml` (not committed; compose merges it automatically):
+
+```yaml
+services:
+  ollama-cpu:        # or ollama-gpu
+    ports: [ "127.0.0.1:11434:11434" ]
+  whisper-cpu:       # or whisper-gpu
+    ports: [ "127.0.0.1:8000:8000" ]
+  piper:
+    ports: [ "127.0.0.1:5000:5000" ]
+```
+
+Profile B (plain Java) runs these services yourself on the default local ports, as before.
+
 ## Compose and script variables (not backend keys)
 
 | Variable | Used by | Meaning |
 |---|---|---|
 | `JOURNAL_DB_PASSWORD` | compose, scripts | **Required.** PostgreSQL password and backend DB password |
+| `JOURNAL_ALLOWED_HOSTS` | compose, systemd, scripts | Extra accepted `Host` names (comma list), see above and docs/PI.md |
+| `WHISPER_ALLOW_ONLINE` | whisper container | `1` keeps the Hugging Face client online after the model is cached (default: offline) |
 | `JOURNAL_DB_DATA_DIR` | compose | Host directory of the PostgreSQL data (default `./db/data`) |
 | `JOURNAL_UID`, `JOURNAL_GID` | compose (Linux) | User the backend/piper containers run as (default 1001:1001) |
 | `OLLAMA_MODELS_TO_PULL` | compose | Space separated model list pulled on first start |
@@ -112,8 +145,8 @@ Logs contain the provider and failure kind only, never the text.
 Pinned upstream image `ghcr.io/speaches-ai/speaches:0.8.3-cpu` / `-cuda` (faster-whisper behind an OpenAI-compatible API) plus a
 first-start model download. Default model **`Systran/faster-whisper-small`** (multilingual, de + en, about 500 MB, good
 accuracy on CPU; use `Systran/faster-whisper-medium` or `large-v3` on a GPU for better quality via `WHISPER_MODEL`).
-The model is cached in `./data/whisper` and downloaded from huggingface.co once; afterwards no outbound connection is
-needed. The service reports healthy only when the model is cached. Logging is set to `info` (no request details).
+The model is cached in `./data/whisper` and downloaded from huggingface.co once; afterwards the container neither calls the
+download endpoint nor lets the Hugging Face client go online (`HF_HUB_OFFLINE=1`), so it makes no outbound connection. The service reports healthy only when the model is cached. Logging is set to `info` (no request details).
 
 ```
 POST /v1/audio/transcriptions   multipart: file, model, language (de|en, optional), response_format=verbose_json

@@ -10,12 +10,44 @@ outbound connections are the provider endpoints you configure.
 | Entry text, transcripts, conversations, memory | local PostgreSQL | local PostgreSQL | local H2 file |
 | Audio recordings | `./data/audio` | `JOURNAL_AUDIO_FILESYSTEM_DIRECTORY` | `/var/lib/ai-diary/audio` |
 | Transcription, questions, embeddings, speech | Whisper, Ollama, Piper on your machine | same, services you run | **OpenAI API** |
-| Outbound connections | none while running. One-time model downloads (Ollama registry, Hugging Face) on first start | none | OpenAI (`api.openai.com`) |
-| Ports | published on `127.0.0.1` only | backend/frontend bind `127.0.0.1` by default | frontend binds `0.0.0.0` in the systemd unit (home network), change if unwanted |
+| Outbound connections | none while running. Model downloads (Ollama registry, Hugging Face) only while a model is missing, i.e. on first start | none | OpenAI (`api.openai.com`) |
+| Ports | database, backend and frontend published on `127.0.0.1` only; Ollama, Whisper and Piper publish no port at all (only the other containers reach them) | backend/frontend bind `127.0.0.1` by default | both units bind `127.0.0.1` (SSH tunnel). Opening the frontend to the home network is an explicit opt-in (`JOURNAL_HTTP_HOST=0.0.0.0` and `JOURNAL_ALLOWED_HOSTS`, docs/PI.md) |
 
-Models are downloaded once. After that you can disconnect the machine; profiles A and B keep working. To stop even the
-one-time downloads, pre-populate `./data/ollama`, `./data/whisper`, `./data/piper` and set `HF_HUB_OFFLINE=1` for the
-whisper container.
+Models are downloaded once. After that you can disconnect the machine; profiles A and B keep working. The containers
+check what is cached before they connect anywhere: the Ollama container runs `ollama pull` only for models that
+`ollama list` does not show (a pull contacts the registry even for a present model), the Whisper container skips the
+download call when the model directory exists in `./data/whisper` and then starts with `HF_HUB_OFFLINE=1` (set
+`WHISPER_ALLOW_ONLINE=1` to keep the client online), and Piper downloads only missing voices. To avoid even the first
+downloads, pre-populate `./data/ollama`, `./data/whisper`, `./data/piper`.
+
+## Protection of the local API (no login in v1)
+
+The journal has no authentication, so the servers defend themselves against other websites open in the same browser:
+
+- **Cross-site writes (CSRF).** Every request other than GET/HEAD/OPTIONS to the backend (`:8080`) and to the frontend's
+  `/upload/**` proxies must carry the header `X-AI-Diary: 1`. A browser cannot add a custom header to a request to
+  another origin without a CORS preflight, and CORS is disabled, so forms, `sendBeacon` and `fetch(..., {mode: 'no-cors'})`
+  from other sites cannot write. Missing header: `403` with code `CSRF_HEADER_REQUIRED`. The frontend and its scripts send
+  it; **your own curl / Invoke-RestMethod calls must send it too** (see the examples in this file).
+- **Origin and Fetch Metadata.** A request with an `Origin` header outside the allowlist (`journal.http.allowed-origins`,
+  empty by default) or with `Sec-Fetch-Site: cross-site` is rejected with `403`, also for reads.
+- **DNS rebinding.** Both servers check the `Host` header: only `localhost`, `127.0.0.1`, `[::1]` (any port), the compose
+  service name `backend` (backend only) and the names in `JOURNAL_ALLOWED_HOSTS` are served; anything else gets `421`
+  without details.
+- **Framing and sniffing.** The frontend sends `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`,
+  `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff` on every response; audio responses are `nosniff` too.
+  Recording uploads accept only audio MIME types (`audio/webm`, `ogg`, `mp4`, `mpeg`, `wav`, `x-wav`, `flac`).
+
+## Deleting while background work is running
+
+Delete-all advances a global "purge generation" before it starts and again when it ends. Background writers that derive
+data from journal text capture the generation when they read their input and drop their result when it changed: the
+entry indexer (and therefore the backfill) and the weekly reflection generation. The indexer also re-checks that the entry
+still exists when it writes, so deleting a single entry while it is being embedded leaves no vectors behind; the weekly
+report drops links and quotes of entries that no longer exist (and is not saved when none remain). Not covered: speech
+transcription jobs (they update the recording's own entry, which delete-all removes, so a late result finds nothing to
+update) and synchronous, user-started LLM calls of the coach, gym and memory features, where a result that arrives after a
+delete-all started could still be stored; run delete-all again to clear it.
 
 ## The `lite-cloud` caveat
 
@@ -54,7 +86,10 @@ curl -o ai-diary-export.zip "http://127.0.0.1:8080/api/data/export?includeAudio=
 ```
 
 (`includeAudio=false` is the default.)
-The zip holds one JSON file per data owner (`entries.json`, `settings.json`, `coach/...`, `legacy/...`) and
+The Settings page streams the zip from the backend directly into the browser download; no temporary copy is written on the
+server (older versions used a temp file, which is swept at startup). The zip holds one JSON file per data owner
+(`entries.json`, `settings.json`, `coach/...`, `legacy/chat_history.json`, `legacy/diary.json` with text and metadata of the
+pre-v1 pgvector table, PostgreSQL only) and
 audio files when requested, plus `manifest.json` (export time, profile, owners and whether each succeeded, `complete`).
 Embeddings are derived data and are not exported (they are rebuilt from the entries). If one owner fails, the export
 continues, marks it `failed` in the manifest and sets `complete=false`; check the manifest.
@@ -68,9 +103,12 @@ curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d "{\"confi
 ```
 
 This removes entries, transcripts, conversations, memory items, reviews, reports, settings, the old pre-v1 tables,
-vector embeddings and all audio files. The response lists how many rows/files each part deleted. A wrong phrase returns
+vector embeddings (both vector tables, `vector_chunk` and `vector_chunk_pg`, whichever store is active) and all audio files. The response lists how many rows/files each part deleted. A wrong phrase returns
 400 and deletes nothing. If a part fails, the others are still deleted and the call returns 500 `DELETE_INCOMPLETE`
 naming the failed parts; run it again (it is idempotent) or check the server log. Export first if you want a copy.
+
+Legacy `diary` rows (the pre-v1 pgvector table) are not linked to entries by id: deleting a single entry cannot always
+find its legacy rows (it can only when their metadata names the entry). Delete-all removes all of them.
 
 What the endpoint does not touch: downloaded models, the `./db/data` directory itself (empty tables remain), database
 backups you made (`./backups`), exports you saved, and PostgreSQL's own files (deleted rows are reclaimed by vacuum,
