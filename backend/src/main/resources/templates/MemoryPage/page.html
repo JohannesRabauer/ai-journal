@@ -1,0 +1,193 @@
+{#include base}
+{#title}{t.get('memory.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/forms.css"><link rel="stylesheet" href="/css/memory.css">{/head}
+<div class="memory-view" id="memory-root" data-due-one="{v.dueOne}" data-due-many="{v.dueMany}" data-due-none="{v.dueNone}"
+     data-position="{t.get('memory.review.position')}" data-interval-one="{t.get('memory.review.interval.one')}" data-interval-other="{t.get('memory.review.interval.other')}"
+     data-retry="{t.get('memory.retry')}" data-cancel="{t.get('memory.cancel')}" data-show="{t.get('memory.tile.show')}" data-hide="{t.get('memory.tile.hide')}"
+     data-extracting="{t.get('memory.extract.working')}"
+     data-approved="{t.get('memory.candidate.approved')}" data-discarded="{t.get('memory.candidate.discarded')}" data-item-deleted="{t.get('memory.items.deleted')}"
+     data-err-unreachable="{t.get('memory.error.unreachable')}" data-err-invalid="{t.get('memory.error.invalid')}" data-err-provider="{t.get('memory.error.provider')}"
+     data-err-state="{t.get('memory.error.state')}" data-err-notfound="{t.get('memory.error.notFound')}" data-err-badinput="{t.get('memory.error.badInput')}"
+     data-err-unavailable="{t.get('memory.error.unavailable')}" data-err-notfinished="{t.get('memory.error.notFinished')}" data-err-empty="{t.get('memory.error.empty')}"
+     data-edit-promptempty="{t.get('memory.edit.promptEmpty')}" data-edit-prompttoolong="{t.get('memory.edit.promptTooLong')}"
+     data-edit-answerempty="{t.get('memory.edit.answerEmpty')}" data-edit-answertoolong="{t.get('memory.edit.answerTooLong')}"
+     data-extract-source="{v.extractSource}" data-extract-id="{v.extractId}">
+  <p class="diary-eyebrow memory-eyebrow" id="memory-eyebrow" role="status">{v.eyebrow}</p>
+  <h1>{t.get('memory.title')}</h1>
+  <p class="diary-muted memory-lead">{t.get('memory.intro')}</p>
+  <noscript><p class="diary-flash">{t.get('memory.noscript')}</p></noscript>
+  <p class="memory-status" id="memory-status" role="status"></p>
+  <div class="diary-problem memory-error" id="memory-error" role="alert"></div>
+  <p class="diary-flash" id="memory-flash" role="status"{#if v.flash.error} data-kind="error"{/if}>{v.flash.text}</p>
+  {#if v.extractSource}
+  <noscript>
+    <form class="memory-extract" method="post" action="/memory/extract">
+      {#csrf /}
+      <input type="hidden" name="source" value="{v.extractSource}">
+      <input type="hidden" name="id" value="{v.extractId}">
+      <p class="diary-muted">{t.get('memory.extractLearnings.title')}</p>
+      <button type="submit" class="diary-button diary-button-primary">{t.get('memory.extractLearnings')}</button>
+    </form>
+  </noscript>
+  {/if}
+
+  <section class="memory-section memory-review" id="memory-review" aria-label="{t.get('memory.review.region')}">
+    {#if v.due.isEmpty}
+    <div class="diary-card memory-flash memory-done" id="memory-done" tabindex="-1"><p>{t.get('memory.due.done')}</p></div>
+    {#else}
+    {#for c in v.due}
+    {#if c_isFirst}
+    <div class="diary-card memory-flash" role="group" aria-labelledby="memory-card-prompt">
+      <div class="memory-flash__meta"><span class="diary-chip memory-position">{t.get('memory.review.position', 1, v.dueCount)}</span><span class="memory-card__type">{c.typeLabel}</span></div>
+      <p id="memory-card-prompt" class="memory-card__prompt memory-flash__q">{c.prompt}</p>
+    </div>
+    {/if}
+    {/for}
+    {/if}
+  </section>
+  <ol class="memory-queue" id="memory-queue" hidden>
+    {#for c in v.due}<li data-id="{c.id}" data-type="{c.type}" data-type-label="{c.typeLabel}">{c.prompt}</li>{/for}
+  </ol>
+
+  <h2 class="memory-also">{t.get('memory.also.title')}</h2>
+  <div id="memory-panels" data-open="{v.openPanel}">
+    <div class="memory-tiles">
+      {#for tile in v.tiles}
+      <a class="diary-card memory-tile" href="{tile.href}" data-panel="{tile.panel}" aria-controls="{tile.sectionId}">
+        <span class="memory-tile__title">{tile.title}</span>
+        <span class="memory-tile__desc">{tile.description}</span>
+        <span class="memory-tile__state">{#if tile.open}{t.get('memory.tile.hide')}{#else}{t.get('memory.tile.show')}{/if}</span>
+      </a>
+      {/for}
+    </div>
+
+    <section class="memory-section" id="memory-panel-candidates" aria-labelledby="memory-candidates-title"{#if v.openPanel != 'candidates'} hidden{/if}>
+      <h3 id="memory-candidates-title" tabindex="-1">{t.get('memory.candidates.title')}</h3>
+      <p class="diary-muted">{v.candidatesIntro}</p>
+      {#for c in v.candidates}
+      {#if c.editing}
+      <form class="diary-card memory-candidate" id="memory-candidate-{c.id}" method="post" action="/memory/candidates/{c.id}/approve" data-memory-action="approve"
+            role="group" aria-label="{t.get('memory.candidate.editing')}">
+        {#csrf /}
+        <div class="diary-field"><label for="memory-edit-prompt">{t.get('memory.candidate.prompt')}</label>
+          <textarea class="diary-input" id="memory-edit-prompt" name="prompt" rows="3" maxlength="500">{c.prompt}</textarea></div>
+        <div class="diary-field"><label for="memory-edit-answer">{t.get('memory.candidate.answer')}</label>
+          <textarea class="diary-input" id="memory-edit-answer" name="answer" rows="4" maxlength="2000">{c.answer}</textarea></div>
+        <div class="diary-field"><label for="memory-edit-type">{t.get('memory.candidate.type')}</label>
+          <select class="diary-input" id="memory-edit-type" name="type">{#for o in c.types}<option value="{o.value}"{#if o.selected} selected{/if}>{o.label}</option>{/for}</select></div>
+        <p class="diary-error-text memory-error-inline" role="alert" data-ref="problem">{v.problem}</p>
+        <div class="memory-actions">
+          <button type="submit" class="diary-button diary-button-primary">{t.get('memory.candidate.save')}</button>
+          <a class="diary-button diary-button-quiet memory-cancel-link" href="/memory?panel=candidates">{t.get('memory.cancel')}</a>
+        </div>
+      </form>
+      {#else}
+      <div class="diary-card memory-candidate" role="group" aria-labelledby="memory-candidate-{c.id}">
+        <span class="memory-card__type">{c.typeLabel}</span>
+        <p id="memory-candidate-{c.id}" class="memory-card__prompt">{c.prompt}</p>
+        <div class="memory-labelled"><span class="memory-labelled__label">{t.get('memory.candidate.answer')}</span><p class="memory-labelled__body">{c.answer}</p></div>
+        <div class="memory-labelled"><span class="memory-labelled__label">{t.get('memory.candidate.quote')}</span><p class="memory-labelled__body">“{c.quote}”</p></div>
+        <div class="memory-actions">
+          <form method="post" action="/memory/candidates/{c.id}/approve" data-memory-action="approve">{#csrf /}<button type="submit" class="diary-button diary-button-primary">{t.get('memory.candidate.approve')}</button></form>
+          <a class="diary-button diary-button-quiet memory-edit-link" href="/memory?edit={c.id}#memory-candidate-{c.id}">{t.get('memory.candidate.edit')}</a>
+          <form method="post" action="/memory/candidates/{c.id}/discard" data-memory-action="discard">{#csrf /}<button type="submit" class="diary-button diary-button-quiet">{t.get('memory.candidate.discard')}</button></form>
+        </div>
+      </div>
+      {/if}
+      {/for}
+    </section>
+
+    <section class="memory-section" id="memory-panel-items" aria-labelledby="memory-items-title"{#if v.openPanel != 'items'} hidden{/if}>
+      <h3 id="memory-items-title" tabindex="-1">{t.get('memory.items.title')}</h3>
+      {#if v.items.isEmpty}
+      <p class="diary-muted">{t.get('memory.items.none')}</p>
+      {#else}
+      <ul class="memory-items">
+        {#for i in v.items}
+        <li class="diary-card memory-item">
+          <span class="memory-card__type">{i.typeLabel}</span>
+          <p class="memory-card__prompt">{i.prompt}</p>
+          <span class="diary-muted">{i.next}</span>
+          <details class="memory-confirm">
+            <summary class="diary-button diary-button-quiet memory-delete" aria-label="{i.deleteLabel}">{t.get('memory.items.delete')}</summary>
+            <div class="memory-confirm__body">
+              <p>{t.get('memory.items.delete.text')}</p>
+              <form method="post" action="/memory/items/{i.id}/delete" data-memory-action="delete-item" data-item-id="{i.id}"
+                    data-confirm-title="{t.get('memory.items.delete.title')}" data-confirm-text="{t.get('memory.items.delete.text')}" data-confirm-label="{t.get('memory.items.delete')}">
+                {#csrf /}
+                <button type="submit" class="diary-button diary-button-danger">{t.get('memory.items.delete')}</button>
+              </form>
+            </div>
+          </details>
+        </li>
+        {/for}
+      </ul>
+      {/if}
+    </section>
+
+    <section class="memory-section" id="memory-panel-lessons" aria-labelledby="memory-lessons-title"{#if v.openPanel != 'lessons'} hidden{/if}>
+      <h3 id="memory-lessons-title" tabindex="-1">{t.get('memory.lessons.title')}</h3>
+      <p class="diary-muted">{t.get('memory.lessons.intro')}</p>
+      {#for l in v.lessons}
+      {#if l.unlocked}
+      <details class="diary-card memory-lesson"><summary>{l.title}</summary><p>{l.body}</p></details>
+      {#else}
+      <div class="diary-card memory-lesson memory-lesson--locked"><h4>{l.title}</h4><span class="memory-card__type">{t.get('memory.lesson.locked')}</span><p class="diary-muted">{l.hint}</p></div>
+      {/if}
+      {/for}
+    </section>
+  </div>
+
+  <template id="memory-tpl-prompt">
+    <div class="diary-card memory-flash" role="group" aria-labelledby="memory-card-prompt">
+      <div class="memory-flash__meta"><span class="diary-chip memory-position" data-ref="position"></span><span class="memory-card__type" data-ref="type"></span></div>
+      <p id="memory-card-prompt" class="memory-card__prompt memory-flash__q" data-ref="prompt"></p>
+      <div class="memory-attempt">
+        <div class="diary-field">
+          <label for="memory-attempt">{t.get('memory.review.answerLabel')}</label>
+          <textarea class="diary-input" id="memory-attempt" rows="4" aria-describedby="memory-attempt-help" data-ref="attempt"></textarea>
+          <span class="diary-help" id="memory-attempt-help">{t.get('memory.review.answerHelper')}</span>
+        </div>
+        <div class="memory-actions memory-actions--center">
+          <button type="button" class="diary-button diary-button-primary" data-ref="show">{t.get('memory.review.show')}</button>
+          <button type="button" class="diary-button diary-button-quiet" data-ref="inHead">{t.get('memory.review.inHead')}</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="memory-tpl-reveal">
+    <div class="diary-card memory-flash" role="group" aria-labelledby="memory-card-prompt">
+      <div class="memory-flash__meta"><span class="diary-chip memory-position" data-ref="position"></span><span class="memory-card__type" data-ref="type"></span></div>
+      <p id="memory-card-prompt" class="memory-card__prompt memory-flash__q" data-ref="prompt"></p>
+      <div class="memory-reveal" role="region" aria-label="{t.get('memory.review.revealLabel')}" tabindex="-1" data-ref="region">
+        <div class="memory-reveal__box">
+          <div class="memory-labelled" data-ref="yourAnswer" hidden><span class="memory-labelled__label">{t.get('memory.review.yourAnswer')}</span><p class="memory-labelled__body" data-ref="yourAnswerText"></p></div>
+          <p class="diary-muted" data-ref="inHeadNote" hidden>{t.get('memory.review.inHeadNote')}</p>
+          <div class="memory-labelled memory-reveal__answer"><span class="memory-labelled__label">{t.get('memory.review.answer')}</span><p class="memory-labelled__body" data-ref="answer"></p></div>
+          <div class="memory-labelled memory-reveal__source" data-ref="source" hidden>
+            <span class="memory-labelled__label" data-ref="sourceLabel"></span><p class="memory-labelled__body" data-ref="sourceQuote"></p>
+            <a data-ref="sourceLink" href="#" hidden></a>
+          </div>
+        </div>
+        <div class="memory-grades" role="group" aria-label="{t.get('memory.review.gradeLabel')}">
+          <button type="button" class="diary-button diary-button-contrast memory-grade" data-grade="forgot"><span>{t.get('memory.grade.forgot')}</span><span class="memory-grade__hint" data-ref="hint-forgot"></span></button>
+          <button type="button" class="diary-button diary-button-contrast memory-grade" data-grade="hard"><span>{t.get('memory.grade.hard')}</span><span class="memory-grade__hint" data-ref="hint-hard"></span></button>
+          <button type="button" class="diary-button diary-button-primary memory-grade" data-grade="good"><span>{t.get('memory.grade.good')}</span><span class="memory-grade__hint" data-ref="hint-good"></span></button>
+          <button type="button" class="diary-button diary-button-contrast memory-grade" data-grade="easy"><span>{t.get('memory.grade.easy')}</span><span class="memory-grade__hint" data-ref="hint-easy"></span></button>
+        </div>
+        <p class="diary-muted">{t.get('memory.review.keysHint')}</p>
+      </div>
+    </div>
+    <span hidden data-ref="label-entry">{t.get('memory.review.sourceEntry')}</span>
+    <span hidden data-ref="label-conversation">{t.get('memory.review.sourceConversation')}</span>
+    <span hidden data-ref="link-entry">{t.get('memory.review.openEntry')}</span>
+    <span hidden data-ref="link-conversation">{t.get('memory.review.openConversation')}</span>
+  </template>
+
+  <template id="memory-tpl-done">
+    <div class="diary-card memory-flash memory-done" tabindex="-1" data-ref="done"><p>{t.get('memory.due.done')}</p></div>
+  </template>
+</div>
+{#scripts}<script type="module" src="/js/memory.js"></script>{/scripts}
+{/include}
