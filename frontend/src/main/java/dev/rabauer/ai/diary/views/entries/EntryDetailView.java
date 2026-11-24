@@ -1,16 +1,19 @@
 package dev.rabauer.ai.diary.views.entries;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -29,7 +32,9 @@ import dev.rabauer.ai.diary.client.BackendException;
 import dev.rabauer.ai.diary.client.EntriesClient;
 import dev.rabauer.ai.diary.client.RecordingsClient;
 import dev.rabauer.ai.diary.client.TranscriptionsClient;
+import dev.rabauer.ai.diary.shell.DiaryIcons;
 import dev.rabauer.ai.diary.shell.MainLayout;
+import dev.rabauer.ai.diary.views.EntryFormat;
 import dev.rabauer.ai.diary.views.coach.CoachView;
 import dev.rabauer.ai.diary.views.memory.MemoryView;
 
@@ -38,6 +43,7 @@ import dev.rabauer.ai.diary.views.memory.MemoryView;
  * confirmation), finish. "Reflect" opens the coach for finished entries.
  */
 @Route(value = "entries/:id", layout = MainLayout.class)
+@CssImport("./entries/entries.css")
 public class EntryDetailView extends VerticalLayout implements BeforeEnterObserver, HasDynamicTitle {
 
     private final EntriesClient entries;
@@ -48,7 +54,9 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         this.entries = entries;
         this.recordings = recordings;
         this.transcriptions = transcriptions;
-        setMaxWidth("48rem");
+        setPadding(false);
+        setSpacing(false);
+        addClassName("entries-detail");
     }
 
     public static RouterLink link(String text, long entryId) {
@@ -75,7 +83,7 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
     /** @param refocus after an in-page action the old controls are gone, so focus moves to the entry heading */
     private void load(long id, boolean refocus) {
         removeAll();
-        add(new RouterLink(getTranslation("entries.detail.back"), EntriesView.class));
+        add(backLink());
         EntryDto entry;
         try {
             entry = entries.get(id);
@@ -97,38 +105,49 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         }
         boolean hasAudio = recording != null && recording.status() == RecordingStatus.COMPLETE;
         EntryActions actions = EntryActions.forEntry(entry.status(), hasAudio, !blank(entry.text()), false);
+        boolean finished = entry.status() == EntryStatus.FINISHED;
 
-        EntryListPresenter.Row row = EntryListPresenter.row(entry, UI.getCurrent().getLocale());
-        H1 heading = new H1(row.date());
+        java.util.Locale locale = UI.getCurrent().getLocale();
+        EntryListPresenter.Row row = EntryListPresenter.row(entry, locale);
+        String when = EntryListPresenter.detailEyebrow(entry, locale);
+        Paragraph eyebrow = new Paragraph(when);
+        eyebrow.addClassName("diary-eyebrow");
+        eyebrow.setVisible(!when.isBlank());
+        String title = EntryFormat.heading(entry.text());
+        H1 heading = new H1(title.isBlank() ? getTranslation("entries.untitled") : title);
+        heading.addClassName("entries-title");
         heading.getElement().setAttribute("tabindex", "-1");
-        HorizontalLayout head = new HorizontalLayout(heading, new Span(getTranslation(row.statusKey())));
-        head.setAlignItems(FlexComponent.Alignment.BASELINE);
-        head.getStyle().set("flex-wrap", "wrap"); // reflow at 320px (WCAG 1.4.10)
-        add(head);
+        add(eyebrow, heading);
         if (refocus) {
             heading.getElement().executeJs("this.focus()");
         }
+
+        Div chips = new Div();
+        chips.addClassName("entries-meta");
         if (entry.source() == EntrySource.VOICE) {
-            Span voice = new Span(getTranslation("entries.badge.voice"));
-            voice.getElement().getThemeList().add("badge contrast");
-            add(voice);
+            chips.add(EntriesView.chip(getTranslation("entries.badge.voice"), "mic", false));
         }
+        if (entry.hasCoachConversation()) {
+            chips.add(EntriesView.chip(getTranslation("entries.badge.coach"), "chat", true));
+        }
+        if (!finished) {
+            Span status = EntriesView.chip(getTranslation(row.statusKey()), null, false);
+            status.addClassName("entries-chip-status");
+            chips.add(status);
+        }
+        add(chips);
 
         if (hasAudio) {
-            add(new AudioPlayer(entry.recordingId(), getTranslation("entries.audio.label")));
-            if (actions.deleteAudio()) {
-                Button deleteAudio = new Button(getTranslation("entries.audio.delete"),
-                        e -> confirm("entries.audio.delete.title", "entries.audio.delete.text",
-                                "entries.audio.delete", () -> deleteAudio(entry)));
-                deleteAudio.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-                add(deleteAudio);
-            }
+            add(new AudioPlayer(entry.recordingId(), this::getTranslation));
         } else if (recording != null && recording.status() == RecordingStatus.AUDIO_DELETED) {
-            add(new Paragraph(getTranslation("entries.audio.deleted")));
+            Paragraph deleted = new Paragraph(getTranslation("entries.audio.deleted"));
+            deleted.addClassName("diary-muted");
+            add(deleted);
         }
 
         EntryEditorPanel panel = new EntryEditorPanel(entries, transcriptions, this::getTranslation,
                 () -> Language.AUTO, changed -> load(changed.id(), true));
+        panel.getElement().getClassList().add("entries-reading");
         panel.show(entry, hasAudio);
         add(panel);
 
@@ -138,33 +157,67 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
             add(remark);
         }
 
-        HorizontalLayout footer = new HorizontalLayout();
-        footer.getStyle().set("flex-wrap", "wrap");
-        boolean finished = entry.status() == EntryStatus.FINISHED;
-        Button reflect = new Button(getTranslation(entry.hasCoachConversation() ? "coach.entry.reflect.open" : "entries.reflect"),
-                e -> UI.getCurrent().navigate(CoachView.class, new RouteParameters("id", String.valueOf(entry.id()))));
-        reflect.setEnabled(finished);
-        if (!finished) {
-            reflect.getElement().setAttribute("title", getTranslation("coach.notFinished"));
-        }
-        footer.add(reflect);
-        if (finished && entry.hasCoachConversation()) {
-            footer.add(new Span(getTranslation("coach.entry.hasConversation")));
+        add(reflectCard(entry, finished));
+
+        Div footer = new Div();
+        footer.addClassName("entries-actions");
+        if (actions.editText()) {
+            footer.add(ghost("entries.edit", "pen", e -> panel.focusEditor()));
         }
         if (finished && !blank(entry.text())) {
-            Button extract = new Button(getTranslation("memory.extractLearnings"),
+            Button extract = ghost("memory.extractLearnings", "bulb",
                     e -> MemoryView.openWithExtraction(UI.getCurrent(), SourceType.ENTRY, entry.id()));
-            extract.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             extract.getElement().setAttribute("title", getTranslation("memory.extractLearnings.title"));
             footer.add(extract);
         }
+        if (hasAudio && actions.deleteAudio()) {
+            footer.add(ghost("entries.audio.delete", "trash",
+                    e -> confirm("entries.audio.delete.title", "entries.audio.delete.text",
+                            "entries.audio.delete", () -> deleteAudio(entry))));
+        }
         if (actions.deleteEntry()) {
-            Button delete = new Button(getTranslation("entries.delete"),
+            Button delete = ghost("entries.delete", "trash",
                     e -> confirm("entries.delete.title", "entries.delete.text", "entries.delete", () -> deleteEntry(entry)));
-            delete.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+            delete.addClassName("entries-danger");
             footer.add(delete);
         }
         add(footer);
+    }
+
+    /**
+     * Reflect stays on its own route ({@code entries/:id/coach}): the coach owns speech playback, a recorder and
+     * recording guards, so it is not embedded as a side panel here. This card makes the entry point prominent.
+     */
+    private Div reflectCard(EntryDto entry, boolean finished) {
+        Div card = new Div();
+        card.addClassNames("diary-card", "entries-reflect");
+        H2 title = new H2();
+        title.addClassName("entries-reflect__title");
+        title.add(DiaryIcons.create("chat"), new Span(getTranslation("entries.reflect")));
+        Paragraph text = new Paragraph(getTranslation(finished ? "entries.reflect.text" : "coach.notFinished"));
+        text.addClassName("diary-muted");
+        Button reflect = new Button(
+                getTranslation(entry.hasCoachConversation() ? "coach.entry.reflect.open" : "entries.reflect"),
+                e -> UI.getCurrent().navigate(CoachView.class, new RouteParameters("id", String.valueOf(entry.id()))));
+        reflect.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        reflect.setEnabled(finished);
+        card.add(title, text, reflect);
+        return card;
+    }
+
+    private Button ghost(String key, String icon, ComponentEventListener<ClickEvent<Button>> listener) {
+        Button button = new Button(getTranslation(key), listener);
+        button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        button.setIcon(DiaryIcons.create(icon));
+        return button;
+    }
+
+    private RouterLink backLink() {
+        RouterLink link = new RouterLink();
+        link.setRoute(EntriesView.class);
+        link.addClassName("entries-back");
+        link.add(DiaryIcons.create("chevron-left"), new Span(getTranslation("entries.detail.back")));
+        return link;
     }
 
     private void confirm(String headerKey, String textKey, String confirmKey, Runnable action) {
