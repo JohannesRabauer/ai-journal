@@ -40,7 +40,7 @@ Wave 1 closed 2026-11-24: main green (180 backend, 77 frontend, 47 JS tests). Ne
 
 Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acceptance: D-026. Next: Wave 3 (W3a memory + SM-2, W3b thinking gym, W3c weekly insights).
 
-## Wave 3 — in progress (started 2026-11-24)
+## Wave 3 — done 2026-11-24; acceptance 7–10 pass on the real stack (docs/ACCEPTANCE.md)
 | Worker | Branch | Worktree | Status |
 |---|---|---|---|
 | W3a memory + SM-2 + lessons | feat/w3a-memory | ../wt-w3a | merged (405 backend, 170 frontend, 88 JS on main) |
@@ -48,3 +48,5 @@ Wave 2 closed: main green (278 backend, 113 frontend, 88 JS tests). Fix from acc
 | W3c weekly reflection | feat/w3c-weekly | ../wt-w3c | merged (358 backend, 152 frontend on main) |
 
 Incident 2026-11-24: W3a started a frontend jar with the main repo as working directory; Vaadin generated node_modules, package.json etc. there. Removed by the orchestrator (only files timestamped in the incident window); rule added to CONVENTIONS.
+
+Wave 3 closed: main green (405 backend, 170 frontend, 88 JS tests). All twelve acceptance criteria have passed at least once. Next: Wave 4 (e2e on profiles A/B/lite with mocked OpenAI, accessibility pass, ACCEPTANCE mapping, security/privacy review).

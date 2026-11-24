@@ -30,3 +30,20 @@ qwen3-embedding:0.6b on CPU, Speaches Whisper, Piper with de/en voices), temp da
 Observed model quality (qwen3:1.7b, CPU): questions are relevant but sometimes awkward (once phrased in the first person,
 "Wie könnte ich…"). A larger local model (e.g. qwen3:4b/8b, GPU) is likely to read better; owner's choice (`journal.llm.ollama.model`).
 Not checked in Wave 2: real microphone for voice answers, TTS audio audibly playing, the recording guard with a real recording.
+
+## Wave 3 (run 2026-11-24 on main after merging W3a–W3c)
+Manual run: throwaway compose project (db, backend, frontend, Ollama 0.20 qwen3:1.7b + qwen3-embedding:0.6b on CPU), temp
+data dirs, three finished German entries in ISO week 2026-W48.
+
+| # | Criterion (short) | Automated tests | Manual evidence | Result |
+|---|---|---|---|---|
+| 7 | Extraction yields validated candidates; only approved ones become items; invalid JSON retried then rejected | `MemoryFlowTest` (invented quote, invalid JSON thrice → 502, approve-only) | Real extraction (23 s) gave a candidate with a verbatim quote; 0 items before approval; approve (edited answer) → 1 item, discard → none; deciding twice → 409 | **Pass** |
+| 8 | Source hidden until attempt; SM-2 with configurable ladder 1/3/7/14/30; lessons unlock progressively | `Sm2SchedulerTest` (exhaustive), `MemoryFlowTest`, `ReviewSchedulerContract` | New item: interval 1 d, EF 2.5; due JSON contained only the prompt; grade before attempt → 409; attempt revealed answer + verbatim quote; grade 4 → interval 3 d; lessons 1–2 open, 3–6 locked with calm German hints | **Pass** |
+| 9 | 5–10 min exercises across 7 categories, personalized with LLM, usable without AI, history | `GymFlowTest`/template-library tests | With Ollama: personalized exercise (11 s, 7 min) built on a verbatim journal excerpt; feedback only on request (2 questions); Ollama stopped: 7 picks rotated through all remaining categories from templates; attempt history kept | **Pass** (content quality of qwen3:1.7b weak, see below) |
+| 10 | Weekly reflection with the six §8 sections, no scores/health claims, history | `WeeklyFlowTest`, `WeeklyRulesTest`, ISO week tests | 2026-W48 generated in 36 s, German, all six sections; quotes verbatim; "what you learned" = 1 item, 1 review from MemoryStats; empty week → 409; future week → 400; history lists W48 | **Pass** |
+| 11 | (re-check) no content in logs | — | backend, frontend, Ollama logs contain none of the entry words | **Pass** |
+
+Browser: /memory, /gym, /weekly render with the real data, no console errors.
+Model quality (qwen3:1.7b): technically valid but often clumsy output (first-person phrasing in exercises, open threads and
+the weekly question; gym steps phrased as questions). The validators keep it safe, not good. Recommendation for the owner:
+a larger local model (e.g. qwen3:4b/8b on the GPU, `JOURNAL_LLM_OLLAMA_MODEL`).
