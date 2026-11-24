@@ -1,11 +1,11 @@
 # Opt-in smoke test of profile C (lite-cloud) against a MOCKED OpenAI API (scripts/mock-openai). Not part of verify.
 # Nothing leaves this machine: journal.openai.base-url points to a local mock, the API key is a dummy.
 #   a) startup is refused without consent and without an API key (clear message)
-#   b) with both: /api/system/info says lite-cloud + cloudMode, the frontend renders the cloud banner (headless Edge/Chrome)
+#   b) with both: /api/system/info says lite-cloud + cloudMode, the HTML pages answer (200, h1, CSP) and the home page renders the cloud banner (headless Edge/Chrome)
 #   c) text entry -> finish -> coach conversation + answer -> memory extraction -> gym exercise (personalized) + feedback -> weekly report
 #   d) /api/transcribe (WAV) returns the mock text, /api/tts returns audio
 #   e) export zip contains entries.json, delete-all empties the journal
-#   f) memory of both JVMs (Windows working set, NOT the Linux RSS of docs/PI.md; use it as a rough guide only)
+#   f) memory of the single JVM (Windows working set, NOT the Linux RSS of docs/PI.md; use it as a rough guide only)
 # Needs: JDK 25 (JAVA_HOME), Node 18+. Builds with scripts\build-lite.ps1 unless -SkipBuild. Throwaway data dir and free ports on 127.0.0.1.
 # Usage: scripts\smoke-lite.ps1 [-SkipBuild]
 param([switch]$SkipBuild)
@@ -61,14 +61,12 @@ function Get-Mb($p) { $p.Refresh(); [math]::Round($p.WorkingSet64 / 1MB) }
 
 $common = '-XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=32m -XX:TieredStopAtLevel=1 -XX:MaxDirectMemorySize=32m -Xms32m'
 $beOpts = @("-Xmx128m -XX:MaxMetaspaceSize=96m $common" -split ' ')
-$feOpts = @("-Xmx160m -XX:MaxMetaspaceSize=128m $common" -split ' ')
 $java = Get-JavaExe
 $beJar = Join-Path $RepoRoot 'backend/target/lite-app/quarkus-run.jar'
-$feJar = Join-Path $RepoRoot 'frontend/target/app.jar'
 $saved = @{}
 foreach ($k in 'QUARKUS_PROFILE', 'OPENAI_API_KEY', 'JOURNAL_CLOUD_CONSENT', 'JOURNAL_OPENAI_BASE_URL', 'JOURNAL_DB_URL', 'JOURNAL_HTTP_PORT', 'JOURNAL_STT_PROVIDER',
     'JOURNAL_LLM_PROVIDER', 'JOURNAL_EMBEDDING_PROVIDER', 'JOURNAL_TTS_PROVIDER', 'JOURNAL_VECTOR_PROVIDER', 'JOURNAL_AUDIO_PROVIDER',
-    'JOURNAL_AUDIO_FILESYSTEM_DIRECTORY', 'JOURNAL_TTS_CACHE_DIR', 'BACKEND_URL', 'JOURNAL_FRONTEND_PORT', 'JOURNAL_HTTP_HOST') {
+    'JOURNAL_AUDIO_FILESYSTEM_DIRECTORY', 'JOURNAL_TTS_CACHE_DIR', 'JOURNAL_HTTP_HOST') {
     $saved[$k] = [Environment]::GetEnvironmentVariable($k, 'Process')
 }
 function Set-Env($name, $value) {
@@ -93,7 +91,6 @@ function Reset-LiteEnv([string]$consent, [string]$key) {
 try {
     if (-not $SkipBuild) { Step 'build lite artifacts (scripts\build-lite.ps1)'; & (Join-Path $PSScriptRoot 'build-lite.ps1') }
     Assert-File $beJar 'Run scripts\build-lite.ps1 first.'
-    Assert-File $feJar 'Run scripts\build-lite.ps1 first.'
     New-Item -ItemType Directory -Force -Path (Join-Path $tmp 'h2'), (Join-Path $tmp 'audio') | Out-Null
     $node = (Get-Command node -ErrorAction SilentlyContinue)
     if (-not $node) { Fail 'node not found (Node 18+ needed for the OpenAI mock)' }
@@ -121,28 +118,25 @@ try {
     }
 
     # ---------------------------------------------------------------- (b) start both
-    Step '(b) start backend + frontend with consent and key (PI.md JVM flags)'
+    Step '(b) start the backend with consent and key (PI.md JVM flags)'
     Reset-LiteEnv $phrase 'sk-smoke-dummy'
-    $bePort = Get-FreePort; $fePort = Get-FreePort
+    $bePort = Get-FreePort
     Set-Env 'JOURNAL_HTTP_PORT' "$bePort"
     $be = "http://127.0.0.1:$bePort"
     $beProc = Start-Proc 'backend' $java ($beOpts + @('-jar', $beJar))
     $summary.backendStartSec = [math]::Round((Wait-Until 'backend' 240 { (Invoke-RestMethod "$be/api/system/info" -TimeoutSec 5) } $beProc), 1)
-    Set-Env 'BACKEND_URL' $be; Set-Env 'JOURNAL_FRONTEND_PORT' "$fePort"; Set-Env 'JOURNAL_HTTP_HOST' '127.0.0.1'
-    $feProc = Start-Proc 'frontend' $java ($feOpts + @('-jar', $feJar))
-    $fe = "http://127.0.0.1:$fePort"
-    $summary.frontendStartSec = [math]::Round((Wait-Until 'frontend' 240 { (Invoke-WebRequest "$fe/" -UseBasicParsing -TimeoutSec 5).StatusCode -eq 200 } $feProc), 1)
     $info = Api GET '/api/system/info'
     Assert-That ($info.profile -eq 'lite-cloud') "profile is '$($info.profile)', expected lite-cloud"
     Assert-That ($info.cloudMode -eq $true) 'cloudMode is not true'
-    Ok "backend $($summary.backendStartSec) s, frontend $($summary.frontendStartSec) s; profile=$($info.profile) cloudMode=$($info.cloudMode) providers=$(($info.providers.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ',')"
+    Ok "backend $($summary.backendStartSec) s; profile=$($info.profile) cloudMode=$($info.cloudMode) providers=$(($info.providers.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ',')"
 
+    Assert-HtmlPages $be
     $browser = Find-Browser
     if ($browser) {
         $profileDir = Join-Path $tmp 'browser-profile'
-        $dom = & $browser --headless=new --disable-gpu --no-first-run "--user-data-dir=$profileDir" --virtual-time-budget=20000 --dump-dom "$fe/" 2>$null | Out-String
-        Assert-That ($dom -match 'Cloud-Modus ist aktiv|Cloud mode is active') 'frontend page does not show the cloud banner (headless browser DOM)'
-        Ok 'frontend renders the cloud banner'
+        $dom = & $browser --headless=new --disable-gpu --no-first-run "--user-data-dir=$profileDir" --virtual-time-budget=20000 --dump-dom "$be/" 2>$null | Out-String
+        Assert-That ($dom -match 'Cloud-Modus ist aktiv|Cloud mode is active') 'home page does not show the cloud banner (headless browser DOM)'
+        Ok 'home page renders the cloud banner'
     }
     else { Write-Host '    SKIPPED: no Edge/Chrome found, cloud banner not checked' -ForegroundColor Yellow }
 
@@ -190,10 +184,11 @@ try {
     Assert-That ($tts.StatusCode -eq 200 -and "$($tts.Headers['Content-Type'])" -like 'audio/*' -and $tts.Content.Length -gt 100) "tts answered $($tts.StatusCode) $($tts.Headers['Content-Type'])"
     Ok "tts: $($tts.Headers['Content-Type']), $($tts.Content.Length) bytes"
 
-    # ---------------------------------------------------------------- frontend sessions (memory realism) then (f) before delete
-    foreach ($route in '', 'settings', 'entries') { try { Invoke-WebRequest "$fe/$route" -UseBasicParsing -TimeoutSec 20 | Out-Null } catch { } }
+    # ---------------------------------------------------------------- render every page once (memory realism), then (f) before delete
+    foreach ($route in '', 'journal', "journal/$($entry.id)", "journal/$($entry.id)/reflect", 'memory', 'gym', 'weekly', 'settings') {
+        try { Invoke-WebRequest "$be/$route" -UseBasicParsing -TimeoutSec 60 | Out-Null } catch { Fail "GET /$route failed: $($_.Exception.Message)" }
+    }
     $summary.backendWorkingSetMb = Get-Mb $beProc.Process
-    $summary.frontendWorkingSetMb = Get-Mb $feProc.Process
 
     # ---------------------------------------------------------------- (e) export and delete
     Step '(e) export and delete-all'
@@ -209,11 +204,10 @@ try {
     Ok 'delete-all emptied the journal'
 
     # ---------------------------------------------------------------- (f) memory
-    Step '(f) memory of both JVMs'
-    Write-Host ("    backend  working set {0} MB (heap limit 128m)" -f $summary.backendWorkingSetMb)
-    Write-Host ("    frontend working set {0} MB (heap limit 160m)" -f $summary.frontendWorkingSetMb)
-    Write-Host ("    total    {0} MB  [Windows WorkingSet64, includes shared DLLs; PI.md budget of 750 MB is Linux RSS - indicative only]" -f ($summary.backendWorkingSetMb + $summary.frontendWorkingSetMb))
-    Write-Host ("    startup: backend {0} s, frontend {1} s" -f $summary.backendStartSec, $summary.frontendStartSec)
+    Step '(f) memory of the single JVM'
+    Write-Host ("    backend (API + pages) working set {0} MB (heap limit 128m)" -f $summary.backendWorkingSetMb)
+    Write-Host ("    [Windows WorkingSet64, includes shared DLLs; the PI.md budget is Linux RSS - indicative only]")
+    Write-Host ("    startup: {0} s" -f $summary.backendStartSec)
     Write-Host '==> smoke-lite OK' -ForegroundColor Green
 }
 finally {

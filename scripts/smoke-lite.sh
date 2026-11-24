@@ -9,8 +9,8 @@ TMP="$(mktemp -d)"; mkdir -p "$TMP/h2" "$TMP/audio" "$TMP/tts-cache"
 PHRASE=I_UNDERSTAND_DATA_LEAVES_THIS_DEVICE
 JAVA="$(java_bin)"
 COMMON="-XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=32m -XX:TieredStopAtLevel=1 -XX:MaxDirectMemorySize=32m -Xms32m"
-BE_OPTS="-Xmx128m -XX:MaxMetaspaceSize=96m $COMMON"; FE_OPTS="-Xmx160m -XX:MaxMetaspaceSize=128m $COMMON"
-BE_JAR="$ROOT/backend/target/lite-app/quarkus-run.jar"; FE_JAR="$ROOT/frontend/target/app.jar"
+BE_OPTS="-Xmx128m -XX:MaxMetaspaceSize=96m $COMMON"
+BE_JAR="$ROOT/backend/target/lite-app/quarkus-run.jar"
 free_port() { python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1])'; }
 PIDS=""
 cleanup() { echo "==> cleanup"; for p in $PIDS; do kill "$p" 2>/dev/null || true; done; sleep 1; rm -rf "$TMP"; }
@@ -18,7 +18,7 @@ trap cleanup EXIT
 fail() { echo "SMOKE FAILED: $*" >&2; exit 1; }
 wait_for() { i=0; while [ "$i" -lt "$2" ]; do curl -fsS -o /dev/null "$1" 2>/dev/null && return 0; i=$((i + 1)); sleep 1; done; fail "not ready: $1"; }
 if [ "${1:-}" != "--skip-build" ]; then echo "==> build-lite"; sh "$ROOT/scripts/build-lite.sh"; fi
-need_file "$BE_JAR" "Run scripts/build-lite.sh first."; need_file "$FE_JAR" "Run scripts/build-lite.sh first."
+need_file "$BE_JAR" "Run scripts/build-lite.sh first."
 cd "$ROOT"
 
 MOCK_PORT="$(free_port)"
@@ -26,7 +26,7 @@ node scripts/mock-openai/server.mjs --port "$MOCK_PORT" >"$TMP/mock.log" 2>&1 & 
 wait_for_mock() { i=0; while [ "$i" -lt 20 ]; do grep -q MOCK_OPENAI_LISTENING "$TMP/mock.log" && return 0; i=$((i + 1)); sleep 1; done; fail "mock not ready"; }
 wait_for_mock
 
-clean_env() { unset OPENAI_API_KEY JOURNAL_CLOUD_CONSENT JOURNAL_HTTP_PORT JOURNAL_HTTP_HOST BACKEND_URL JOURNAL_FRONTEND_PORT; }
+clean_env() { unset OPENAI_API_KEY JOURNAL_CLOUD_CONSENT JOURNAL_HTTP_PORT JOURNAL_HTTP_HOST; }
 lite_env() {
   export QUARKUS_PROFILE=lite-cloud JOURNAL_OPENAI_BASE_URL="http://127.0.0.1:$MOCK_PORT/v1"
   export JOURNAL_DB_URL="jdbc:h2:file:$TMP/h2/journal;DB_CLOSE_ON_EXIT=FALSE"
@@ -44,19 +44,18 @@ clean_env; lite_env; export JOURNAL_CLOUD_CONSENT="$PHRASE" JOURNAL_HTTP_PORT="$
 if timeout 120 "$JAVA" $BE_OPTS -jar "$BE_JAR" >"$TMP/refuse2.log" 2>&1; then fail "backend started without key"; fi
 grep -q OPENAI_API_KEY "$TMP/refuse2.log" || fail "no key message"
 
-echo "==> (b) start backend + frontend"
+echo "==> (b) start the backend"
 clean_env; lite_env; export OPENAI_API_KEY=sk-smoke-dummy JOURNAL_CLOUD_CONSENT="$PHRASE"
-BE_PORT="$(free_port)"; FE_PORT="$(free_port)"; BE="http://127.0.0.1:$BE_PORT"; FE="http://127.0.0.1:$FE_PORT"
+BE_PORT="$(free_port)"; BE="http://127.0.0.1:$BE_PORT"
 JOURNAL_HTTP_PORT="$BE_PORT" "$JAVA" $BE_OPTS -jar "$BE_JAR" >"$TMP/backend.log" 2>&1 & BE_PID=$!; PIDS="$PIDS $BE_PID"
 wait_for "$BE/api/system/info" 240
-BACKEND_URL="$BE" JOURNAL_FRONTEND_PORT="$FE_PORT" JOURNAL_HTTP_HOST=127.0.0.1 "$JAVA" $FE_OPTS -jar "$FE_JAR" >"$TMP/frontend.log" 2>&1 & FE_PID=$!; PIDS="$PIDS $FE_PID"
-wait_for "$FE/" 240
 INFO="$(curl -fsS "$BE/api/system/info")"
 echo "$INFO" | grep -q '"profile":"lite-cloud"' || fail "profile not lite-cloud"
 echo "$INFO" | grep -q '"cloudMode":true' || fail "cloudMode not true"
+assert_html_pages "$BE"
 BROWSER="$(command -v chromium || command -v chromium-browser || command -v google-chrome || command -v microsoft-edge || true)"
 if [ -n "$BROWSER" ]; then
-  "$BROWSER" --headless=new --disable-gpu --no-sandbox "--user-data-dir=$TMP/browser" --virtual-time-budget=20000 --dump-dom "$FE/" 2>/dev/null | grep -Eq 'Cloud-Modus ist aktiv|Cloud mode is active' || fail "no cloud banner"
+  "$BROWSER" --headless=new --disable-gpu --no-sandbox "--user-data-dir=$TMP/browser" --virtual-time-budget=20000 --dump-dom "$BE/" 2>/dev/null | grep -Eq 'Cloud-Modus ist aktiv|Cloud mode is active' || fail "no cloud banner"
 else echo "    SKIPPED: no browser, cloud banner not checked"; fi
 
 echo "==> (c) AI features"
@@ -84,6 +83,6 @@ unzip -l "$TMP/export.zip" | grep -q entries.json || fail "no entries.json"
 post /api/data/delete-all '{"confirmation":"DELETE EVERYTHING"}' >/dev/null
 curl -fsS "$BE/api/entries" | grep -q '"total":0' || fail "journal not empty"
 
-echo "==> (f) RSS (Linux VmRSS)"
-for p in "$BE_PID:backend" "$FE_PID:frontend"; do grep VmRSS "/proc/${p%%:*}/status" 2>/dev/null | sed "s/^/    ${p##*:} /" || true; done
+echo "==> (f) RSS of the single JVM (Linux VmRSS)"
+grep VmRSS "/proc/$BE_PID/status" 2>/dev/null | sed "s/^/    backend /" || true
 echo "==> smoke-lite OK"

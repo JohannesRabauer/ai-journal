@@ -45,3 +45,21 @@ function Assert-File {
     param([string]$Path, [string]$Hint)
     if (-not (Test-Path $Path)) { throw "Missing $Path. $Hint" }
 }
+
+function Assert-HtmlPages {
+    # Smoke check of the server-rendered pages (D-033): 200, text/html, the expected h1 and the Content-Security-Policy
+    # header. Asks for English (Accept-Language) so the h1 texts are known. $Base is e.g. http://127.0.0.1:8080
+    param([string]$Base)
+    $pages = @(
+        @{ Path = '/'; H1 = '<h1[^>]*>\s*\S' },
+        @{ Path = '/journal'; H1 = '<h1[^>]*>\s*Journal\s*</h1>' },
+        @{ Path = '/settings'; H1 = '<h1[^>]*>\s*Settings\s*</h1>' })
+    foreach ($p in $pages) {
+        $r = Invoke-WebRequest -Uri "$Base$($p.Path)" -UseBasicParsing -TimeoutSec 60 -Headers @{ 'Accept-Language' = 'en' }
+        if ($r.StatusCode -ne 200) { throw "SMOKE FAILED: $($p.Path) answered $($r.StatusCode)" }
+        if ("$($r.Headers['Content-Type'])" -notlike 'text/html*') { throw "SMOKE FAILED: $($p.Path) is not text/html ($($r.Headers['Content-Type']))" }
+        if ($r.Content -notmatch $p.H1) { throw "SMOKE FAILED: $($p.Path) has no matching h1 ($($p.H1))" }
+        if ("$($r.Headers['Content-Security-Policy'])" -notmatch "default-src 'self'") { throw "SMOKE FAILED: $($p.Path) has no Content-Security-Policy header" }
+        Write-Host "    ok: GET $($p.Path) -> 200 text/html, h1, CSP"
+    }
+}

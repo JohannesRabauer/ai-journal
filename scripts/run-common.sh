@@ -46,3 +46,20 @@ mvn_run() {
 need_file() {
   [ -f "$1" ] || { echo "Missing $1. $2" >&2; exit 1; }
 }
+
+# assert_html_pages BASE_URL: smoke check of the server-rendered pages (D-033): 200, text/html, expected h1 and the
+# Content-Security-Policy header. Asks for English so the h1 texts are known.
+assert_html_pages() {
+  _base="$1"
+  for _spec in '/|<h1[^>]*>[[:space:]]*[^[:space:]]' '/journal|<h1[^>]*>[[:space:]]*Journal[[:space:]]*</h1>' '/settings|<h1[^>]*>[[:space:]]*Settings[[:space:]]*</h1>'; do
+    _path="${_spec%%|*}"; _h1="${_spec#*|}"
+    _hdr="$(mktemp)"; _body="$(mktemp)"
+    _code="$(curl -sS -H 'Accept-Language: en' -D "$_hdr" -o "$_body" -w '%{http_code}' "$_base$_path")"
+    [ "$_code" = "200" ] || { echo "SMOKE FAILED: $_path answered $_code" >&2; exit 1; }
+    grep -qi '^content-type: text/html' "$_hdr" || { echo "SMOKE FAILED: $_path is not text/html" >&2; exit 1; }
+    grep -qi "^content-security-policy:.*default-src 'self'" "$_hdr" || { echo "SMOKE FAILED: $_path has no Content-Security-Policy header" >&2; exit 1; }
+    grep -Eq "$_h1" "$_body" || { echo "SMOKE FAILED: $_path has no matching h1" >&2; exit 1; }
+    rm -f "$_hdr" "$_body"
+    echo "    ok: GET $_path -> 200 text/html, h1, CSP"
+  done
+}
