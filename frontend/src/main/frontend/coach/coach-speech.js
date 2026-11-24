@@ -1,0 +1,111 @@
+// <diary-coach-speech>: invisible helper of the coach screen. Plays coach questions through the same-origin TTS
+// proxy (one at a time, never while a recording is active), owns the polite live region that announces new
+// questions, and moves focus to the answer field once nothing is recording. It never creates content itself:
+// Java calls enqueue/play/announce only as a reaction to the user's own action (SPEC 5.8).
+// Attributes: labels (JSON: stop, playing), tts-url (default /upload/tts).
+// Events: speech-state {playingId, loadingId, queued} (bubbling, composed).
+
+import { createPlaybackQueue } from './playback-queue.js';
+import { pageGuard } from './page-guard.js';
+
+const TEMPLATE = `
+<style>
+  :host { display: block; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  button { font: inherit; min-height: 44px; padding: 0 1rem; border-radius: 22px; cursor: pointer;
+           border: 1px solid var(--lumo-contrast-60pct, #777); background: var(--lumo-base-color, #fff);
+           color: var(--lumo-body-text-color, #1b1b1b); }
+  button:focus-visible { outline: 3px solid var(--lumo-primary-color, #2c5f66); outline-offset: 2px; }
+  button[hidden] { display: none; }
+</style>
+<div class="sr" role="status" aria-live="polite" aria-atomic="true" id="live"></div>
+<button type="button" id="stop" hidden></button>`;
+
+export class DiaryCoachSpeech extends HTMLElement {
+  #queue;
+  #guard;
+  #labels = { stop: 'Stop audio' };
+
+  connectedCallback() {
+    if (this.shadowRoot) {
+      return;
+    }
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = TEMPLATE;
+    try {
+      this.#labels = { ...this.#labels, ...JSON.parse(this.getAttribute('labels') ?? '{}') };
+    } catch {
+      // keep defaults
+    }
+    this.live = root.querySelector('#live');
+    this.stopButton = root.querySelector('#stop');
+    this.stopButton.textContent = this.#labels.stop;
+    this.stopButton.addEventListener('click', () => this.stop());
+
+    this.#guard = pageGuard();
+    this.#queue = createPlaybackQueue({
+      guard: this.#guard,
+      fetchAudio: (item) => this.#fetchAudio(item),
+      createAudio: (url) => new Audio(url),
+      objectUrl: { create: (blob) => URL.createObjectURL(blob), revoke: (url) => URL.revokeObjectURL(url) },
+      onChange: (state) => {
+        this.stopButton.hidden = !(state.playingId || state.loadingId || state.queued);
+        this.dispatchEvent(new CustomEvent('speech-state', { detail: state, bubbles: true, composed: true }));
+      },
+    });
+    window.addEventListener('pagehide', this.#onPageHide);
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('pagehide', this.#onPageHide);
+    this.#queue?.stop();
+    this.#guard?.cancelDeferred(this);
+  }
+
+  #onPageHide = () => this.#queue?.stop();
+
+  async #fetchAudio(item) {
+    const response = await fetch(this.getAttribute('tts-url') ?? '/upload/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: item.text, language: item.language, voice: item.voice ?? null }),
+    });
+    if (response.status !== 200) {
+      return null; // 204 (TTS off or failing) and any error: text only, silently
+    }
+    const blob = await response.blob();
+    return blob.size > 0 ? blob : null;
+  }
+
+  /** Queues a coach question for automatic playback (waits while a recording is active). */
+  enqueue(id, text, language, voice) {
+    return this.#queue?.enqueue({ id, text, language, voice }) ?? false;
+  }
+
+  /** The per-message play button. */
+  play(id, text, language, voice) {
+    return this.#queue?.playNow({ id, text, language, voice }) ?? false;
+  }
+
+  stop() {
+    this.#queue?.stop();
+  }
+
+  /** Polite announcement for screen readers; held back while a recording is active. */
+  announce(text) {
+    this.#guard?.whenIdle(`${this.localName}-announce`, () => {
+      this.live.textContent = '';
+      // Re-set on the next tick so the same text is announced again.
+      setTimeout(() => { this.live.textContent = text; }, 50);
+    });
+  }
+
+  /** Moves focus to `target` (the answer field) once nothing is recording. */
+  focusWhenIdle(target) {
+    this.#guard?.whenIdle(`${this.localName}-focus`, () => target?.focus?.());
+  }
+}
+
+if (!customElements.get('diary-coach-speech')) {
+  customElements.define('diary-coach-speech', DiaryCoachSpeech);
+}
