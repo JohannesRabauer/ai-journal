@@ -30,3 +30,10 @@ Orchestrator fixes after merge: D-016 (journal.* keys), D-018 route contract, D-
 Compose smoke (scripts/smoke-compose.ps1) green on main after the W1a/W1c/W1d/W1e merges: db+backend+frontend healthy, entry saved and listed, export ok, frontend 200.
 
 Wave 1 closed 2026-11-24: main green (180 backend, 77 frontend, 47 JS tests). Next: Wave 2 (W2a coach backend, W2b TTS, W2c coach UI).
+
+## Wave 2 — in progress (started 2026-11-24)
+| Worker | Branch | Worktree | Status |
+|---|---|---|---|
+| W2a coach backend + /api/transcribe | feat/w2a-coach | ../wt-w2a | running |
+| W2b TTS (Piper, OpenAI, cache) | feat/w2b-tts | ../wt-w2b | running |
+| W2c coach UI (voice answers, TTS, recording guard) | feat/w2c-coach-ui | ../wt-w2c | running |
