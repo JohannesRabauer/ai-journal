@@ -92,6 +92,13 @@ anyone on that network can then read your journal. Never expose the port to the 
 - [ ] `sudo systemctl kill -s KILL ai-diary-backend` : systemd restarts it (`Restart=on-failure`).
 - [ ] Reboot: both units come back.
 
+## Smoke test on a PC
+`scripts\smoke-lite.ps1` (`sh scripts/smoke-lite.sh`) builds the lite artifacts, starts both JVMs with the flags above against a
+mock OpenAI server (`scripts/mock-openai/server.mjs`, a dependency-free Node script that logs only method and path) in a
+throwaway data directory, and checks the refusal without consent/key, the cloud banner, the AI features, audio, export and
+delete-all. It prints the memory of both JVMs; on Windows that is the working set, not the Linux RSS the 750 MB budget refers to.
+Use `-SkipBuild` / `--skip-build` to reuse existing jars. It does not replace the checklist above on real hardware.
+
 ## Measurements
 
 ### Wave 0 spike (2026-11-23)

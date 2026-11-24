@@ -89,5 +89,10 @@ sh scripts/build-lite.sh && sh scripts/run-lite.sh
 - `scripts\verify.ps1` / `sh scripts/verify.sh`: build and all tests (no network after dependencies are cached, no Docker).
 - `scripts\smoke-compose.ps1` / `sh scripts/smoke-compose.sh`: opt-in Docker smoke test (builds the images, starts
   db, backend and frontend with fake providers in a throwaway project, then removes everything).
+- `scripts\smoke-plain.ps1` / `sh scripts/smoke-plain.sh`: opt-in smoke test of profile B (only Postgres in Docker, backend
+  and frontend via `run-backend`/`run-frontend` with fake providers; entry, export, delete-all).
+- `scripts\smoke-lite.ps1` / `sh scripts/smoke-lite.sh`: opt-in smoke test of profile C against a local mock of the OpenAI
+  API (`scripts/mock-openai`, Node 18+, nothing leaves your machine): consent/key refusal, cloud banner, coach, memory,
+  gym, weekly report, transcribe, TTS, export, delete-all, memory of both JVMs. The `.sh` mirrors are untested.
 - Docs: [PLAN](docs/PLAN.md), [DECISIONS](docs/DECISIONS.md), [CONVENTIONS](docs/CONVENTIONS.md),
   [CONFIG](docs/CONFIG.md), [PRIVACY](docs/PRIVACY.md), [PI](docs/PI.md).
