@@ -20,6 +20,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
@@ -307,6 +308,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         }
         attempt.setLabel(getTranslation("memory.review.answerLabel"));
         attempt.setHelperText(getTranslation("memory.review.answerHelper"));
+        attempt.setValueChangeMode(ValueChangeMode.EAGER); // Ctrl+Enter must see the text just typed
         attempt.setWidthFull();
         attempt.setMinHeight("6rem");
         attempt.setReadOnly(busy);
