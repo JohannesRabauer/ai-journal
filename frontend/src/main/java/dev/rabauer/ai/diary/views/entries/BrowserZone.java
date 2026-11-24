@@ -15,13 +15,23 @@ public final class BrowserZone {
 
     /** Ask the browser for its zone (async). Call when a view that creates entries is built. */
     public static void init(UI ui) {
-        if (ui == null || ComponentUtil.getData(ui, KEY) != null) {
+        init(ui, () -> { });
+    }
+
+    /** Like {@link #init(UI)}; {@code onKnown} runs on the UI thread once the zone is known (immediately if cached). */
+    public static void init(UI ui, Runnable onKnown) {
+        if (ui == null) {
+            return;
+        }
+        if (ComponentUtil.getData(ui, KEY) != null) {
+            onKnown.run();
             return;
         }
         ui.getPage().retrieveExtendedClientDetails(details -> {
             String id = details.getTimeZoneId();
             if (id != null) {
                 ComponentUtil.setData(ui, KEY, id);
+                onKnown.run();
             }
         });
     }

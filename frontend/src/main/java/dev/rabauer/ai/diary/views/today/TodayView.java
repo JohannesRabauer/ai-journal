@@ -86,6 +86,13 @@ public class TodayView extends VerticalLayout implements HasDynamicTitle {
     }
 
     @Override
+    protected void onAttach(com.vaadin.flow.component.AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        // Learn the browser time zone so new entries carry the user's local time; refresh "today" once known.
+        BrowserZone.init(attachEvent.getUI(), this::refreshToday);
+    }
+
+    @Override
     public String getPageTitle() {
         return getTranslation("entries.today.title");
     }
