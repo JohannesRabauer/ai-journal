@@ -24,6 +24,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import dev.rabauer.ai.diary.api.coach.AnswerRequest;
 import dev.rabauer.ai.diary.api.coach.CoachMessageDto;
 import dev.rabauer.ai.diary.api.coach.CoachMessageKind;
@@ -40,6 +41,7 @@ import dev.rabauer.ai.diary.client.EntriesClient;
 import dev.rabauer.ai.diary.client.SettingsClient;
 import dev.rabauer.ai.diary.coach.AnswerRecorder;
 import dev.rabauer.ai.diary.coach.CoachSpeech;
+import dev.rabauer.ai.diary.shell.DiaryIcons;
 import dev.rabauer.ai.diary.shell.MainLayout;
 import dev.rabauer.ai.diary.views.coach.CoachPresenter.Actions;
 import dev.rabauer.ai.diary.views.coach.CoachPresenter.AnswerDraft;
@@ -112,7 +114,8 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         this.coach = coach;
         this.settings = settings;
         addClassName("coach-view");
-        setMaxWidth("48rem");
+        setPadding(false);
+        addClassName("coach-page");
 
         speech = new CoachSpeech(Map.of("stop", getTranslation("coach.speech.stop")));
         recorder = new AnswerRecorder(voiceLabels());
@@ -223,8 +226,11 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         conversationBox.setVisible(false);
     }
 
-    private Component backLink() {
-        return EntryDetailView.link(getTranslation("coach.back"), entryId);
+    private RouterLink backLink() {
+        RouterLink link = EntryDetailView.link("", entryId);
+        link.addClassName("coach-back");
+        link.add(DiaryIcons.create("chevron-left"), new Span(getTranslation("coach.back")));
+        return link;
     }
 
     // ---- building the persistent parts
@@ -232,7 +238,9 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
     private void buildStartBox() {
         startButton.setText(getTranslation("coach.start.button"));
         startButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        startButton.setIcon(DiaryIcons.create("chat"));
         startButton.addClickListener(e -> startConversation());
+        startBox.addClassNames("diary-card", "coach-start");
         startBox.add(new H2(getTranslation("coach.start.title")),
                 new Paragraph(getTranslation("coach.start.text")), startButton);
     }
@@ -250,6 +258,8 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
         });
         send.setText(getTranslation("coach.answer.send"));
         send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        send.setIcon(DiaryIcons.create("send"));
+        send.addClassName("coach-send");
         send.addClickListener(e -> sendAnswer());
         // EAGER so Ctrl+Enter sends the text as typed (with ON_CHANGE the value is not yet synced; found in W3a's memory view)
         answer.setValueChangeMode(com.vaadin.flow.data.value.ValueChangeMode.EAGER);
@@ -263,7 +273,9 @@ public class CoachView extends VerticalLayout implements BeforeEnterObserver, Ha
             updateEnabled();
         });
         answerBox.addClassName("coach-answer");
-        answerBox.add(answer, recorder, send);
+        Div answerActions = new Div(recorder, send);
+        answerActions.addClassName("coach-answer__actions");
+        answerBox.add(answer, answerActions);
     }
 
     private Map<String, String> voiceLabels() {

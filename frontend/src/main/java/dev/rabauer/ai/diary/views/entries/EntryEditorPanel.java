@@ -70,6 +70,15 @@ public class EntryEditorPanel extends Composite<VerticalLayout> {
         return entry;
     }
 
+    /** Moves keyboard focus into the text area (the "Edit" action); false when the entry is not editable. */
+    public boolean focusEditor() {
+        if (editor == null) {
+            return false;
+        }
+        editor.textArea().focus();
+        return true;
+    }
+
     /** Saves pending text; true if nothing is left unsaved. */
     public boolean saveNow() {
         return editor == null || editor.save();

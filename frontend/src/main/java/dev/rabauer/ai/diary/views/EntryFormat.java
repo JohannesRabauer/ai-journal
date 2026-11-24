@@ -39,4 +39,29 @@ public final class EntryFormat {
         String first = text.strip().lines().findFirst().orElse("");
         return first.length() <= max ? first : first.substring(0, Math.max(0, max - 1)).stripTrailing() + "…";
     }
+
+    /**
+     * Heading for an entry detail page: the first sentence of the text (at most 80 characters), otherwise the first
+     * words with an ellipsis. Empty when the text is blank (the caller shows its "Entry" fallback).
+     */
+    public static String heading(String text) {
+        String first = preview(text, Integer.MAX_VALUE);
+        if (first.isEmpty()) {
+            return "";
+        }
+        for (int i = 0; i < first.length() && i < 80; i++) {
+            char c = first.charAt(i);
+            if ((c == '.' || c == '!' || c == '?') && (i + 1 == first.length() || Character.isWhitespace(first.charAt(i + 1)))) {
+                String sentence = first.substring(0, c == '.' ? i : i + 1).strip();
+                if (!sentence.isEmpty()) {
+                    return sentence;
+                }
+            }
+        }
+        if (first.length() <= 60) {
+            return first;
+        }
+        int cut = first.lastIndexOf(' ', 60);
+        return first.substring(0, cut > 20 ? cut : 60).stripTrailing() + "…";
+    }
 }

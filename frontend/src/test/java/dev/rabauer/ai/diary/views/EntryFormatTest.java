@@ -31,4 +31,15 @@ class EntryFormatTest {
         assertThat(EntryFormat.preview("abcdefghij", 5)).isEqualTo("abcd…");
         assertThat(EntryFormat.preview(null, 5)).isEmpty();
     }
+
+    @Test
+    void headingIsFirstSentenceOrShortenedFirstLine() {
+        assertThat(EntryFormat.heading("Couldn't sleep past six. I keep replaying it.")).isEqualTo("Couldn't sleep past six");
+        assertThat(EntryFormat.heading("Was it fine?\nsecond line")).isEqualTo("Was it fine?");
+        assertThat(EntryFormat.heading("  ")).isEmpty();
+        assertThat(EntryFormat.heading(null)).isEmpty();
+        String longLine = "word ".repeat(40);
+        String h = EntryFormat.heading(longLine);
+        assertThat(h).endsWith("…").hasSizeLessThanOrEqualTo(62);
+    }
 }
