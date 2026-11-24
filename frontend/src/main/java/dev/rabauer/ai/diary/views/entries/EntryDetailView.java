@@ -23,15 +23,17 @@ import dev.rabauer.ai.diary.api.audio.RecordingStatus;
 import dev.rabauer.ai.diary.api.common.Language;
 import dev.rabauer.ai.diary.api.entry.EntryDto;
 import dev.rabauer.ai.diary.api.entry.EntrySource;
+import dev.rabauer.ai.diary.api.entry.EntryStatus;
 import dev.rabauer.ai.diary.client.BackendException;
 import dev.rabauer.ai.diary.client.EntriesClient;
 import dev.rabauer.ai.diary.client.RecordingsClient;
 import dev.rabauer.ai.diary.client.TranscriptionsClient;
 import dev.rabauer.ai.diary.shell.MainLayout;
+import dev.rabauer.ai.diary.views.coach.CoachView;
 
 /**
  * Entry detail: text edit with autosave, audio playback through the proxy, delete audio / delete entry (with
- * confirmation), finish. "Reflect" is a disabled placeholder until the coach exists (Wave 2).
+ * confirmation), finish. "Reflect" opens the coach for finished entries.
  */
 @Route(value = "entries/:id", layout = MainLayout.class)
 public class EntryDetailView extends VerticalLayout implements BeforeEnterObserver, HasDynamicTitle {
@@ -128,10 +130,17 @@ public class EntryDetailView extends VerticalLayout implements BeforeEnterObserv
         }
 
         HorizontalLayout footer = new HorizontalLayout();
-        Button reflect = new Button(getTranslation("entries.reflect"));
-        reflect.setEnabled(false);
-        reflect.getElement().setAttribute("title", getTranslation("entries.reflect.soon"));
+        boolean finished = entry.status() == EntryStatus.FINISHED;
+        Button reflect = new Button(getTranslation(entry.hasCoachConversation() ? "coach.entry.reflect.open" : "entries.reflect"),
+                e -> UI.getCurrent().navigate(CoachView.class, new RouteParameters("id", String.valueOf(entry.id()))));
+        reflect.setEnabled(finished);
+        if (!finished) {
+            reflect.getElement().setAttribute("title", getTranslation("coach.notFinished"));
+        }
         footer.add(reflect);
+        if (finished && entry.hasCoachConversation()) {
+            footer.add(new Span(getTranslation("coach.entry.hasConversation")));
+        }
         if (actions.deleteEntry()) {
             Button delete = new Button(getTranslation("entries.delete"),
                     e -> confirm("entries.delete.title", "entries.delete.text", "entries.delete", () -> deleteEntry(entry)));

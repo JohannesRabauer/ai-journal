@@ -1,0 +1,24 @@
+/* Coach screen. Calm, text first, theme tokens only (docs/DESIGN.md). No animation except what reduced motion allows. */
+.coach-view { gap: 1rem; }
+.coach-status { color: var(--diary-muted, #575d64); margin: 0; }
+.coach-transcript { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.coach-message { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-rule, #e3dfd8);
+  background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
+.coach-message--user { margin-left: 1.5rem; background: var(--diary-bg, #faf8f5); }
+.coach-message--explanation { border-style: dashed; border-color: var(--diary-border, #8a8f94); }
+.coach-message__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; color: var(--diary-muted, #575d64);
+  font-size: var(--lumo-font-size-s, .875rem); }
+.coach-message__speaker { font-weight: 600; color: var(--diary-text, #1f2328); }
+.coach-message__body { margin: .35rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.coach-message__actions { margin-top: .25rem; }
+.coach-current { padding: 1rem 1.25rem; border-radius: 12px; border: 2px solid var(--diary-accent, #2c5f66);
+  background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
+.coach-current h3 { margin: 0 0 .35rem; font-size: var(--lumo-font-size-s, .875rem); font-weight: 600; color: var(--diary-muted, #575d64); }
+.coach-current p { margin: 0; font-size: 1.2rem; line-height: 1.5; overflow-wrap: anywhere; }
+.coach-thinking { color: var(--diary-muted, #575d64); padding: .5rem 0; }
+.coach-error { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-error, #a4262c);
+  color: var(--diary-error, #a4262c); background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
+.coach-error p { margin: 0 0 .5rem; }
+.coach-answer { display: flex; flex-direction: column; gap: .75rem; max-width: var(--diary-measure, 65ch); }
+.coach-answer vaadin-text-area { width: 100%; }
+.coach-controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
