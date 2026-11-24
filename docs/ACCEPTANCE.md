@@ -61,6 +61,9 @@ issues. All were fixed on `fix/w4c-security` (decision D-031); details of each f
 | M1 races keep deleted text; M2 export temp file | purge generation + existence re-checks in indexer and weekly store; export streams without a temp file, startup sweep | `EntryIndexerRaceTest`, `WeeklyReportRaceTest`, `ExportDownloadTest` |
 | L1–L11 | prompt closing tags neutralised, legacy `diary` exported and both vector tables cleared, audio MIME allowlist, anti-framing headers, no model downloads on every start, AI ports unpublished, images pinned, Pi frontend without the API key, docs corrected, placeholder DB password rejected | named tests per fix in the W4c commits; `docker compose config` valid for default, cpu+tts, gpu+tts |
 
+Pinned images (L8) built and run together: PostgreSQL 17.12 with pgvector 0.8.7, Java 25.0.3 runtime, backend as uid 1001;
+entry saved and listed, frontend 200 with the anti-framing headers, `/upload` without the header 403.
+
 Whisper offline start (L6) verified on the real image: the entrypoint logs "cached, not contacting Hugging Face",
 transcription of a German sample works, and works again after a restart.
 

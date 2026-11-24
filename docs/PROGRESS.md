@@ -57,4 +57,7 @@ Wave 3 closed: main green (405 backend, 170 frontend, 88 JS tests). All twelve a
 | W4a e2e smoke: profile B (plain Java) + lite-cloud with mocked OpenAI | feat/w4a-e2e | ../wt-w4a | merged (both smoke tests green; lite working set 390 MB on Windows) |
 | W4b accessibility pass (keyboard, a11y tree, reduced motion; no axe) | feat/w4b-a11y | ../wt-w4b | merged (9 defect classes fixed, docs/A11Y.md) |
 | Security/privacy review (read-only, independent) | – | main | done: 1 critical (cross-site writes), 1 high (DNS rebinding), 3 medium, 11 low |
-| W4c security fixes for the review | fix/w4c-security | ../wt-w4c | running |
+| W4c security fixes for the review | fix/w4c-security | ../wt-w4c | merged and verified on a real backend + browser |
+
+## Wave 4 — done 2026-11-24
+Main green (425 backend, 183 frontend, 91 JS tests). All twelve acceptance criteria pass (docs/ACCEPTANCE.md). Open items are hardware/owner decisions only (real Pi, real microphone, screen reader, model size).
