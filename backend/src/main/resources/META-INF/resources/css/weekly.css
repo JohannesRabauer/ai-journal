@@ -1,0 +1,62 @@
+/* Weekly reflection page. Calm, text first, theme tokens only (docs/DESIGN.md). No charts, no counters, no animation.
+   Ported from the Vaadin frontend. */
+.weekly-view { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; max-width: 48rem; }
+.weekly-view h1, .weekly-view h2, .weekly-view p { margin-top: 0; }
+.weekly-muted { color: var(--diary-muted); margin: 0; }
+.weekly-lead { color: var(--diary-muted); margin: 0 0 .5rem; max-width: var(--diary-measure); }
+.weekly-status { color: var(--diary-muted); margin: 0; }
+.weekly-status:empty { display: none; }
+
+/* Header: previous / eyebrow date range + h1 / next */
+.weekly-header { display: flex; align-items: center; gap: .5rem; }
+.weekly-heading { flex: 1; min-width: 0; }
+.weekly-range { margin: 0; }
+.weekly-view h1.weekly-title { margin: 0; }
+.weekly-title:focus { outline: none; }
+.weekly-nav-button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; padding: 0; flex: none; }
+.weekly-nav-button .diary-icon { width: 1.25rem; height: 1.25rem; }
+span.weekly-nav-button { visibility: hidden; }
+
+.weekly-picker { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; }
+.weekly-picker .diary-field { flex: 1 1 16rem; }
+
+.weekly-empty { max-width: var(--diary-measure); display: flex; flex-direction: column; gap: .75rem; align-items: flex-start; }
+.weekly-empty p { margin: 0; }
+
+/* Report as a calm article */
+.weekly-section { margin-top: 1.5rem; max-width: var(--diary-measure); }
+.weekly-article .weekly-section:has(.weekly-themes) { max-width: none; }
+.weekly-section h2 { font-size: 1.25rem; font-weight: 650; margin: 0 0 .5rem; }
+.weekly-themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; margin: .5rem 0 0; }
+.weekly-theme { padding: 1.1rem 1.2rem; border-top: 3px solid var(--diary-accent); min-width: 0; }
+.weekly-theme__title { display: block; font-weight: 650; font-size: 1.1rem; margin-bottom: .35rem; overflow-wrap: anywhere; }
+.weekly-theme p { margin: .25rem 0; color: var(--diary-muted); overflow-wrap: anywhere; }
+.weekly-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--diary-muted); font-size: .875rem; margin-top: .5rem; }
+.weekly-quote { margin: 1rem 0 .25rem; padding: .25rem 0 .25rem 1rem; border-left: 3px solid var(--diary-accent);
+  font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.weekly-quote__source { font-size: .875rem; padding-left: 1rem; margin-bottom: .75rem; }
+.weekly-list { margin: 0; padding-left: 1.25rem; }
+.weekly-list li { margin-bottom: .35rem; overflow-wrap: anywhere; }
+.weekly-question { font-size: 1.15rem; line-height: 1.5; overflow-wrap: anywhere; margin: 0; }
+.weekly-entry-link { display: inline-block; min-height: 2.75rem; line-height: 2.75rem; }
+.weekly-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; margin-top: 2rem; padding-top: 1rem;
+  border-top: 1px solid var(--diary-rule); }
+
+/* "Create again" and "Delete" confirm without JavaScript in a details box; with JavaScript the summary opens a dialog */
+.weekly-confirm > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; }
+.weekly-confirm > summary::-webkit-details-marker { display: none; }
+.weekly-confirm__body { margin-top: .5rem; padding: .75rem 1rem; border: 1px solid var(--diary-rule); border-radius: var(--diary-radius-md);
+  background: var(--diary-surface); max-width: 22rem; }
+.weekly-confirm__body p { margin: 0 0 .75rem; }
+
+.weekly-editor { display: flex; flex-direction: column; gap: .5rem; }
+.weekly-edit-item { display: flex; flex-direction: column; gap: .5rem; align-items: stretch; margin-bottom: 1rem; }
+.weekly-counters { display: flex; flex-wrap: wrap; gap: 1rem; }
+.weekly-counters .diary-field { width: 10rem; }
+
+/* Past weeks as cards */
+.weekly-history { margin-top: 2rem; }
+.weekly-history h2 { margin-top: 0; font-size: 1.25rem; }
+.weekly-history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; max-width: var(--diary-measure); }
+.weekly-history-item { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .75rem; padding: .5rem .75rem; }
+.weekly-history-item a[aria-current='true'] { color: var(--diary-accent); font-weight: 700; text-decoration: underline; }
