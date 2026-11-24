@@ -12,8 +12,11 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class BackendClientConfig {
 
+    /** The backend requires this header on every non-GET request (CSRF guard). */
+    public static final String WRITE_GUARD_HEADER = "X-AI-Diary";
+
     @Bean
     RestClient backendRestClient(RestClient.Builder builder, @Value("${backend.url}") String backendUrl) {
-        return builder.baseUrl(backendUrl).build();
+        return builder.baseUrl(backendUrl).defaultHeader(WRITE_GUARD_HEADER, "1").build();
     }
 }

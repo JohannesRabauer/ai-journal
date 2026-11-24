@@ -1,5 +1,6 @@
 package dev.rabauer.ai.diary.coach;
 
+import dev.rabauer.ai.diary.client.BackendClientConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -68,6 +69,7 @@ public class CoachProxyController {
                         return b.build();
                     })
                     .headers(h -> {
+                        h.set(BackendClientConfig.WRITE_GUARD_HEADER, "1");
                         for (String name : REQUEST_HEADERS) {
                             String value = request.getHeader(name);
                             if (value != null) {

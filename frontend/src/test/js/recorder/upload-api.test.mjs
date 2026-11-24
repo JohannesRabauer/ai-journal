@@ -30,6 +30,7 @@ test('requests go to the same-origin proxy with the right shape', async () => {
     ['GET', '/upload/recordings/abc'],
     ['POST', '/upload/recordings/abc/complete'],
   ]);
+  assert.ok(calls.every((c) => c.headers['X-AI-Diary'] === '1'), 'every request carries the write-guard header');
   assert.equal(JSON.parse(calls[0].body).language, 'DE');
   assert.equal(calls[1].body, blob);
   assert.equal(calls[1].headers['Content-Type'], 'application/octet-stream');

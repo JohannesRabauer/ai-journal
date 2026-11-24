@@ -22,7 +22,8 @@ export function isRetryableStatus(status) {
 
 export function createUploadApi({ fetch, baseUrl = '/upload/recordings' }) {
   async function call(method, path, { json, body, contentType } = {}) {
-    const headers = { Accept: 'application/json' };
+    // X-AI-Diary: non-safelisted header; makes cross-site writes impossible (the servers require it for non-GET).
+    const headers = { Accept: 'application/json', 'X-AI-Diary': '1' };
     let payload = body;
     if (json !== undefined) {
       headers['Content-Type'] = 'application/json';

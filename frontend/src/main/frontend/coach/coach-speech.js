@@ -73,7 +73,7 @@ export class DiaryCoachSpeech extends HTMLElement {
   async #fetchAudio(item) {
     const response = await fetch(this.getAttribute('tts-url') ?? '/upload/tts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-AI-Diary': '1' },
       body: JSON.stringify({ text: item.text, language: item.language, voice: item.voice ?? null }),
     });
     if (response.status !== 200) {
