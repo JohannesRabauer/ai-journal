@@ -1,0 +1,113 @@
+{#include base}
+{#title}{t.get('gym.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/forms.css"><link rel="stylesheet" href="/css/gym.css">{/head}
+<div class="gym-view" id="gym-root" data-lang="{v.lang}" data-llm="{v.llm}"
+     data-preparing="{t.get('gym.preparing')}" data-saving="{t.get('gym.saving')}" data-feedback-working="{t.get('gym.feedback.working')}"
+     data-retry="{t.get('gym.retry')}" data-timer-show="{t.get('gym.timer.show')}" data-timer-hide="{t.get('gym.timer.hide')}"
+     data-meta="{t.get('gym.meta')}" data-source-personalized="{t.get('gym.source.personalized')}" data-source-template="{t.get('gym.source.template')}"
+     data-err-unreachable="{t.get('gym.error.unreachable')}" data-err-aiunavailable="{t.get('gym.error.aiUnavailable')}"
+     data-err-aiinvalid="{t.get('gym.error.aiInvalid')}" data-err-answerempty="{t.get('gym.error.answerEmpty')}"
+     data-err-answertoolong="{t.get('gym.error.answerTooLong')}" data-err-notfound="{t.get('gym.error.notFound')}"
+     data-err-unavailable="{t.get('gym.error.unavailable')}"
+     {#for c in v.categories}data-cat-{c.attr}="{c.name}" {/for}>
+  <h1>{t.get('gym.title')}</h1>
+  <p class="diary-muted">{t.get('gym.intro')}</p>
+  <noscript><p class="diary-flash">{t.get('gym.noscript')}</p></noscript>
+  <p class="gym-status" id="gym-status" role="status"></p>
+  <div class="diary-problem gym-error" id="gym-error" role="alert"></div>
+
+  <section class="gym-pick" id="gym-pick" aria-labelledby="gym-pick-title">
+    <h2 id="gym-pick-title">{t.get('gym.pick.title')}</h2>
+    <div class="gym-categories" role="group" aria-label="{t.get('gym.pick.categoriesLabel')}">
+      {#for c in v.categories}
+      <button type="button" class="gym-card diary-card" data-category="{c.code}"><span class="gym-card__title">{c.name}</span><span class="gym-card__text">{c.description}</span></button>
+      {/for}
+    </div>
+    <button type="button" class="diary-button diary-button-primary gym-surprise" data-category="">{#icon 'sparkle' /}<span>{t.get('gym.pick.any')}</span></button>
+    <p class="diary-muted">{t.get('gym.pick.anyHelp')}</p>
+  </section>
+
+  <section class="gym-exercise" id="gym-exercise" aria-label="{t.get('gym.title')}" hidden></section>
+
+  <section class="gym-history" id="gym-history" aria-labelledby="gym-history-title">
+    <h2 id="gym-history-title">{t.get('gym.history.title')}</h2>
+    <form class="gym-filter" method="get" action="/gym">
+      <div class="diary-field">
+        <label for="gym-filter">{t.get('gym.history.filter')}</label>
+        <select class="diary-input" id="gym-filter" name="category">
+          {#for o in v.filter}<option value="{o.value}"{#if o.selected} selected{/if}>{o.label}</option>{/for}
+        </select>
+      </div>
+      <button type="submit" class="diary-button" id="gym-filter-go">{t.get('gym.history.apply')}</button>
+    </form>
+    <div class="gym-history__list">
+      {#if v.history.isEmpty}<p class="diary-muted">{t.get('gym.history.empty')}</p>{/if}
+      {#for a in v.history}
+      <details class="gym-history__item diary-card">
+        <summary>
+          <span class="gym-history__head"><span>{a.when}</span><span>{a.category}</span><span>{a.duration}</span></span>
+          <span class="gym-history__snippet">{a.snippet}</span>
+        </summary>
+        <div class="gym-history__body">
+          {#if a.exerciseTitle}<p>{t.get('gym.history.exercise')}: {a.exerciseTitle}</p>{/if}
+          <p class="gym-label">{t.get('gym.history.answer')}</p>
+          <p class="gym-answer-text">{a.answer}</p>
+          {#if !a.questions.isEmpty}
+          <h3>{t.get('gym.feedback.title')}</h3>
+          <ol class="gym-questions">{#for q in a.questions}<li>{q}</li>{/for}</ol>
+          {/if}
+        </div>
+      </details>
+      {/for}
+    </div>
+    {#if v.hasMore}<a class="diary-button gym-history__more" href="{v.moreHref}">{t.get('gym.history.more')}</a>{/if}
+  </section>
+
+  <template id="gym-tpl-exercise">
+    <button type="button" class="diary-button diary-button-quiet" data-ref="back">{t.get('gym.back')}</button>
+    <h2 tabindex="-1" data-ref="title"></h2>
+    <p class="gym-meta"><span data-ref="category"></span><span data-ref="minutes"></span><span data-ref="source"></span></p>
+    <p class="gym-prompt diary-card" data-ref="prompt"></p>
+    <div class="gym-source" role="group" aria-label="{t.get('gym.source.label')}" data-ref="sourceBox" hidden>
+      <span class="gym-source__label">{t.get('gym.source.label')}</span>
+      <blockquote data-ref="excerpt"></blockquote>
+      <a data-ref="sourceLink" href="#" hidden>{t.get('gym.source.open')}</a>
+    </div>
+    <div role="group" aria-label="{t.get('gym.steps.label')}"><span class="gym-label">{t.get('gym.steps.label')}</span><ol class="gym-steps" data-ref="steps"></ol></div>
+    <div class="gym-timer">
+      <button type="button" class="diary-button diary-button-quiet" data-ref="timerToggle" aria-expanded="false">{t.get('gym.timer.show')}</button>
+      <div class="gym-timer__running" data-ref="timerBox" hidden>
+        <span>{t.get('gym.timer.label')}</span><span class="gym-timer__value" data-ref="timerValue">0:00</span><span class="diary-muted">{t.get('gym.timer.hint')}</span>
+      </div>
+    </div>
+    <div class="gym-answer">
+      <div class="diary-field">
+        <label for="gym-answer">{t.get('gym.answer.label')}</label>
+        <textarea class="diary-input" id="gym-answer" rows="8" maxlength="20000" aria-describedby="gym-answer-help" data-ref="answer"></textarea>
+        <span class="diary-help" id="gym-answer-help">{t.get('gym.answer.helper')}</span>
+      </div>
+      <div class="gym-actions">
+        <button type="button" class="diary-button diary-button-primary" data-ref="save">{t.get('gym.save')}</button>
+        <button type="button" class="diary-button diary-button-quiet" data-ref="another">{t.get('gym.another')}</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="gym-tpl-saved">
+    <h2 tabindex="-1" data-ref="message">{t.get('gym.saved')}</h2>
+    <div data-ref="feedbackAsk" hidden>
+      <p class="diary-muted">{t.get('gym.feedback.hint')}</p>
+      <button type="button" class="diary-button" data-ref="ask">{t.get('gym.feedback.ask')}</button>
+    </div>
+    <div class="gym-feedback" data-ref="feedbackBox" hidden>
+      <h3 tabindex="-1" data-ref="feedbackTitle">{t.get('gym.feedback.title')}</h3>
+      <ol class="gym-questions" data-ref="questions"></ol>
+    </div>
+    <div class="gym-actions">
+      <button type="button" class="diary-button diary-button-primary" data-ref="another">{t.get('gym.another')}</button>
+      <button type="button" class="diary-button diary-button-quiet" data-ref="back">{t.get('gym.back')}</button>
+    </div>
+  </template>
+</div>
+{#scripts}<script type="module" src="/js/gym.js"></script>{/scripts}
+{/include}

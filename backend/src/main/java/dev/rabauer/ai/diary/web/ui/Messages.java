@@ -12,7 +12,8 @@ import java.util.ResourceBundle;
  */
 public final class Messages {
 
-    private static final List<String> BUNDLES = List.of("i18n.shell", "i18n.entries", "i18n.today");
+    private static final List<String> BUNDLES = List.of("i18n.shell", "i18n.entries", "i18n.today", "i18n.memory",
+            "i18n.gym", "i18n.weekly", "i18n.settings");
 
     private final Locale locale;
     private final List<ResourceBundle> bundles;
@@ -54,6 +55,10 @@ public final class Messages {
 
     public String get(String key, Object a) {
         return new MessageFormat(get(key), locale).format(new Object[] {a});
+    }
+
+    public String get(String key, Object a, Object b, Object c) {
+        return new MessageFormat(get(key), locale).format(new Object[] {a, b, c});
     }
 
     public String get(String key, Object a, Object b) {

@@ -1,0 +1,133 @@
+{#include base}
+{#title}{t.get('settings.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/forms.css"><link rel="stylesheet" href="/css/settings.css">{/head}
+<div class="settings-view" id="settings-root"
+     data-saved="{t.get('settings.save.done')}" data-nothing="{t.get('settings.save.nothing')}"
+     data-error-prefix="{t.get('settings.error.prefix')}" data-error-unreachable="{t.get('settings.error.unreachable')}"
+     data-not-available="{t.get('settings.notAvailable')}"
+     data-err-empty="{t.get('settings.intervals.error.empty')}" data-err-format="{t.get('settings.intervals.error.format')}"
+     data-err-range="{v.rangeError}" data-err-order="{t.get('settings.intervals.error.order')}" data-err-count="{v.countError}"
+     data-export-started="{t.get('settings.export.started')}" data-delete-done="{t.get('settings.delete.done')}"
+     data-delete-result="{t.get('settings.delete.result')}" data-phrase="{v.phrase}">
+  <h1>{t.get('settings.title')}</h1>
+  <p class="diary-muted">{t.get('settings.intro')}</p>
+  <p class="diary-flash" id="settings-flash" role="status"{#if v.flash.error} data-kind="error"{/if}>{v.flash.text}</p>
+
+  <form class="settings-form" id="settings-form" method="post" action="/settings">
+    {#csrf /}
+    <section class="settings-card diary-card" aria-labelledby="settings-appearance">
+      <h2 id="settings-appearance">{t.get('settings.section.appearance')}</h2>
+      <div class="settings-fields diary-js-only" id="settings-theme" hidden>
+        <span class="settings-label" id="settings-theme-label">{t.get('settings.theme')}</span>
+        <div class="settings-seg" role="group" aria-labelledby="settings-theme-label">
+          <button type="button" data-theme-mode="system" aria-pressed="false">{#icon 'cog' /}<span>{t.get('settings.theme.system')}</span></button>
+          <button type="button" data-theme-mode="light" aria-pressed="false">{#icon 'sun' /}<span>{t.get('settings.theme.light')}</span></button>
+          <button type="button" data-theme-mode="dark" aria-pressed="false">{#icon 'moon' /}<span>{t.get('settings.theme.dark')}</span></button>
+        </div>
+        <span class="diary-help">{t.get('settings.theme.help')}</span>
+      </div>
+    </section>
+
+    <section class="settings-card diary-card" aria-labelledby="settings-language">
+      <h2 id="settings-language">{t.get('settings.section.language')}</h2>
+      <div class="settings-fields">
+        <div class="diary-field">
+          <label for="settings-ui-language">{t.get('settings.uiLanguage')}</label>
+          <select class="diary-input" id="settings-ui-language" name="uiLanguage" aria-describedby="settings-ui-language-help">
+            {#for o in v.uiLanguages}<option value="{o.value}"{#if o.selected} selected{/if}>{o.label}</option>{/for}
+          </select>
+          <span class="diary-help" id="settings-ui-language-help">{t.get('settings.uiLanguage.help')}</span>
+        </div>
+        <div class="diary-field">
+          <label for="settings-entry-language">{t.get('settings.entryLanguage')}</label>
+          <select class="diary-input" id="settings-entry-language" name="entryLanguage" aria-describedby="settings-entry-language-help">
+            {#for o in v.entryLanguages}<option value="{o.value}"{#if o.selected} selected{/if}>{o.label}</option>{/for}
+          </select>
+          <span class="diary-help" id="settings-entry-language-help">{t.get('settings.entryLanguage.help')}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-card diary-card" aria-labelledby="settings-voice">
+      <h2 id="settings-voice">{t.get('settings.section.voice')}</h2>
+      <div class="settings-fields">
+        <div class="diary-check">
+          <input type="checkbox" id="settings-tts" name="ttsAutoPlay" value="true"{#if v.ttsAutoPlay} checked{/if} aria-describedby="settings-tts-help">
+          <label for="settings-tts">{t.get('settings.ttsAutoPlay')}</label>
+          <span class="diary-help" id="settings-tts-help">{t.get('settings.ttsAutoPlay.help')}</span>
+        </div>
+        <div class="diary-check">
+          <input type="checkbox" id="settings-keep-audio" name="keepAudio" value="true"{#if v.keepAudio} checked{/if} aria-describedby="settings-keep-audio-help">
+          <label for="settings-keep-audio">{t.get('settings.keepAudio')}</label>
+          <span class="diary-help" id="settings-keep-audio-help">{t.get('settings.keepAudio.help')}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-card diary-card" aria-labelledby="settings-reminders">
+      <h2 id="settings-reminders">{t.get('settings.section.reminders')}</h2>
+      <div class="settings-fields">
+        <div class="diary-field">
+          <label for="settings-intervals">{t.get('settings.intervals')}</label>
+          <input class="diary-input" type="text" id="settings-intervals" name="intervals" value="{v.intervals}" inputmode="numeric" autocomplete="off"
+                 aria-describedby="settings-intervals-help settings-intervals-error"{#if v.intervalsError} aria-invalid="true"{/if}>
+          <span class="diary-help" id="settings-intervals-help">{t.get('settings.intervals.help')}</span>
+          <p class="diary-error-text" id="settings-intervals-error">{#if v.intervalsError}{v.intervalsError}{/if}</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="settings-save">
+      <button type="submit" class="diary-button diary-button-primary" id="settings-save">{t.get('settings.save')}</button>
+      <div class="diary-status-slot" id="settings-save-status" role="status" aria-live="polite"></div>
+    </div>
+  </form>
+
+  <section class="settings-card diary-card" aria-labelledby="settings-privacy">
+    <h2 id="settings-privacy">{t.get('settings.section.privacy')}</h2>
+    <p>{t.get('settings.privacy.intro')}</p>
+
+    <h3>{t.get('settings.export.title')}</h3>
+    <p>{t.get('settings.export.text')}</p>
+    <form class="diary-form" id="settings-export" method="get" action="/api/data/export">
+      <div class="diary-check">
+        <input type="checkbox" id="settings-include-audio" name="includeAudio" value="true">
+        <label for="settings-include-audio">{t.get('settings.export.includeAudio')}</label>
+      </div>
+      <button type="submit" class="diary-button diary-button-contrast">{t.get('settings.export.button')}</button>
+    </form>
+    <div id="settings-export-status" role="status" aria-live="polite"></div>
+
+    <div class="diary-danger">
+      <h3>{t.get('settings.delete.title')}</h3>
+      <p>{t.get('settings.delete.text')}</p>
+      <p>{t.get('settings.delete.phrasePrefix')} <code class="diary-phrase">{v.phrase}</code></p>
+      <form class="diary-form" id="settings-delete" method="post" action="/settings/delete-all">
+        {#csrf /}
+        <div class="diary-field">
+          <label for="settings-confirmation">{t.get('settings.delete.confirmLabel')}</label>
+          <input class="diary-input" type="text" id="settings-confirmation" name="confirmation" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="settings-confirmation-help">
+          <span class="diary-help" id="settings-confirmation-help">{t.get('settings.delete.confirmHelp')}</span>
+        </div>
+        <button type="submit" class="diary-button diary-button-danger" id="settings-delete-button">{t.get('settings.delete.button')}</button>
+      </form>
+      <div id="settings-delete-status" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="settings-card diary-card" aria-labelledby="settings-profile">
+    <h2 id="settings-profile">{t.get('settings.section.profile')}</h2>
+    <p>{t.get('settings.profile.intro')}</p>
+    {#if v.profileAvailable}
+    <ul>
+      <li>{v.profileLine}</li>
+      <li>{v.cloudLine}</li>
+      {#for p in v.providers}<li>{p}</li>{/for}
+    </ul>
+    {#else}
+    <p class="diary-muted">{t.get('settings.profile.unavailable')}</p>
+    {/if}
+  </section>
+</div>
+{#scripts}<script type="module" src="/js/settings.js"></script>{/scripts}
+{/include}

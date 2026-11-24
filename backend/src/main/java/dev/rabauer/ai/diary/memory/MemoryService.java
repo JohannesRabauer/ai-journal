@@ -311,7 +311,25 @@ public class MemoryService {
         return QuarkusTransaction.requiringNew().call(() -> MemoryItemEntity.count("nextReviewOn <= ?1", today));
     }
 
+    /** SM-2 qualities of the four grade buttons (SPEC section 6). */
+    static final int GRADE_FORGOT = 1;
+    static final int GRADE_HARD = 3;
+    static final int GRADE_GOOD = 4;
+    static final int GRADE_EASY = 5;
+
+    /** Days until the next review per grade button; asks the scheduler and changes nothing (D-030). */
+    private RevealDto.NextIntervals projectedIntervals(MemoryItemEntity item, List<Integer> ladder) {
+        LocalDate today = today();
+        ReviewScheduler.State current = new ReviewScheduler.State(item.repetitions, item.intervalDays, item.easeFactor, item.nextReviewOn);
+        return new RevealDto.NextIntervals(
+                scheduler.next(current, GRADE_FORGOT, today, ladder).intervalDays(),
+                scheduler.next(current, GRADE_HARD, today, ladder).intervalDays(),
+                scheduler.next(current, GRADE_GOOD, today, ladder).intervalDays(),
+                scheduler.next(current, GRADE_EASY, today, ladder).intervalDays());
+    }
+
     public RevealDto attempt(long itemId, ReviewAttemptRequest request) {
+        List<Integer> ladder = intervals();
         String text = request == null || request.attemptText() == null || request.attemptText().isBlank() ? null : request.attemptText().strip();
         if (text != null && text.length() > MAX_ATTEMPT_CHARS) {
             throw ApiException.badRequest("ATTEMPT_TOO_LONG", "The answer is too long.");
@@ -329,7 +347,8 @@ public class MemoryService {
             open.attemptText = text;
             open.attemptedAt = now();
             open.persist();
-            return new RevealDto(item.id, item.answer, item.sourceQuote, item.sourceType, item.sourceId, text);
+            return new RevealDto(item.id, item.answer, item.sourceQuote, item.sourceType, item.sourceId, text,
+                    projectedIntervals(item, ladder));
         });
     }
 
