@@ -12,11 +12,11 @@
 .memory-error-inline { color: var(--diary-error); margin: 0; }
 
 /* the one flashcard */
-.memory-section[aria-label] { max-width: none; }
+.memory-section[aria-label] { max-width: none; align-self: stretch; }
 .memory-flash { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
 .memory-flash__meta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .5rem; }
 .memory-flash__q { font-size: 1.5rem; line-height: 1.4; max-width: 30ch; margin: .25rem auto 1rem; }
-.memory-done { padding: 1.5rem 2rem; }
+.memory-done { padding: 1.5rem 2rem; align-self: stretch; box-sizing: border-box; width: 100%; }
 .memory-done p { margin: 0; font-size: 1.1rem; }
 .memory-card__type { color: var(--diary-muted); font-size: var(--lumo-font-size-s, .875rem); }
 .memory-card__prompt { margin: 0; font-size: 1.15rem; line-height: 1.5; overflow-wrap: anywhere; }

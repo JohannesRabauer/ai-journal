@@ -52,6 +52,15 @@ fails the build if any pair drops below its threshold (4.5:1 for text, 3:1 for c
 | error on bg / surface | 6.56 / 7.15 | 8.89 / 8.10 | 4.5 |
 | border on bg / surface | 3.23 / 3.52 | 4.62 / 4.21 | 3.0 |
 
+## Pages
+Each page has its own stylesheet, loaded with `@CssImport` and prefixed by feature (`today/today.css`,
+`entries/entries.css`, `coach/coach.css`, `memory/memory.css`, `gym/gym.css`, `weekly/weekly.css`,
+`settings/settings.css`). They use only `--diary-*` tokens and the shared building blocks (`.diary-card`,
+`.diary-chip`, `.diary-eyebrow`). Today: Speak / Write composer and a timeline of today's entries (no AI output).
+Journal: entries grouped by day, "Load older entries". Entry: reading column, custom audio player
+(`entries/audio-player.js`), Reflect card linking to the coach chat. Remember: one flashcard at a time.
+Week: article layout with week arrows. Gym: category tiles. Settings: grouped cards, segmented theme control.
+
 ## Layout and navigation
 One `<nav aria-label>` landmark, restyled by CSS. At 768px and wider it is a side bar: brand mark, the destinations,
 Settings set apart by a rule, and a quiet privacy line at the bottom ("Local. Nothing leaves this device.", or the cloud
