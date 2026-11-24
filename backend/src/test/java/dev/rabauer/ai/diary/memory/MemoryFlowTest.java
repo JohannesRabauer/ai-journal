@@ -334,6 +334,12 @@ class MemoryFlowTest {
         assertThat(reveal.getString("sourceType")).isEqualTo("ENTRY");
         assertThat(reveal.getLong("sourceId")).isEqualTo(entry);
         assertThat(reveal.getString("attemptText")).isEqualTo("my guess");
+        // projected next interval per grade button (ladder [2,5]; a lapse restarts at the first step), nothing is stored yet
+        assertThat(reveal.getInt("nextIntervals.forgot")).isEqualTo(2);
+        assertThat(reveal.getInt("nextIntervals.hard")).isEqualTo(5);
+        assertThat(reveal.getInt("nextIntervals.good")).isEqualTo(5);
+        assertThat(reveal.getInt("nextIntervals.easy")).isEqualTo(5);
+        assertThat(given().get("/api/memory/items").then().extract().jsonPath().getInt("[0].repetitions")).isZero();
 
         JsonPath graded = given().contentType(ContentType.JSON).body("{\"quality\":5}").post("/api/memory/reviews/" + item + "/grade")
                 .then().statusCode(200).extract().jsonPath();
@@ -354,6 +360,40 @@ class MemoryFlowTest {
                 .then().statusCode(200).extract().jsonPath();
         assertThat(lapsed.getInt("repetitions")).isZero();
         assertThat(lapsed.getInt("intervalDays")).isEqualTo(2);
+    }
+
+    @Test
+    void nextIntervalHintsComeFromTheSchedulerBeyondTheLadderAndChangeNothing() {
+        settings("[1,2]");
+        long entry = finishedEntry(ENTRY_TEXT);
+        long item = approvedItem(entry);
+        for (int cycle = 0; cycle < 2; cycle++) { // two good grades: past the end of the ladder, interval 5, ease 2.5
+            makeDue(item);
+            given().contentType(ContentType.JSON).body("{}").post("/api/memory/reviews/" + item + "/attempt").then().statusCode(200);
+            given().contentType(ContentType.JSON).body("{\"quality\":4}").post("/api/memory/reviews/" + item + "/grade").then().statusCode(200);
+        }
+        assertThat(given().get("/api/memory/items").then().extract().jsonPath().getInt("[0].intervalDays")).isEqualTo(5);
+
+        makeDue(item);
+        JsonPath hints = given().contentType(ContentType.JSON).body("{}").post("/api/memory/reviews/" + item + "/attempt")
+                .then().statusCode(200).extract().jsonPath();
+        assertThat(hints.getInt("nextIntervals.forgot")).isEqualTo(1); // a lapse restarts the ladder
+        assertThat(hints.getInt("nextIntervals.hard")).isEqualTo(12); // 5 * 2.36
+        assertThat(hints.getInt("nextIntervals.good")).isEqualTo(13); // 5 * 2.5
+        assertThat(hints.getInt("nextIntervals.easy")).isEqualTo(13); // 5 * 2.6
+
+        // asking again (a second attempt) projects the same: the projection never mutates the item
+        JsonPath again = given().contentType(ContentType.JSON).body("{}").post("/api/memory/reviews/" + item + "/attempt")
+                .then().statusCode(200).extract().jsonPath();
+        assertThat(again.getMap("nextIntervals")).isEqualTo(hints.getMap("nextIntervals"));
+        var stored = given().get("/api/memory/items").then().extract().jsonPath();
+        assertThat(stored.getInt("[0].repetitions")).isEqualTo(2);
+        assertThat(stored.getInt("[0].intervalDays")).isEqualTo(5);
+        assertThat(stored.getDouble("[0].easeFactor")).isEqualTo(2.5);
+
+        // the real grade agrees with the hint
+        given().contentType(ContentType.JSON).body("{\"quality\":4}").post("/api/memory/reviews/" + item + "/grade")
+                .then().statusCode(200).body("intervalDays", equalTo(13));
     }
 
     @Test
