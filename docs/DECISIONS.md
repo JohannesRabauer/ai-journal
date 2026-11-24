@@ -104,3 +104,8 @@ the user stay forbidden.
 **D-030 Memory policies (W3a).** SM-2 with the configured ladder, then interval x EF; scheduler `sm2` is the default
 everywhere. Lessons unlock by usage only. Deleting an entry deletes its candidates; approved items stay but lose
 quote and source. Deleting an item keeps an anonymous review log (time, grade, interval) so lessons never re-lock.
+
+**D-031 Cross-site and DNS-rebinding protection (security review, Wave 4).** Binding to 127.0.0.1 does not protect a
+no-auth local app from websites in the user's browser. Every non-GET request to the backend and to the frontend's
+/upload/** proxies requires the header `X-AI-Diary: 1` (forces a CORS preflight, which fails), foreign `Origin`
+headers are rejected, and both servers accept only localhost hosts (plus `JOURNAL_ALLOWED_HOSTS` for the Pi LAN opt-in).
