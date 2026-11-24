@@ -1,0 +1,227 @@
+[
+  {
+    "id": "assumption-1", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 7,
+    "title": "What am I taking for granted?",
+    "prompt": "Think of something you said or wrote recently that you were sure about. Look for the assumptions underneath it.",
+    "steps": [
+      "Write the statement in one sentence.",
+      "List two or three things that would have to be true for the statement to hold.",
+      "Mark the one you have the least evidence for.",
+      "Write down one small way to find out whether it is true."
+    ]
+  },
+  {
+    "id": "assumption-2", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 6,
+    "title": "Fact or interpretation?",
+    "prompt": "Pick a situation that bothered you this week. Separate what you saw or heard from what you concluded.",
+    "steps": [
+      "Describe only what a camera would have recorded.",
+      "Describe what you concluded from it.",
+      "Name one other conclusion that fits the same facts."
+    ]
+  },
+  {
+    "id": "assumption-3", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 8,
+    "title": "The word 'always'",
+    "prompt": "Find a thought of yours that contains words like always, never, everyone or nobody. Check how far it really reaches.",
+    "steps": [
+      "Write the thought as you first phrased it.",
+      "Look for one occasion where it did not hold.",
+      "Rewrite the thought so that it is accurate.",
+      "Notice whether the rewritten version changes what you want to do."
+    ]
+  },
+  {
+    "id": "perspective-1", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 8,
+    "title": "Through someone else's eyes",
+    "prompt": "Choose a recent conversation or situation with another person. Retell it from their point of view.",
+    "steps": [
+      "Describe the situation in two sentences from your own view.",
+      "Retell it as the other person might: what did they want, what did they worry about?",
+      "Note one thing you had not considered before.",
+      "Decide whether anything in your next step would change."
+    ]
+  },
+  {
+    "id": "perspective-2", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 7,
+    "title": "The observer in the room",
+    "prompt": "Imagine a calm, fair observer who watched a recent disagreement or tense moment from the corner of the room.",
+    "steps": [
+      "Write what the observer saw happening, without taking sides.",
+      "Write what the observer would say each person needed.",
+      "Compare this with your own account: where do they differ?"
+    ]
+  },
+  {
+    "id": "perspective-3", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 6,
+    "title": "A year from now",
+    "prompt": "Take something that feels large today. Look at it from the viewpoint of yourself one year from now.",
+    "steps": [
+      "Describe today's situation in a few sentences.",
+      "Write a short note about it as you a year later, who has seen how it turned out.",
+      "Write what that later self would like you to do or not do today."
+    ]
+  },
+  {
+    "id": "reframing-1", "category": "REFRAMING", "estimatedMinutes": 6,
+    "title": "Two other readings",
+    "prompt": "Pick an event that you interpreted in a negative way. Find two other readings that fit the same facts.",
+    "steps": [
+      "Write the event and your first interpretation.",
+      "Write a second interpretation that is neutral.",
+      "Write a third interpretation that is more generous.",
+      "Note which reading you would check first, and how."
+    ]
+  },
+  {
+    "id": "reframing-2", "category": "REFRAMING", "estimatedMinutes": 7,
+    "title": "What else could this be?",
+    "prompt": "Think of a setback from the past weeks. Ask what else it could be, besides a failure.",
+    "steps": [
+      "Describe the setback in plain words.",
+      "List two things it might have given you or shown you.",
+      "Write one sentence about it that you can accept as true."
+    ]
+  },
+  {
+    "id": "reframing-3", "category": "REFRAMING", "estimatedMinutes": 8,
+    "title": "Same story, other headline",
+    "prompt": "Take a day or situation you remember as difficult. Write two different headlines for it.",
+    "steps": [
+      "Write the headline you would give it today.",
+      "Write a second headline that stresses something different.",
+      "Write two or three sentences under the second headline.",
+      "Note what changes when you read that version."
+    ]
+  },
+  {
+    "id": "decision-1", "category": "DECISION_REVIEW", "estimatedMinutes": 9,
+    "title": "Options and criteria",
+    "prompt": "Choose a decision that is still open. Lay out the options and what matters for choosing between them.",
+    "steps": [
+      "Write the decision as a question.",
+      "List at least two options, including 'do nothing'.",
+      "List the three criteria that matter most to you.",
+      "For each option, note briefly how it fares on each criterion.",
+      "Write which option looks best now and what would change your mind."
+    ]
+  },
+  {
+    "id": "decision-2", "category": "DECISION_REVIEW", "estimatedMinutes": 8,
+    "title": "A look ahead at what could go wrong",
+    "prompt": "Take a plan you intend to carry out. Imagine it is half a year later and it did not work out. Why?",
+    "steps": [
+      "Write the plan in one sentence.",
+      "List three plausible reasons it did not work out.",
+      "For the most likely one, write what you could do now to lessen it.",
+      "Write whether the plan still looks right to you."
+    ]
+  },
+  {
+    "id": "decision-3", "category": "DECISION_REVIEW", "estimatedMinutes": 7,
+    "title": "What do I still need to know?",
+    "prompt": "Think of a decision you are circling around. Find out which missing piece of information would help most.",
+    "steps": [
+      "Write what you know for sure about the decision.",
+      "Write what you only guess.",
+      "Pick the one guess that matters most and note how you could find out more about it."
+    ]
+  },
+  {
+    "id": "second-1", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 7,
+    "title": "And then what?",
+    "prompt": "Pick a choice you made or are about to make. Follow its consequences a few steps further than usual.",
+    "steps": [
+      "Write the choice.",
+      "Write what will most likely happen next.",
+      "Write what happens as a result of that.",
+      "Write what happens after that, in a month or a year.",
+      "Note whether anything on the path surprises you."
+    ]
+  },
+  {
+    "id": "second-2", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 8,
+    "title": "Who else is affected?",
+    "prompt": "Take a habit or a decision of yours. Look at the effects on other people and on your future days.",
+    "steps": [
+      "Write the habit or decision.",
+      "List the direct effects you notice right away.",
+      "List the later effects, on others and on you.",
+      "Write one change that would keep the good effects and reduce the unwanted ones."
+    ]
+  },
+  {
+    "id": "second-3", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 6,
+    "title": "The short and the long run",
+    "prompt": "Choose something you did to make a situation easier right now. Compare the short and the long effect.",
+    "steps": [
+      "Write what you did and why it helped at the time.",
+      "Write what it may cost or cause later.",
+      "Decide whether you would do the same again."
+    ]
+  },
+  {
+    "id": "bias-1", "category": "BIAS_SPOTTING", "estimatedMinutes": 8,
+    "title": "Only the evidence I like",
+    "prompt": "Think of an opinion you hold firmly. Check which kind of evidence you notice and which you skip.",
+    "steps": [
+      "Write the opinion in one sentence.",
+      "List what supports it.",
+      "Actively look for what speaks against it and list it.",
+      "Write whether the two lists are equally easy to fill, and what that tells you."
+    ]
+  },
+  {
+    "id": "bias-2", "category": "BIAS_SPOTTING", "estimatedMinutes": 7,
+    "title": "A judgement made quickly",
+    "prompt": "Pick a quick judgement you made about a person or a situation. Look for a thinking habit that may have shaped it.",
+    "steps": [
+      "Describe the judgement and what it was based on.",
+      "Ask: did I rely on a first impression, on one example, or on what I expected to see?",
+      "Name one fact you would want before judging the same way again."
+    ]
+  },
+  {
+    "id": "bias-3", "category": "BIAS_SPOTTING", "estimatedMinutes": 6,
+    "title": "Looking back, it was obvious",
+    "prompt": "Recall an outcome you now feel you 'knew all along'. Check what you actually knew at the time.",
+    "steps": [
+      "Write what happened.",
+      "Write what you really knew and expected before it happened.",
+      "Note what looks obvious only now."
+    ]
+  },
+  {
+    "id": "explain-1", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 8,
+    "title": "Explain it to a friend",
+    "prompt": "Choose something you learned lately. Explain it in plain words, as you would to a friend who knows nothing about it.",
+    "steps": [
+      "Write the topic and the main idea in one or two sentences.",
+      "Explain it with everyday words and no jargon.",
+      "Add one example from daily life.",
+      "Mark the places where your explanation was vague, and note what you would look up."
+    ]
+  },
+  {
+    "id": "explain-2", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 7,
+    "title": "Three sentences",
+    "prompt": "Pick an idea you want to understand better. Say it in three sentences.",
+    "steps": [
+      "Write what the idea is.",
+      "Write why it matters or how it works.",
+      "Write what it is often confused with.",
+      "Read it back and shorten wherever you can."
+    ]
+  },
+  {
+    "id": "explain-3", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 9,
+    "title": "Find the gaps",
+    "prompt": "Take a topic you believe you know well. Explain it step by step and see where the explanation gets thin.",
+    "steps": [
+      "Write the topic.",
+      "Explain it from the beginning, step by step, without looking anything up.",
+      "Underline each step where you hesitated.",
+      "Write one question for each gap."
+    ]
+  }
+]

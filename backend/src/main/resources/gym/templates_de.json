@@ -1,0 +1,227 @@
+[
+  {
+    "id": "assumption-1", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 7,
+    "title": "Was nehme ich als gegeben hin?",
+    "prompt": "Denke an etwas, das du kürzlich gesagt oder geschrieben hast und dessen du dir sicher warst. Suche die Annahmen darunter.",
+    "steps": [
+      "Schreibe die Aussage in einem Satz auf.",
+      "Notiere zwei oder drei Dinge, die zutreffen müssten, damit die Aussage stimmt.",
+      "Markiere die Annahme, für die du am wenigsten Belege hast.",
+      "Schreibe einen kleinen Weg auf, wie du herausfinden könntest, ob sie stimmt."
+    ]
+  },
+  {
+    "id": "assumption-2", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 6,
+    "title": "Tatsache oder Deutung?",
+    "prompt": "Wähle eine Situation aus dieser Woche, die dich beschäftigt hat. Trenne, was du gesehen oder gehört hast, von dem, was du daraus geschlossen hast.",
+    "steps": [
+      "Beschreibe nur, was eine Kamera aufgenommen hätte.",
+      "Beschreibe, was du daraus geschlossen hast.",
+      "Nenne eine andere Schlussfolgerung, die zu denselben Tatsachen passt."
+    ]
+  },
+  {
+    "id": "assumption-3", "category": "ASSUMPTION_CHECK", "estimatedMinutes": 8,
+    "title": "Das Wort „immer“",
+    "prompt": "Suche einen Gedanken von dir mit Wörtern wie immer, nie, alle oder niemand. Prüfe, wie weit er wirklich reicht.",
+    "steps": [
+      "Schreibe den Gedanken so auf, wie du ihn zuerst formuliert hast.",
+      "Suche eine Gelegenheit, bei der er nicht gestimmt hat.",
+      "Formuliere den Gedanken so um, dass er zutrifft.",
+      "Beachte, ob die neue Fassung ändert, was du tun möchtest."
+    ]
+  },
+  {
+    "id": "perspective-1", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 8,
+    "title": "Mit den Augen eines anderen",
+    "prompt": "Wähle ein Gespräch oder eine Situation mit einer anderen Person. Erzähle sie aus deren Sicht nach.",
+    "steps": [
+      "Beschreibe die Situation in zwei Sätzen aus deiner Sicht.",
+      "Erzähle sie so, wie die andere Person sie erlebt haben könnte: Was wollte sie, was machte ihr Sorgen?",
+      "Notiere eine Sache, die du vorher nicht bedacht hattest.",
+      "Überlege, ob sich dadurch dein nächster Schritt ändert."
+    ]
+  },
+  {
+    "id": "perspective-2", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 7,
+    "title": "Der Beobachter im Raum",
+    "prompt": "Stell dir eine ruhige, faire Beobachterin vor, die einen jüngsten Streit oder eine angespannte Situation aus der Ecke des Raums verfolgt hat.",
+    "steps": [
+      "Schreibe auf, was sie geschehen sah, ohne Partei zu ergreifen.",
+      "Schreibe auf, was ihrer Meinung nach jede beteiligte Person gebraucht hätte.",
+      "Vergleiche das mit deiner eigenen Darstellung: Wo unterscheiden sie sich?"
+    ]
+  },
+  {
+    "id": "perspective-3", "category": "PERSPECTIVE_SHIFT", "estimatedMinutes": 6,
+    "title": "In einem Jahr",
+    "prompt": "Nimm etwas, das sich heute groß anfühlt. Betrachte es aus der Sicht deines Ichs in einem Jahr.",
+    "steps": [
+      "Beschreibe die heutige Situation in wenigen Sätzen.",
+      "Schreibe eine kurze Notiz dazu als dein Ich in einem Jahr, das gesehen hat, wie es ausgegangen ist.",
+      "Schreibe auf, was dieses spätere Ich sich von dir heute wünschen würde."
+    ]
+  },
+  {
+    "id": "reframing-1", "category": "REFRAMING", "estimatedMinutes": 6,
+    "title": "Zwei andere Lesarten",
+    "prompt": "Wähle ein Ereignis, das du negativ gedeutet hast. Finde zwei andere Lesarten, die zu denselben Tatsachen passen.",
+    "steps": [
+      "Schreibe das Ereignis und deine erste Deutung auf.",
+      "Schreibe eine zweite, neutrale Deutung auf.",
+      "Schreibe eine dritte, wohlwollendere Deutung auf.",
+      "Notiere, welche Lesart du zuerst prüfen würdest und wie."
+    ]
+  },
+  {
+    "id": "reframing-2", "category": "REFRAMING", "estimatedMinutes": 7,
+    "title": "Was könnte es noch sein?",
+    "prompt": "Denke an einen Rückschlag der letzten Wochen. Frage dich, was er außer einem Scheitern noch sein könnte.",
+    "steps": [
+      "Beschreibe den Rückschlag in einfachen Worten.",
+      "Nenne zwei Dinge, die er dir gezeigt oder gebracht haben könnte.",
+      "Schreibe einen Satz darüber, den du als wahr annehmen kannst."
+    ]
+  },
+  {
+    "id": "reframing-3", "category": "REFRAMING", "estimatedMinutes": 8,
+    "title": "Dieselbe Geschichte, andere Überschrift",
+    "prompt": "Nimm einen Tag oder eine Situation, die du als schwierig in Erinnerung hast. Schreibe zwei verschiedene Überschriften dafür.",
+    "steps": [
+      "Schreibe die Überschrift, die du heute wählen würdest.",
+      "Schreibe eine zweite Überschrift, die etwas anderes betont.",
+      "Schreibe zwei oder drei Sätze unter die zweite Überschrift.",
+      "Notiere, was sich verändert, wenn du diese Fassung liest."
+    ]
+  },
+  {
+    "id": "decision-1", "category": "DECISION_REVIEW", "estimatedMinutes": 9,
+    "title": "Optionen und Kriterien",
+    "prompt": "Wähle eine Entscheidung, die noch offen ist. Lege die Optionen dar und das, worauf es bei der Wahl ankommt.",
+    "steps": [
+      "Formuliere die Entscheidung als Frage.",
+      "Liste mindestens zwei Optionen auf, auch „nichts tun“.",
+      "Liste die drei Kriterien auf, die dir am wichtigsten sind.",
+      "Notiere kurz, wie jede Option bei jedem Kriterium abschneidet.",
+      "Schreibe auf, welche Option jetzt am besten aussieht und was dich umstimmen würde."
+    ]
+  },
+  {
+    "id": "decision-2", "category": "DECISION_REVIEW", "estimatedMinutes": 8,
+    "title": "Ein Blick voraus: Was könnte schiefgehen?",
+    "prompt": "Nimm einen Plan, den du umsetzen willst. Stell dir vor, es ist ein halbes Jahr später und er ist nicht aufgegangen. Warum?",
+    "steps": [
+      "Schreibe den Plan in einem Satz auf.",
+      "Nenne drei plausible Gründe, warum er nicht aufgegangen ist.",
+      "Schreibe zum wahrscheinlichsten Grund auf, was du jetzt tun könntest, um ihn abzuschwächen.",
+      "Halte fest, ob der Plan dir weiterhin richtig erscheint."
+    ]
+  },
+  {
+    "id": "decision-3", "category": "DECISION_REVIEW", "estimatedMinutes": 7,
+    "title": "Was muss ich noch wissen?",
+    "prompt": "Denke an eine Entscheidung, um die du kreist. Finde heraus, welche fehlende Information am meisten helfen würde.",
+    "steps": [
+      "Schreibe auf, was du über die Entscheidung sicher weißt.",
+      "Schreibe auf, was du nur vermutest.",
+      "Wähle die wichtigste Vermutung und notiere, wie du mehr darüber herausfinden könntest."
+    ]
+  },
+  {
+    "id": "second-1", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 7,
+    "title": "Und dann?",
+    "prompt": "Wähle eine Entscheidung, die du getroffen hast oder treffen willst. Verfolge ihre Folgen ein paar Schritte weiter als sonst.",
+    "steps": [
+      "Schreibe die Entscheidung auf.",
+      "Schreibe auf, was als Nächstes am wahrscheinlichsten geschieht.",
+      "Schreibe auf, was daraus folgt.",
+      "Schreibe auf, was danach geschieht, in einem Monat oder einem Jahr.",
+      "Notiere, ob dich etwas auf diesem Weg überrascht."
+    ]
+  },
+  {
+    "id": "second-2", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 8,
+    "title": "Wer ist noch betroffen?",
+    "prompt": "Nimm eine Gewohnheit oder Entscheidung von dir. Betrachte die Wirkungen auf andere Menschen und auf deine kommenden Tage.",
+    "steps": [
+      "Schreibe die Gewohnheit oder Entscheidung auf.",
+      "Liste die unmittelbaren Wirkungen auf, die du sofort bemerkst.",
+      "Liste die späteren Wirkungen auf, bei anderen und bei dir.",
+      "Schreibe eine Änderung auf, die das Gute behält und Unerwünschtes verringert."
+    ]
+  },
+  {
+    "id": "second-3", "category": "SECOND_ORDER_THINKING", "estimatedMinutes": 6,
+    "title": "Kurzfristig und langfristig",
+    "prompt": "Wähle etwas, das du getan hast, um eine Lage sofort leichter zu machen. Vergleiche die kurze und die lange Wirkung.",
+    "steps": [
+      "Schreibe auf, was du getan hast und warum es damals geholfen hat.",
+      "Schreibe auf, was es später kosten oder bewirken kann.",
+      "Entscheide, ob du es wieder genauso tun würdest."
+    ]
+  },
+  {
+    "id": "bias-1", "category": "BIAS_SPOTTING", "estimatedMinutes": 8,
+    "title": "Nur die Belege, die mir gefallen",
+    "prompt": "Denke an eine Meinung, die du fest vertrittst. Prüfe, welche Art von Belegen du bemerkst und welche du überspringst.",
+    "steps": [
+      "Schreibe die Meinung in einem Satz auf.",
+      "Liste auf, was sie stützt.",
+      "Suche gezielt nach dem, was dagegen spricht, und liste es auf.",
+      "Schreibe auf, ob sich beide Listen gleich leicht füllen ließen und was das sagt."
+    ]
+  },
+  {
+    "id": "bias-2", "category": "BIAS_SPOTTING", "estimatedMinutes": 7,
+    "title": "Ein schnelles Urteil",
+    "prompt": "Wähle ein schnelles Urteil über eine Person oder Situation. Suche nach einer Denkgewohnheit, die es geprägt haben könnte.",
+    "steps": [
+      "Beschreibe das Urteil und worauf es sich stützte.",
+      "Frage dich: Habe ich mich auf einen ersten Eindruck, auf ein einzelnes Beispiel oder auf das Erwartete verlassen?",
+      "Nenne eine Tatsache, die du haben möchtest, bevor du wieder so urteilst."
+    ]
+  },
+  {
+    "id": "bias-3", "category": "BIAS_SPOTTING", "estimatedMinutes": 6,
+    "title": "Im Rückblick war es offensichtlich",
+    "prompt": "Erinnere dich an ein Ergebnis, von dem du heute meinst, du hättest es „schon immer gewusst“. Prüfe, was du damals wirklich wusstest.",
+    "steps": [
+      "Schreibe auf, was geschehen ist.",
+      "Schreibe auf, was du vorher tatsächlich wusstest und erwartet hast.",
+      "Notiere, was erst jetzt offensichtlich wirkt."
+    ]
+  },
+  {
+    "id": "explain-1", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 8,
+    "title": "Erkläre es einer Freundin",
+    "prompt": "Wähle etwas, das du kürzlich gelernt hast. Erkläre es in einfachen Worten, so wie einer Freundin, die nichts darüber weiß.",
+    "steps": [
+      "Schreibe das Thema und die Hauptidee in ein bis zwei Sätzen auf.",
+      "Erkläre es mit Alltagswörtern und ohne Fachjargon.",
+      "Füge ein Beispiel aus dem Alltag hinzu.",
+      "Markiere die Stellen, an denen deine Erklärung vage war, und notiere, was du nachschlagen würdest."
+    ]
+  },
+  {
+    "id": "explain-2", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 7,
+    "title": "Drei Sätze",
+    "prompt": "Wähle eine Idee, die du besser verstehen möchtest. Sage sie in drei Sätzen.",
+    "steps": [
+      "Schreibe auf, was die Idee ist.",
+      "Schreibe auf, warum sie wichtig ist oder wie sie funktioniert.",
+      "Schreibe auf, womit sie oft verwechselt wird.",
+      "Lies es noch einmal und kürze, wo du kannst."
+    ]
+  },
+  {
+    "id": "explain-3", "category": "EXPLAIN_SIMPLY", "estimatedMinutes": 9,
+    "title": "Lücken finden",
+    "prompt": "Nimm ein Thema, von dem du glaubst, dass du es gut kennst. Erkläre es Schritt für Schritt und schau, wo die Erklärung dünn wird.",
+    "steps": [
+      "Schreibe das Thema auf.",
+      "Erkläre es von Anfang an, Schritt für Schritt, ohne etwas nachzuschlagen.",
+      "Unterstreiche jeden Schritt, bei dem du gezögert hast.",
+      "Schreibe zu jeder Lücke eine Frage auf."
+    ]
+  }
+]
