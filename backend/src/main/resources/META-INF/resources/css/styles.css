@@ -16,6 +16,7 @@
   --diary-sage: #e6ebe1;
   --diary-sage-text: #3d4d38;
   --diary-error: #a4262c;
+  --diary-on-error: #ffffff;
   --diary-border: #83888d;
   --diary-rule: #e3ddd2;
   --diary-shadow: 0 1px 2px rgba(40, 30, 20, 0.05), 0 4px 16px rgba(40, 30, 20, 0.06);
@@ -40,6 +41,7 @@ html[theme~='dark'] {
   --diary-sage: #262d24;
   --diary-sage-text: #c5d4bd;
   --diary-error: #ff9a9f;
+  --diary-on-error: #10181a;
   --diary-border: #7b8288;
   --diary-rule: #2d3338;
   --diary-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
@@ -442,4 +444,86 @@ code.diary-phrase {
 .diary-button[aria-busy='true'] {
   cursor: progress;
   opacity: 0.7;
+}
+
+/* ---- Shared page foundation (phase 0): notifications, dialog, danger button, autosave status ---- */
+.diary-banner-offline .diary-banner-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.diary-nav-status[data-kind='offline'] {
+  color: var(--diary-error);
+}
+.diary-notify {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--diary-nav-height) + 1rem);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(32rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.diary-notify__item {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--diary-rule);
+  border-left: 4px solid var(--diary-accent);
+  border-radius: var(--diary-radius-md);
+  background: var(--diary-surface);
+  color: var(--diary-text);
+  box-shadow: var(--diary-shadow);
+  pointer-events: auto;
+}
+.diary-notify__item[data-kind='error'] {
+  border-left-color: var(--diary-error);
+}
+.diary-dialog {
+  box-sizing: border-box;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--diary-rule);
+  border-radius: var(--diary-radius-lg);
+  background: var(--diary-surface);
+  color: var(--diary-text);
+  box-shadow: var(--diary-shadow);
+}
+.diary-dialog::backdrop {
+  background: rgba(20, 23, 26, 0.55);
+}
+.diary-dialog__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+.diary-dialog__message {
+  margin: 0 0 1.25rem;
+}
+.diary-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+.diary-button-danger {
+  background: var(--diary-error);
+  color: var(--diary-on-error);
+}
+.diary-button-danger:hover {
+  background: color-mix(in srgb, var(--diary-error) 85%, var(--diary-text));
+}
+.diary-autosave {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  color: var(--diary-muted);
+  font-size: 0.875rem;
+}
+.diary-autosave[data-state='failed'] {
+  color: var(--diary-error);
 }

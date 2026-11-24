@@ -5,7 +5,11 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MediaType;
 import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 
-/** Hardening headers for server-rendered HTML. No inline script or style is allowed; everything is same-origin. */
+/**
+ * Hardening headers. Server-rendered HTML gets the full set (no inline script or style, everything same-origin).
+ * Every {@code /api} response (JSON, audio, exports: all of it is journal content) gets {@code no-store} and
+ * {@code nosniff}. Static assets under /css, /js and /icons are not touched and may be cached.
+ */
 public class HtmlSecurityHeaders {
 
     static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
@@ -13,6 +17,12 @@ public class HtmlSecurityHeaders {
 
     @ServerResponseFilter
     public void add(ContainerRequestContext request, ContainerResponseContext response) {
+        String path = request.getUriInfo().getPath();
+        if (path.equals("/api") || path.startsWith("/api/")) {
+            response.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
+            response.getHeaders().putSingle("Cache-Control", "no-store");
+            return;
+        }
         MediaType type = response.getMediaType();
         if (type == null || !MediaType.TEXT_HTML_TYPE.isCompatible(type)) {
             return;

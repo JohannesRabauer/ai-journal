@@ -101,7 +101,38 @@ Both servers protect the unauthenticated API (docs/PRIVACY.md, "Protection of th
 | Key | Env | Default | Meaning |
 |---|---|---|---|
 | `journal.http.allowed-hosts` (backend), `journal.allowed-hosts` (frontend) | `JOURNAL_ALLOWED_HOSTS` | empty | Comma list of extra `Host` names accepted besides `localhost`, `127.0.0.1`, `[::1]` (and `backend` on the backend). Needed for the Pi/LAN opt-in |
-| `journal.http.allowed-origins` (backend) | none | empty | Browser origins allowed to call the backend. Leave empty: the browser only talks to the frontend |
+| `journal.http.allowed-origins` (backend) | none | empty | Extra browser origins allowed to call the API. Leave empty: the backend's own origin is accepted automatically (see below) |
+| `quarkus.http.host` (backend) | `JOURNAL_HTTP_HOST` | `127.0.0.1` | Bind address. `0.0.0.0` only for the LAN opt-in |
+| `journal.web.legacy-port` (backend) | `JOURNAL_FRONTEND_PORT` | `8081` | Port of the previous Vaadin interface; used by the temporary "not moved yet" pages (removed with phase 5 of docs/MIGRATION-QUTE.md) |
+
+### LAN access when the backend serves the pages (D-033)
+The browser now talks to the backend directly, so the LAN opt-in is a backend setting (the frontend's settings keep
+working for the Vaadin UI until phase 5). Off by default: the backend binds `127.0.0.1` and accepts only the loopback
+names. Anyone on the LAN can then read the journal (no login); never expose it to the internet.
+
+```
+JOURNAL_HTTP_HOST=0.0.0.0                                              # bind on all interfaces
+JOURNAL_ALLOWED_HOSTS=raspberrypi,raspberrypi.local,192.168.1.50       # the names/IPs you type into the browser
+```
+
+Without `JOURNAL_ALLOWED_HOSTS` the Host check answers `421` for every other name. Set both in `/etc/ai-diary/backend.env`
+on the Pi (`deploy/backend.env.example`) or in `.env` for the scripts and compose. The port is `JOURNAL_HTTP_PORT` (8080).
+
+What is accepted automatically, with no further setting:
+- **Own origin.** A request whose `Origin` is `http(s)://` plus the very `Host` the browser used (and that host is
+  allowed) passes the origin check, on any port and for every allowed LAN name: the pages the backend serves can call
+  `/api` without configuration. Every other origin (another site, another port, another host name) gets `403`.
+- **Writes.** Every non-GET/HEAD/OPTIONS request needs `X-AI-Diary: 1` (what `js/api.js` sends). The one alternative
+  is a plain HTML form post (`application/x-www-form-urlencoded`, outside `/api`) with the per-session token:
+  cookie `diary-csrf` (`HttpOnly`, `SameSite=Strict`, no `Secure` on plain HTTP, set by the first page load) and the
+  hidden field `_csrf` (`{#csrf /}` in templates), which the route verifies with `Csrf.require`. The token secret is
+  per process: after a restart open forms must be reloaded.
+- **Time zone.** `js/tz.js` stores the browser zone in the cookie `diary-tz` (no journal content); "Today" and
+  "Yesterday" follow it, the server zone is the fallback.
+- **Headers.** HTML: CSP without inline script/style, `nosniff`, `no-referrer`, `frame-ancestors 'none'`, `no-store`.
+  Every `/api` response: `no-store` and `nosniff`. Static files under `/css`, `/js`, `/icons` may be cached.
+- **OpenAPI.** `/q/openapi` and the Swagger UI exist only in the `%dev` and `%test` profiles; prod and lite-cloud have
+  neither (`quarkus.smallrye-openapi.enable=false`).
 
 Every non-GET request to the backend (and to the frontend's `/upload/**`) needs the header `X-AI-Diary: 1`:
 
