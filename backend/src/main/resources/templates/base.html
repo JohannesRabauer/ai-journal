@@ -19,7 +19,7 @@
       <li{#if item.secondary} class="diary-nav-secondary"{/if}><a href="{item.href}"{#if item.active} aria-current="page"{/if}>{#icon item.icon /}<span>{t.get(item.labelKey)}</span></a></li>
       {/for}
     </ul>
-    <div class="diary-nav-status" data-kind="{shell.statusKind}">{#icon shell.statusIcon /}<span>{t.get(shell.statusKey)}</span></div>
+    <div class="diary-nav-status" data-kind="{shell.statusKind}" data-offline-text="{t.get('status.offline')}">{#icon shell.statusIcon /}<span>{t.get(shell.statusKey)}</span></div>
   </nav>
   <div class="diary-body">
     <div class="diary-topbar">
@@ -31,11 +31,16 @@
       <div class="diary-banner-inner"><strong>{t.get('banner.cloud.title')}</strong> <span>{t.get('banner.cloud.default')}</span></div>
     </div>
     {/if}
+    <div class="diary-banner diary-banner-offline" id="diary-offline" data-text="{t.get('banner.offline.text')}" hidden>
+      <div class="diary-banner-inner"><span class="diary-banner-text" role="status"></span> <button type="button" class="diary-button" data-action="retry">{t.get('banner.offline.retry')}</button></div>
+    </div>
     <main id="main-content" class="diary-main" tabindex="-1">
       {#insert /}
     </main>
   </div>
 </div>
+<div class="diary-notify" id="diary-notify" role="status" aria-live="polite" aria-label="{t.get('notify.label')}"></div>
+<script type="module" src="/js/shell.js"></script>
 {#insert scripts}{/insert}
 </body>
 </html>

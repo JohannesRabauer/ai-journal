@@ -6,14 +6,17 @@ import dev.rabauer.ai.diary.entry.EntryService;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -51,10 +54,27 @@ public class JournalResource {
     ShellFactory shells;
     @Inject
     Clock clock;
+    @Inject
+    NotMovedPages notMoved;
+
+    /** Entry detail (phase 1 replaces this): /journal/{id}. */
+    @GET
+    @Path("{id: [0-9]+}")
+    public TemplateInstance entry(@PathParam("id") long id, @Context HttpHeaders headers, @Context UriInfo uri) {
+        return notMoved.render(headers.getAcceptableLanguages(), uri.getRequestUri(), "/journal", "nav.journal", "/entries/" + id);
+    }
+
+    /** Coach for one entry (phase 3 replaces this): /journal/{id}/reflect. */
+    @GET
+    @Path("{id: [0-9]+}/reflect")
+    public TemplateInstance reflect(@PathParam("id") long id, @Context HttpHeaders headers, @Context UriInfo uri) {
+        return notMoved.render(headers.getAcceptableLanguages(), uri.getRequestUri(), "/journal", "nav.journal", "/entries/" + id + "/coach");
+    }
 
     @GET
     public TemplateInstance journal(@QueryParam("page") @DefaultValue("0") int page,
-                                    @QueryParam("fragment") String fragment, @Context HttpHeaders headers) {
+                                    @QueryParam("fragment") String fragment,
+                                    @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
         Messages t = Messages.forAcceptable(headers.getAcceptableLanguages());
         int last = Math.max(0, Math.min(page, MAX_PAGE));
         boolean fragmentOnly = fragment != null && !fragment.isEmpty() && !"0".equals(fragment);
@@ -73,7 +93,8 @@ public class JournalResource {
         long shown = Math.min(total, fragmentOnly ? (long) last * PAGE_SIZE + items.size() : items.size());
         boolean more = !result.items().isEmpty() && (long) (last + 1) * PAGE_SIZE < total;
 
-        LocalDate today = LocalDate.now(clock);
+        // "Today" follows the browser's time zone (diary-tz cookie), not the server clock.
+        LocalDate today = LocalDate.now(clock.withZone(ClientZone.resolve(zoneCookie, clock.getZone())));
         Journal j = new Journal(
                 total == 0 && items.isEmpty(),
                 total == 0 ? "" : t.get(total == 1 ? "entries.journal.count.one" : "entries.journal.count", total),
