@@ -1,31 +1,64 @@
 /* Remember screen. Calm, text first, theme tokens only (docs/DESIGN.md). No animation, no counters beyond "due today". */
 .memory-view { gap: 1rem; }
-.memory-section { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; max-width: var(--diary-measure, 65ch); }
-.memory-section > h2 { margin: 0; outline: none; }
-.memory-status { color: var(--diary-muted, #575d64); min-height: 1.5rem; }
-.memory-error { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-error, #a4262c);
-  color: var(--diary-error, #a4262c); background: var(--diary-surface, #fff); max-width: var(--diary-measure, 65ch); }
+.memory-eyebrow, .memory-lead { margin: 0; }
+.memory-view h1 { margin: 0; }
+.memory-section { display: flex; flex-direction: column; gap: .75rem; max-width: var(--diary-measure, 65ch); }
+.memory-section > h3 { margin: 0; }
+.memory-section > h3:focus { outline: 2px solid var(--diary-accent); outline-offset: 2px; }
+.memory-status { color: var(--diary-muted); min-height: 1.5rem; }
+.memory-error { padding: .75rem 1rem; border-radius: var(--diary-radius-md); border: 1px solid var(--diary-error);
+  color: var(--diary-error); background: var(--diary-surface); max-width: var(--diary-measure, 65ch); }
 .memory-error p { margin: 0 0 .5rem; }
-.memory-error-inline { color: var(--diary-error, #a4262c); margin: 0; }
-.memory-card, .memory-candidate, .memory-item { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--diary-rule, #e3dfd8);
-  background: var(--diary-surface, #fff); display: flex; flex-direction: column; gap: .5rem; }
-.memory-card { border: 2px solid var(--diary-accent, #2c5f66); padding: 1rem 1.25rem; }
-.memory-card__type { color: var(--diary-muted, #575d64); font-size: var(--lumo-font-size-s, .875rem); }
+.memory-error-inline { color: var(--diary-error); margin: 0; }
+
+/* the one flashcard */
+.memory-section[aria-label] { max-width: none; }
+.memory-flash { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
+.memory-flash__meta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .5rem; }
+.memory-flash__q { font-size: 1.5rem; line-height: 1.4; max-width: 30ch; margin: .25rem auto 1rem; }
+.memory-done { padding: 1.5rem 2rem; }
+.memory-done p { margin: 0; font-size: 1.1rem; }
+.memory-card__type { color: var(--diary-muted); font-size: var(--lumo-font-size-s, .875rem); }
 .memory-card__prompt { margin: 0; font-size: 1.15rem; line-height: 1.5; overflow-wrap: anywhere; }
 .memory-labelled { display: flex; flex-direction: column; }
-.memory-labelled__label { font-size: var(--lumo-font-size-s, .875rem); font-weight: 600; color: var(--diary-muted, #575d64); }
+.memory-labelled__label { font-size: var(--lumo-font-size-s, .875rem); font-weight: 600; color: var(--diary-muted); }
 .memory-labelled__body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.memory-reveal { display: flex; flex-direction: column; gap: .75rem; }
-.memory-reveal__answer .memory-labelled__body { font-size: 1.1rem; }
-.memory-reveal__source .memory-labelled__body { font-style: italic; }
-.memory-grades__label { margin: 0; font-weight: 600; }
-.memory-grades { display: flex; flex-wrap: wrap; gap: .5rem; }
-.memory-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-.memory-attempt { display: flex; flex-direction: column; gap: .75rem; }
+.memory-attempt { display: flex; flex-direction: column; gap: .75rem; width: 100%; max-width: 40rem; text-align: left; }
 .memory-attempt vaadin-text-area, .memory-candidate vaadin-text-area { width: 100%; }
+.memory-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.memory-actions--center { justify-content: center; }
+.memory-reveal { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 40rem; text-align: left; }
+.memory-reveal__box { display: flex; flex-direction: column; gap: .75rem; padding: 1.25rem; border-radius: var(--diary-radius-md);
+  background: var(--diary-surface-2); }
+.memory-reveal__answer .memory-labelled__body { font-size: 1.1rem; color: var(--diary-text); }
+.memory-reveal__source .memory-labelled__body { font-style: italic; }
+.memory-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }
+.memory-grades vaadin-button { width: 100%; min-height: 3.5rem; margin: 0; }
+.memory-reveal > .diary-muted { margin: 0; text-align: center; }
+
+/* "Also here" tiles */
+.memory-also { margin: .5rem 0 0; font-size: 1.1rem; }
+.memory-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.memory-tile { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; padding: 1rem 1.1rem; min-height: 44px;
+  text-align: left; font: inherit; color: var(--diary-text); cursor: pointer; width: 100%; }
+.memory-tile__title { font-weight: 600; font-size: 1rem; }
+.memory-tile__desc { color: var(--diary-muted); font-size: .9rem; flex: 1; }
+.memory-tile__state { color: var(--diary-accent); font-size: .875rem; font-weight: 600; text-decoration: underline; }
+.memory-tile[aria-expanded="true"] { border-color: var(--diary-accent); }
+
+/* candidates, cards, lessons as cards */
+.memory-candidate, .memory-item { padding: .75rem 1rem; display: flex; flex-direction: column; gap: .5rem; }
 .memory-items { display: flex; flex-direction: column; gap: .5rem; }
-.memory-item { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; }
+.memory-item { flex-direction: row; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; }
 .memory-item .memory-card__prompt { flex: 1 1 14rem; font-size: 1rem; }
-.memory-lesson { border-radius: 12px; border: 1px solid var(--diary-rule, #e3dfd8); padding: .5rem 1rem; background: var(--diary-surface, #fff); }
-.memory-lesson--locked h3 { margin: .25rem 0; font-size: 1rem; }
+.memory-lesson { padding: .5rem 1rem; }
+.memory-lesson--locked h4 { margin: .25rem 0; font-size: 1rem; }
 .memory-lesson--locked p { margin: 0 0 .25rem; }
+
+@media (max-width: 800px) {
+  .memory-tiles { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .memory-grades { grid-template-columns: repeat(2, 1fr); }
+  .memory-flash { padding: 1.25rem 1rem; }
+}

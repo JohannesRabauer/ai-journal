@@ -14,6 +14,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.NativeButton;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Section;
 import com.vaadin.flow.component.html.Span;
@@ -77,6 +79,9 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
     private final Section itemsSection = new Section();
     private final Section lessonsSection = new Section();
     private final TextArea attempt = new TextArea();
+    private final Paragraph eyebrow = new Paragraph();
+    private final Div tiles = new Div();
+    private Panel openPanel;
 
     private ReviewSession session = new ReviewSession(List.of());
     private RevealView revealView;
@@ -90,6 +95,9 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
     private Runnable retry;
     private Target pendingTarget;
 
+    /** The "Also here" sections that can be opened below the review card. */
+    private enum Panel { CANDIDATES, ITEMS, LESSONS }
+
     /** The reveal and the entry the source can be opened at (null when unknown or gone). */
     private record RevealView(RevealDto reveal, Long entryId, SourceType sourceType) {
     }
@@ -101,7 +109,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         this.memory = memory;
         this.coach = coach;
         addClassName("memory-view");
-        setMaxWidth("48rem");
+        setMaxWidth("56rem");
 
         status.addClassName("memory-status");
         status.getElement().setAttribute("role", "status");
@@ -112,9 +120,18 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         for (Section s : List.of(dueSection, candidatesSection, itemsSection, lessonsSection)) {
             s.addClassName("memory-section");
         }
+        candidatesSection.setId("memory-panel-candidates");
+        itemsSection.setId("memory-panel-items");
+        lessonsSection.setId("memory-panel-lessons");
+        eyebrow.addClassNames("diary-eyebrow", "memory-eyebrow");
+        eyebrow.getElement().setAttribute("role", "status");
         Paragraph intro = new Paragraph(getTranslation("memory.intro"));
-        intro.addClassName("diary-muted");
-        add(new H1(getTranslation("memory.title")), intro, status, errorBox, dueSection, candidatesSection, itemsSection, lessonsSection);
+        intro.addClassNames("diary-muted", "memory-lead");
+        H2 also = new H2(getTranslation("memory.also.title"));
+        also.addClassName("memory-also");
+        tiles.addClassName("memory-tiles");
+        add(eyebrow, new H1(getTranslation("memory.title")), intro, status, errorBox, dueSection, also, tiles,
+                candidatesSection, itemsSection, lessonsSection);
     }
 
     /** "Extract learnings" on an entry or reflection: opens this screen and starts the extraction there. */
@@ -222,6 +239,9 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
     private void extract(Target target) {
         async("memory.extract.working", () -> memory.extract(target.type(), target.id()), created -> {
             candidates = safe(() -> memory.candidates(CandidateStatus.PENDING), candidates);
+            if (!created.isEmpty()) {
+                openPanel = Panel.CANDIDATES;
+            }
             status.setText(created.isEmpty() ? getTranslation("memory.extract.none")
                     : getTranslation("memory.extract.done", created.size()));
             render();
@@ -248,16 +268,50 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         renderCandidates();
         renderItems();
         renderLessons();
+        renderTiles();
     }
 
-    private static H2 heading(String text, String id) {
-        H2 h = new H2(text);
+    private void renderTiles() {
+        tiles.removeAll();
+        tiles.add(tile(Panel.CANDIDATES, "memory.candidates.title", candidates.size(), "memory.tile.candidates", candidatesSection));
+        tiles.add(tile(Panel.ITEMS, "memory.items.title", items.size(), "memory.tile.items", itemsSection));
+        tiles.add(tile(Panel.LESSONS, "memory.lessons.title", -1, "memory.lessons.intro", lessonsSection));
+        candidatesSection.setVisible(openPanel == Panel.CANDIDATES);
+        itemsSection.setVisible(openPanel == Panel.ITEMS);
+        lessonsSection.setVisible(openPanel == Panel.LESSONS);
+    }
+
+    private Component tile(Panel panel, String titleKey, int count, String descKey, Section target) {
+        boolean open = openPanel == panel;
+        NativeButton b = new NativeButton();
+        b.addClassNames("diary-card", "memory-tile");
+        b.getElement().setAttribute("aria-expanded", String.valueOf(open));
+        b.getElement().setAttribute("aria-controls", target.getId().orElse(""));
+        Span title = new Span(count < 0 ? getTranslation(titleKey) : getTranslation(titleKey) + " \u00b7 " + count);
+        title.addClassName("memory-tile__title");
+        Span desc = new Span(getTranslation(descKey));
+        desc.addClassName("memory-tile__desc");
+        Span state = new Span(getTranslation(open ? "memory.tile.hide" : "memory.tile.show"));
+        state.addClassName("memory-tile__state");
+        b.add(title, desc, state);
+        b.addClickListener(e -> {
+            openPanel = open ? null : panel;
+            renderTiles();
+            if (!open) {
+                target.getChildren().findFirst().ifPresent(h -> h.getElement().executeJs("this.focus()"));
+            }
+        });
+        return b;
+    }
+
+    private static H3 heading(String text, String id) {
+        H3 h = new H3(text);
         h.setId(id);
         h.getElement().setAttribute("tabindex", "-1");
         return h;
     }
 
-    private static void section(Section section, H2 heading) {
+    private static void section(Section section, H3 heading) {
         section.removeAll();
         section.getElement().setAttribute("aria-labelledby", heading.getId().orElse(""));
         section.add(heading);
@@ -284,19 +338,29 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
 
     private void renderDue() {
         int due = session.remaining();
-        section(dueSection, heading(due == 0 ? getTranslation("memory.due.none") : getTranslation("memory.due.title", due), "memory-due-title"));
+        eyebrow.setText(due == 0 ? getTranslation("memory.due.none") : getTranslation("memory.due.title", due));
+        dueSection.removeAll();
+        dueSection.getElement().setAttribute("aria-label", getTranslation("memory.review.region"));
         if (session.phase() == Phase.DONE) {
+            Div done = new Div(new Paragraph(getTranslation("memory.due.done")));
+            done.addClassNames("diary-card", "memory-flash", "memory-done");
+            done.getElement().setAttribute("tabindex", "-1");
+            dueSection.add(done);
             return;
         }
         ReviewCardDto card = session.current().orElseThrow();
         Div box = new Div();
-        box.addClassName("memory-card");
+        box.addClassNames("diary-card", "memory-flash");
         box.getElement().setAttribute("role", "group");
         box.getElement().setAttribute("aria-labelledby", "memory-card-prompt");
+        Span position = new Span(getTranslation("memory.review.position", session.position(), session.total()));
+        position.addClassNames("diary-chip", "memory-position");
         Paragraph prompt = new Paragraph(card.prompt());
         prompt.setId("memory-card-prompt");
-        prompt.addClassName("memory-card__prompt");
-        box.add(typeBadge(card.type()), prompt);
+        prompt.addClassNames("memory-card__prompt", "memory-flash__q");
+        Div meta = new Div(position, typeBadge(card.type()));
+        meta.addClassName("memory-flash__meta");
+        box.add(meta, prompt);
         box.add(session.phase() == Phase.PROMPT ? promptControls(card) : revealControls(card));
         dueSection.add(box);
     }
@@ -324,6 +388,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         buttons.addClassName("memory-actions");
         Div wrap = new Div(attempt, buttons);
         wrap.addClassName("memory-attempt");
+        buttons.addClassName("memory-actions--center");
         if (!busy && error == null) {
             attempt.focus();
         }
@@ -367,6 +432,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         wrap.addClassName("memory-reveal");
         wrap.getElement().setAttribute("role", "region");
         wrap.getElement().setAttribute("aria-label", getTranslation("memory.review.revealLabel"));
+        wrap.getElement().setAttribute("tabindex", "-1");
         if (reveal.attemptText() != null && !reveal.attemptText().isBlank()) {
             wrap.add(labelled("memory.review.yourAnswer", reveal.attemptText()));
         } else {
@@ -390,29 +456,29 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
             }
             wrap.add(source);
         }
-        Paragraph label = new Paragraph(getTranslation("memory.review.gradeLabel"));
-        label.addClassName("memory-grades__label");
         Div grades = new Div();
         grades.addClassName("memory-grades");
         grades.getElement().setAttribute("role", "group");
         grades.getElement().setAttribute("aria-label", getTranslation("memory.review.gradeLabel"));
         Key[] keys = {Key.DIGIT_1, Key.DIGIT_2, Key.DIGIT_3, Key.DIGIT_4};
-        Button first = null;
         for (Grade g : Grade.values()) {
             Button b = new Button(getTranslation(g.key()), e -> grade(card, g));
             b.addThemeVariants(g == Grade.GOOD ? ButtonVariant.LUMO_PRIMARY : ButtonVariant.LUMO_CONTRAST);
             b.setEnabled(!busy);
             b.addClickShortcut(keys[g.ordinal()]);
             grades.add(b);
-            if (first == null) {
-                first = b;
-            }
         }
         Paragraph hint = new Paragraph(getTranslation("memory.review.keysHint"));
         hint.addClassName("diary-muted");
-        wrap.add(label, grades, hint);
-        if (first != null && !busy) {
-            first.focus();
+        Div revealBox = new Div();
+        revealBox.addClassName("memory-reveal__box");
+        for (Component c : wrap.getChildren().toList()) {
+            revealBox.add(c);
+        }
+        wrap.removeAll();
+        wrap.add(revealBox, grades, hint);
+        if (!busy) {
+            wrap.getElement().executeJs("this.focus()");
         }
         return wrap;
     }
@@ -429,6 +495,8 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
             render();
             if (session.phase() == Phase.DONE) {
                 dueSection.getChildren().findFirst().ifPresent(h -> h.getElement().executeJs("this.focus()"));
+            } else {
+                attempt.focus();
             }
         }, () -> grade(card, grade));
     }
@@ -447,7 +515,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
 
     private Component candidateCard(MemoryCandidateDto c) {
         Div box = new Div();
-        box.addClassName("memory-candidate");
+        box.addClassNames("diary-card", "memory-candidate");
         box.getElement().setAttribute("role", "group");
         String promptId = "memory-candidate-" + c.id();
         box.getElement().setAttribute("aria-labelledby", promptId);
@@ -476,7 +544,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
 
     private Component candidateEditor(MemoryCandidateDto c) {
         Div box = new Div();
-        box.addClassName("memory-candidate");
+        box.addClassNames("diary-card", "memory-candidate");
         box.getElement().setAttribute("role", "group");
         box.getElement().setAttribute("aria-label", getTranslation("memory.candidate.editing"));
         TextArea prompt = new TextArea(getTranslation("memory.candidate.prompt"));
@@ -558,7 +626,7 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         list.addClassName("memory-items");
         for (MemoryItemDto item : items) {
             Div row = new Div();
-            row.addClassName("memory-item");
+            row.addClassNames("diary-card", "memory-item");
             row.getElement().setAttribute("role", "listitem");
             Paragraph prompt = new Paragraph(item.prompt());
             prompt.addClassName("memory-card__prompt");
@@ -605,17 +673,17 @@ public class MemoryView extends VerticalLayout implements BeforeEnterObserver, H
         for (LessonDto lesson : lessons) {
             if (lesson.unlocked()) {
                 Details d = new Details(lesson.title(), new Paragraph(lesson.body()));
-                d.addClassName("memory-lesson");
+                d.addClassNames("diary-card", "memory-lesson");
                 d.setOpened(false);
                 lessonsSection.add(d);
             } else {
                 Div locked = new Div();
-                locked.addClassNames("memory-lesson", "memory-lesson--locked");
+                locked.addClassNames("diary-card", "memory-lesson", "memory-lesson--locked");
                 Span lock = new Span(getTranslation("memory.lesson.locked"));
                 lock.addClassName("memory-card__type");
                 Paragraph hint = new Paragraph(lesson.unlockHint() == null ? "" : lesson.unlockHint());
                 hint.addClassName("diary-muted");
-                locked.add(new H3(lesson.title()), lock, hint);
+                locked.add(new H4(lesson.title()), lock, hint);
                 lessonsSection.add(locked);
             }
         }
