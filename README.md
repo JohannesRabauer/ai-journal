@@ -7,8 +7,8 @@ turn learnings into memory items with spaced review, do thinking exercises and r
 No telemetry, no external fonts or CDNs. In the full profiles nothing leaves your machine except one-time model
 downloads. Details: [docs/PRIVACY.md](docs/PRIVACY.md). Specification: [docs/SPEC.md](docs/SPEC.md).
 
-Stack: Quarkus 3.29 (backend), Vaadin 24 on Spring Boot (frontend), embedded H2 file database, Ollama, faster-whisper,
-Piper, Java 25.
+Stack: Quarkus 3.31 (one backend process: REST API plus server-rendered Qute pages with small browser modules), embedded H2
+file database, Ollama, faster-whisper, Piper, Java 25. There is no separate frontend process (D-033).
 
 ## Three ways to run it
 
@@ -39,9 +39,9 @@ cp .env.example .env                 # optional: edit .env
 mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama
 docker compose --profile cpu --profile tts up --build -d
 ```
-Open http://127.0.0.1:8081. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
+Open http://127.0.0.1:8080. The first start downloads models (Ollama registry, Hugging Face: Whisper small and two
 Piper voices); the Whisper service becomes healthy once its model is cached. Check with `docker compose ps`. Stop with
-`docker compose --profile cpu --profile tts down`. The backend and frontend ports are published on `127.0.0.1` only (the database is embedded H2 in the backend, no port); Ollama, Whisper and Piper publish none (docs/CONFIG.md shows how to expose them for debugging). On Linux set
+`docker compose --profile cpu --profile tts down`. The backend port (API and web pages) is published on `127.0.0.1` only (the database is embedded H2 in the backend, no port); Ollama, Whisper and Piper publish none (docs/CONFIG.md shows how to expose them for debugging). On Linux set
 `JOURNAL_UID`/`JOURNAL_GID` in `.env` to your user if it is not 1001.
 
 Data lives in `data/db/journal.mv.db` (compose) or `data/journal.mv.db` (plain Java). Backup: stop the backend and copy that folder.
@@ -58,17 +58,15 @@ The database is embedded (H2 file `data/journal.mv.db`), no Docker needed for it
 (`ollama pull qwen3:1.7b qwen3-embedding:0.6b`), a Whisper service and optionally Piper yourself, then set their
 endpoints in `.env` (defaults: `localhost:11434`, `:8000`, `:5000`). Needs JDK 25 (`JAVA_HOME`).
 
-Windows PowerShell (two terminals):
+Windows PowerShell:
 ```powershell
 scripts\run-backend.ps1       # builds with mvnw on first run (-Build to force)
-scripts\run-frontend.ps1
 ```
 sh:
 ```sh
 sh scripts/run-backend.sh     # --build to force
-sh scripts/run-frontend.sh
 ```
-Open http://127.0.0.1:8081.
+Open http://127.0.0.1:8080 (the one process serves the pages and the API).
 
 ### Profile C: lite-cloud (Raspberry Pi 3)
 
@@ -94,13 +92,14 @@ sh scripts/build-lite.sh && sh scripts/run-lite.sh
 - Profile C relaxes this: see the caveat in [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Development
-- `scripts\verify.ps1` / `sh scripts/verify.sh`: build and all tests (no network after dependencies are cached, no Docker).
-- `scripts\smoke-compose.ps1` / `sh scripts/smoke-compose.sh`: opt-in Docker smoke test (builds the images, starts
-  backend and frontend with fake providers in a throwaway project, then removes everything).
-- `scripts\smoke-plain.ps1` / `sh scripts/smoke-plain.sh`: opt-in smoke test of profile B (no Docker, throwaway H2 file, backend
-  and frontend via `run-backend`/`run-frontend` with fake providers; entry, export, delete-all).
+- `scripts\verify.ps1` / `sh scripts/verify.sh`: build and all tests, Java and the node tests of the browser modules (no network after dependencies are cached, no Docker).
+- Layout: `api/` (shared REST records), `backend/` (Quarkus; pages in `backend/src/main/java/.../web/ui`, templates in `src/main/resources/templates`, CSS and JS in `src/main/resources/META-INF/resources`).
+- `scripts\smoke-compose.ps1` / `sh scripts/smoke-compose.sh`: opt-in Docker smoke test (builds the image, starts
+  the backend with fake providers in a throwaway project, checks the HTML pages, then removes everything).
+- `scripts\smoke-plain.ps1` / `sh scripts/smoke-plain.sh`: opt-in smoke test of profile B (no Docker, throwaway H2 file, the
+  backend via `run-backend` with fake providers; HTML pages, entry, export, delete-all).
 - `scripts\smoke-lite.ps1` / `sh scripts/smoke-lite.sh`: opt-in smoke test of profile C against a local mock of the OpenAI
   API (`scripts/mock-openai`, Node 18+, nothing leaves your machine): consent/key refusal, cloud banner, coach, memory,
-  gym, weekly report, transcribe, TTS, export, delete-all, memory of both JVMs. The `.sh` mirrors are untested.
+  gym, weekly report, transcribe, TTS, export, delete-all, memory of the JVM. The `.sh` mirrors are untested.
 - Docs: [PLAN](docs/PLAN.md), [DECISIONS](docs/DECISIONS.md), [CONVENTIONS](docs/CONVENTIONS.md),
   [CONFIG](docs/CONFIG.md), [PRIVACY](docs/PRIVACY.md), [PI](docs/PI.md).

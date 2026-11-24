@@ -102,3 +102,5 @@ keyboard focus, list semantics, 375 px reflow, reduced motion, ARIA on the recor
 
 ## Post-wave change: D-032
 After Wave 4 PostgreSQL + pgvector was replaced by the embedded H2 file database for all profiles (D-032). References above to PostgreSQL, pgvector and the `db` service describe the state at acceptance time; criteria 11 and 12 must be re-run (`smoke-compose`, `smoke-plain`, `smoke-lite`) against the H2-only build. Pi memory numbers should be re-measured.
+
+Note (2026-11-24): the frontend process and port 8081 mentioned above no longer exist (D-033); the backend serves the pages on 8080.

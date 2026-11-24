@@ -64,3 +64,12 @@ Main green (425 backend, 183 frontend, 91 JS tests). All twelve acceptance crite
 
 ## Post-wave change: D-032
 PostgreSQL + pgvector removed; the only database is the embedded H2 file (`data/journal.mv.db`, compose: `data/db/journal.mv.db`), vectors in the `jdbc` store, one build for all profiles (docs/DECISIONS.md D-032). Scripts, docs and deploy units updated; `smoke-plain` no longer needs Docker. Earlier entries above describe the PostgreSQL state and are kept as history.
+
+## Qute migration (D-033): phases 0 to 5 done 2026-11-24
+The Vaadin frontend is replaced by server-rendered Qute pages in the backend (docs/MIGRATION-QUTE.md). Phase 5 removed the
+`frontend/` module, its Dockerfile, compose service, systemd unit and scripts; one JVM serves the pages and the API on
+port 8080 (port 8081 is gone; mentions of it in the waves above and in docs/ACCEPTANCE.md are history). The smoke tests
+check the HTML pages (200, h1, CSP header) on the backend port. Tests after phase 5: 619 Java tests (backend and api,
+`./mvnw verify`), 215 JS tests (`cd backend && npm test`); `smoke-plain`, `smoke-lite` (single JVM about 221 MB Windows
+working set after rendering every page) and `smoke-compose` green. Open: phase 6, measure the one JVM on a real Pi 3 and
+redo the screen reader / axe pass. Dependabot PRs for Vaadin and Spring Boot (#20, #26) are obsolete and should be closed.

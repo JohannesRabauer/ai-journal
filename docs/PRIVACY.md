@@ -11,7 +11,7 @@ outbound connections are the provider endpoints you configure.
 | Audio recordings | `./data/audio` | `JOURNAL_AUDIO_FILESYSTEM_DIRECTORY` | `/var/lib/ai-diary/audio` |
 | Transcription, questions, embeddings, speech | Whisper, Ollama, Piper on your machine | same, services you run | **OpenAI API** |
 | Outbound connections | none while running. Model downloads (Ollama registry, Hugging Face) only while a model is missing, i.e. on first start | none | OpenAI (`api.openai.com`) |
-| Ports | backend and frontend published on `127.0.0.1` only (the H2 database is embedded in the backend and has no port); Ollama, Whisper and Piper publish no port at all (only the other containers reach them) | backend/frontend bind `127.0.0.1` by default | both units bind `127.0.0.1` (SSH tunnel). Opening the frontend to the home network is an explicit opt-in (`JOURNAL_HTTP_HOST=0.0.0.0` and `JOURNAL_ALLOWED_HOSTS`, docs/PI.md) |
+| Ports | the backend (API and web pages, one process) published on `127.0.0.1` only (the H2 database is embedded in the backend and has no port); Ollama, Whisper and Piper publish no port at all (only the other containers reach them) | the backend binds `127.0.0.1` by default | the unit binds `127.0.0.1` (SSH tunnel). Opening the pages to the home network is an explicit opt-in (`JOURNAL_HTTP_HOST=0.0.0.0` and `JOURNAL_ALLOWED_HOSTS`, docs/PI.md) |
 
 Models are downloaded once. After that you can disconnect the machine; profiles A and B keep working. The containers
 check what is cached before they connect anywhere: the Ollama container runs `ollama pull` only for models that
@@ -24,17 +24,17 @@ downloads, pre-populate `./data/ollama`, `./data/whisper`, `./data/piper`.
 
 The journal has no authentication, so the servers defend themselves against other websites open in the same browser:
 
-- **Cross-site writes (CSRF).** Every request other than GET/HEAD/OPTIONS to the backend (`:8080`) and to the frontend's
-  `/upload/**` proxies must carry the header `X-AI-Diary: 1`. A browser cannot add a custom header to a request to
+- **Cross-site writes (CSRF).** Every request other than GET/HEAD/OPTIONS to the backend (`:8080`, which serves both the API and
+  the pages) must carry the header `X-AI-Diary: 1`. A browser cannot add a custom header to a request to
   another origin without a CORS preflight, and CORS is disabled, so forms, `sendBeacon` and `fetch(..., {mode: 'no-cors'})`
-  from other sites cannot write. Missing header: `403` with code `CSRF_HEADER_REQUIRED`. The frontend and its scripts send
-  it; **your own curl / Invoke-RestMethod calls must send it too** (see the examples in this file).
+  from other sites cannot write. Missing header: `403` with code `CSRF_HEADER_REQUIRED`. The browser scripts of the pages send
+  it (HTML form posts use a per-session token instead); **your own curl / Invoke-RestMethod calls must send it too** (see the examples in this file).
 - **Origin and Fetch Metadata.** A request with an `Origin` header outside the allowlist (`journal.http.allowed-origins`,
   empty by default) or with `Sec-Fetch-Site: cross-site` is rejected with `403`, also for reads.
-- **DNS rebinding.** Both servers check the `Host` header: only `localhost`, `127.0.0.1`, `[::1]` (any port), the compose
-  service name `backend` (backend only) and the names in `JOURNAL_ALLOWED_HOSTS` are served; anything else gets `421`
+- **DNS rebinding.** The backend checks the `Host` header: only `localhost`, `127.0.0.1`, `[::1]` (any port), the compose
+  service name `backend` and the names in `JOURNAL_ALLOWED_HOSTS` are served; anything else gets `421`
   without details.
-- **Framing and sniffing.** The frontend sends `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`,
+- **Framing and sniffing.** The pages are sent with `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`,
   `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff` on every response; audio responses are `nosniff` too.
   Recording uploads accept only audio MIME types (`audio/webm`, `ogg`, `mp4`, `mpeg`, `wav`, `x-wav`, `flac`).
 
@@ -121,7 +121,7 @@ Remove-Item -Recurse -Force data
 rm -rf data
 ```
 
-On the Pi: `sudo systemctl stop ai-diary-frontend ai-diary-backend && sudo rm -rf /var/lib/ai-diary`.
+On the Pi: `sudo systemctl stop ai-diary-backend && sudo rm -rf /var/lib/ai-diary`.
 (Never do this to `data` (the H2 file and audio) before you have an export or backup you want to keep.)
 
 ## Importing data from the old PostgreSQL version

@@ -1,6 +1,6 @@
 # Migration plan: Vaadin frontend → Qute pages in the backend
 
-Status: **proposed** (2026-11-24); phase 0 implemented on branch `qute/phase-0`. Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
+Status: **phases 0 to 5 done** (2026-11-24, branch `qute/phase-5`); the Vaadin frontend is removed and one JVM serves everything. Phase 6 (real Pi measurement) is open. Decision record: D-033 in [DECISIONS.md](DECISIONS.md).
 Proof of concept: branch `spike/qute-journal` (Journal page, commit `bd72455`).
 
 ## Why
@@ -72,24 +72,23 @@ browser ──same origin──> backend (Quarkus, :8080)
 7. Re-run the security review checklist from Wave 4 against the new surface.
 
 ## Phases
-Each phase is one branch, merged when `verify` and the smoke tests pass. The Vaadin frontend keeps working until
-phase 5, so the app is usable at every step. Phases 2–4 can run in parallel (separate files).
+Each phase is one branch, merged when `verify` and the smoke tests pass. The Vaadin frontend kept working until
+phase 5, so the app was usable at every step.
 
 | # | Scope | Done when |
 |---|---|---|
-| 0 | Merge the spike; security items 1, 4, 5; move `ThemeContrastTest`; shared JS (`notify`, `confirm`, `autosave`, `poll`) | backend serves `/journal` behind the guard; unit + JS tests green |
-| 1 | Today (composer, recorder element, review panel, timeline) + entry detail + audio player | voice and text entry end to end in the Qute UI |
-| 2 | Journal search/filter (new `GET /api/entries?q=&source=&reflected=`) | open item from the UI overhaul closed |
-| 3 | Coach (Reflect) — and here the side-by-side layout from the mockup becomes cheap | coach flow incl. voice answers and TTS |
-| 4 | Remember (with next-interval hints: extend `ReviewCardDto`), Gym, Week, Settings (+ export, delete-all) | every Vaadin route has a Qute page |
-| 5 | Remove `frontend/` module, its Dockerfile, systemd unit, compose service, scripts; port 8081 → 8080 in docs; close Dependabot PRs #20 and #26 | one JVM; `smoke-plain`, `smoke-lite`, `smoke-compose` green; DESIGN/PI/README/CONFIG updated |
+| 0 | ~~Merge the spike; security items 1, 4, 5; move `ThemeContrastTest`; shared JS (`notify`, `confirm`, `autosave`, `poll`)~~ **done** | backend serves `/journal` behind the guard; unit + JS tests green |
+| 1 | ~~Today (composer, recorder element, review panel, timeline) + entry detail + audio player~~ **done** | voice and text entry end to end in the Qute UI |
+| 2 | ~~Journal search/filter (new `GET /api/entries?q=&source=&reflected=`)~~ **done** | open item from the UI overhaul closed |
+| 3 | ~~Coach (Reflect) — and here the side-by-side layout from the mockup becomes cheap~~ **done** | coach flow incl. voice answers and TTS |
+| 4 | ~~Remember (with next-interval hints: extend `ReviewCardDto`), Gym, Week, Settings (+ export, delete-all)~~ **done** | every Vaadin route has a Qute page |
+| 5 | ~~Remove `frontend/` module, its Dockerfile, systemd unit, compose service, scripts; port 8081 → 8080 in docs; close Dependabot PRs #20 and #26~~ **done** (the two PRs themselves are still to be closed by the owner) | one JVM; `smoke-plain`, `smoke-lite`, `smoke-compose` green; DESIGN/PI/README/CONFIG updated |
 | 6 | Measure on a real Pi 3 (RSS of the one JVM), re-tune `-Xmx`; a11y pass (keyboard, screen reader, axe) | numbers in PI.md; A11Y.md updated |
 
 ## Conventions (phase 0 foundation; every later phase follows them)
 **Routes.** `/` Today, `/journal` list, `/journal/{id}` entry detail, `/journal/{id}/reflect` coach, `/memory`, `/gym`,
-`/weekly`, `/settings`. `/api/**` stays JSON. Routes not built yet answer with the "not moved yet" page
-(`NotMovedResource`, plus the two `/journal/{id}` methods in `JournalResource`): a phase deletes the method of the route
-it builds. One URL prefix belongs to one resource class (JAX-RS), so nested routes live in the prefix's class.
+`/weekly`, `/settings`. `/api/**` stays JSON. (During the migration unbuilt routes answered with a "not moved yet"
+page; all routes exist now and that page is deleted.) One URL prefix belongs to one resource class (JAX-RS), so nested routes live in the prefix's class.
 
 **Java.**
 - One resource per page under `web/ui/`, with a typed `@CheckedTemplate` (`static native TemplateInstance page(Shell shell, Messages t, <ViewModel> v)`),

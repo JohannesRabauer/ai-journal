@@ -118,9 +118,11 @@ Consequences: Flyway location is plain `db/migration`; `lite-cloud` is selected 
 the compose `db` service, `JOURNAL_DB_PASSWORD` and the db host port are gone. Old PostgreSQL data is imported with
 `scripts/import-legacy-postgres.*`.
 
-**D-033 Server-rendered Qute pages in the backend replace the Vaadin frontend (proposed, 2026-11-24).** The backend
+**D-033 Server-rendered Qute pages in the backend replace the Vaadin frontend (accepted, 2026-11-24).** The backend
 renders the UI with Qute (`quarkus-rest-qute`) plus small vanilla ES modules; the `frontend/` module, its JVM, image,
 unit and `/upload` proxy are removed at the end. Reason: one JVM instead of two on the Raspberry Pi 3 (measured: about
 180 MB of about 390 MB saved), no Vaadin 25 / Spring Boot 4 / Jackson 3 migration, simpler deploy. Evidence: spike
 branch `spike/qute-journal`. Consequences and phases: [MIGRATION-QUTE.md](MIGRATION-QUTE.md); the browser talks to the
 backend directly, so same-origin handling, CSRF for form posts and the LAN settings of D-031 move to the backend.
+Done with phase 5: `frontend/` module, Dockerfile, systemd unit, compose service and scripts are deleted; the app is one
+JVM on port 8080 (8081 no longer exists).

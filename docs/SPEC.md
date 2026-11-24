@@ -159,8 +159,8 @@ lists past weeks.
 ## 10. Privacy and data
 
 - No telemetry, analytics, crash reporting or external fonts/CDNs. No journal content in logs.
-- All published ports bind to `127.0.0.1` by default. CORS restricted to the configured
-  frontend origin.
+- All published ports bind to `127.0.0.1` by default. CORS is disabled; the pages are served
+  by the backend itself (same origin, D-033).
 - **Export**: one-click export of all data (entries, transcripts, conversations, memory items,
   reviews, gym attempts, reports) as JSON in a zip, audio optional.
 - **Delete everything**: one action (with typed confirmation) deletes all user data including
@@ -171,11 +171,11 @@ lists past weeks.
 
 ### 11.1 Profile A — docker-compose (full local)
 ollama, whisper (faster-whisper with an OpenAI-compatible HTTP API), piper
-TTS, backend (with the embedded H2 file database, D-032), frontend. Compose profiles select GPU/CPU variants and optional services.
+TTS, backend (REST API and web pages, with the embedded H2 file database, D-032). Compose profiles select GPU/CPU variants and optional services.
 Secrets via `.env` (`.env.example` committed). Ports on 127.0.0.1.
 
 ### 11.2 Profile B — plain Java
-Backend and frontend via `java -jar` / mvnw against externally running Ollama,
+The backend (API and pages) via `java -jar` / mvnw against externally running Ollama,
 Whisper and Piper (the database is the embedded H2 file); every endpoint configurable by env var / properties. Scripts:
 `scripts/run-*.ps1` (primary) and `scripts/run-*.sh`.
 

@@ -2,7 +2,7 @@
 
 Direction "Quiet paper": calm, text-first, a warm paper background with raised cards, one accent colour, generous
 whitespace. System sans-serif fonts only: no external fonts or CDNs (SPEC section 10) and, by owner decision, no serif
-face. Implemented in `frontend/src/main/frontend/themes/diary/styles.css` on top of Vaadin Lumo. A clickable mockup of
+face. Implemented in `backend/src/main/resources/META-INF/resources/css/styles.css` (shared tokens and building blocks; one stylesheet per page next to it) with native HTML controls, no UI framework (D-033). A clickable mockup of
 the full overhaul is in `docs/mockups/ui-overhaul.html`.
 
 ## Principles
@@ -19,11 +19,11 @@ the full overhaul is in `docs/mockups/ui-overhaul.html`.
 
 ## Colour scheme
 Follows `prefers-color-scheme`. Manual override in Settings (system / light / dark), stored in the browser's
-`localStorage` key `diary.theme` and applied by `themes/diary/theme-init.js` before first render (Lumo's `theme="dark"`
+`localStorage` key `diary.theme` and applied by `js/theme-init.js` before first render (the `theme="dark"`
 attribute on `<html>`).
 
 ## Tokens and contrast (WCAG 2.1 AA)
-Ratios computed with the WCAG relative luminance formula. `ThemeContrastTest` parses the tokens from `styles.css` and
+Ratios computed with the WCAG relative luminance formula. `ThemeContrastTest` parses the tokens from `css/styles.css` and
 fails the build if any pair drops below its threshold (4.5:1 for text, 3:1 for control borders and focus ring).
 
 | Token | Light | Dark | Use |
@@ -78,4 +78,4 @@ gym, weekly; missing files are fine), fallback en, then the key. Keys are prefix
 `settings.uiLanguage` unless AUTO, else the browser locale.
 
 ## Accessibility additions (W4b, details in docs/A11Y.md)
-Focus rings use the solid accent (`--lumo-primary-color-50pct` is redefined); form controls get a 1px `--diary-border` boundary; `--lumo-error-contrast-color` on `--diary-error` is covered by `ThemeContrastTest`. Every page has one `h1`.
+Focus rings use the solid accent (`ThemeContrastTest.focusRingIsTheSolidAccent`); form controls get a 1px `--diary-border` boundary; the error button colours are covered by `ThemeContrastTest` (`backend/src/test/java/dev/rabauer/ai/diary/web/ui/`). Every page has one `h1`.

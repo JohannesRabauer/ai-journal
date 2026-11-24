@@ -1,7 +1,7 @@
 # Configuration reference
 
 Every key can be set as an environment variable: upper-case, `.` and `-` become `_` (`journal.stt.provider` ->
-`JOURNAL_STT_PROVIDER`). Docker compose, `scripts/run-*` and the systemd units read `.env` / `/etc/ai-diary/backend.env` (and the optional `frontend.env`).
+`JOURNAL_STT_PROVIDER`). Docker compose, `scripts/run-*` and the systemd units read `.env` / `/etc/ai-diary/backend.env`. There is one process (the backend, which also serves the web pages, D-033), so one set of settings.
 Template with all variables: [`.env.example`](../.env.example). Keys marked (W1a)/(W2b)... belong to a feature that
 another worker implements; names below are the agreed contract, check `backend/src/main/resources/application.properties`
 for the final defaults.
@@ -11,7 +11,7 @@ for the final defaults.
 | Profile | `journal.profile` | Providers | DB | Start |
 |---|---|---|---|---|
 | A: docker compose | `full` | Ollama, Whisper, Piper (local) | embedded H2 file, `jdbc` vector store | `docker compose --profile cpu up --build -d` |
-| B: plain Java | `full` | same, services run by you | embedded H2 file, `jdbc` vector store | `scripts/run-backend.*`, `scripts/run-frontend.*` |
+| B: plain Java | `full` | same, services run by you | embedded H2 file, `jdbc` vector store | `scripts/run-backend.*` |
 | C: `lite-cloud` | `lite-cloud` | OpenAI only | H2 file, in-JVM vectors | `scripts/run-lite.*` or systemd (docs/PI.md) |
 
 One build serves every profile (D-032). `lite-cloud` is selected purely at runtime and needs
@@ -86,28 +86,24 @@ spoken coach text, so "delete all" (SPEC section 10) clears it; it is not part o
 The OpenAI provider is lite-cloud only; the format defaults to mp3 (about 10x smaller than wav, which keeps the cache small).
 Logs contain the provider and failure kind only, never the text.
 
-## Frontend
+## Web pages (served by the backend, D-033)
 
-| Key | Env | Default |
-|---|---|---|
-| `backend.url` | `BACKEND_URL` | `http://127.0.0.1:8080` |
-| `server.address` | `JOURNAL_HTTP_HOST` | `127.0.0.1` |
-| `server.port` | `JOURNAL_FRONTEND_PORT` | `8081` |
+The pages are Qute templates rendered by the backend; there is no separate frontend process and no `BACKEND_URL`. The
+browser opens `http://127.0.0.1:8080` (the backend's `JOURNAL_HTTP_PORT`). Static files (`/css`, `/js`, `/icons`) are
+served with `max-age=0` (`quarkus.http.static-resources.max-age`) so an update never runs with stale assets.
 
 ## Request guard (CSRF, DNS rebinding) and exposing services
 
-Both servers protect the unauthenticated API (docs/PRIVACY.md, "Protection of the local API"):
+The backend protects the unauthenticated API and the pages (docs/PRIVACY.md, "Protection of the local API"):
 
 | Key | Env | Default | Meaning |
 |---|---|---|---|
-| `journal.http.allowed-hosts` (backend), `journal.allowed-hosts` (frontend) | `JOURNAL_ALLOWED_HOSTS` | empty | Comma list of extra `Host` names accepted besides `localhost`, `127.0.0.1`, `[::1]` (and `backend` on the backend). Needed for the Pi/LAN opt-in |
-| `journal.http.allowed-origins` (backend) | none | empty | Extra browser origins allowed to call the API. Leave empty: the backend's own origin is accepted automatically (see below) |
-| `quarkus.http.host` (backend) | `JOURNAL_HTTP_HOST` | `127.0.0.1` | Bind address. `0.0.0.0` only for the LAN opt-in |
-| `journal.web.legacy-port` (backend) | `JOURNAL_FRONTEND_PORT` | `8081` | Port of the previous Vaadin interface; used by the temporary "not moved yet" pages (removed with phase 5 of docs/MIGRATION-QUTE.md) |
+| `journal.http.allowed-hosts` | `JOURNAL_ALLOWED_HOSTS` | empty | Comma list of extra `Host` names accepted besides `localhost`, `127.0.0.1`, `[::1]` (and `backend`). Needed for the Pi/LAN opt-in |
+| `journal.http.allowed-origins` | none | empty | Extra browser origins allowed to call the API. Leave empty: the backend's own origin is accepted automatically (see below) |
+| `quarkus.http.host` | `JOURNAL_HTTP_HOST` | `127.0.0.1` | Bind address. `0.0.0.0` only for the LAN opt-in |
 
-### LAN access when the backend serves the pages (D-033)
-The browser now talks to the backend directly, so the LAN opt-in is a backend setting (the frontend's settings keep
-working for the Vaadin UI until phase 5). Off by default: the backend binds `127.0.0.1` and accepts only the loopback
+### LAN access (D-033)
+The browser talks to the backend directly, so the LAN opt-in is a backend setting. Off by default: the backend binds `127.0.0.1` and accepts only the loopback
 names. Anyone on the LAN can then read the journal (no login); never expose it to the internet.
 
 ```
@@ -134,7 +130,7 @@ What is accepted automatically, with no further setting:
 - **OpenAPI.** `/q/openapi` and the Swagger UI exist only in the `%dev` and `%test` profiles; prod and lite-cloud have
   neither (`quarkus.smallrye-openapi.enable=false`).
 
-Every non-GET request to the backend (and to the frontend's `/upload/**`) needs the header `X-AI-Diary: 1`:
+Every non-GET request to the backend needs the header `X-AI-Diary: 1`:
 
 ```
 curl -X POST -H "X-AI-Diary: 1" -H "Content-Type: application/json" -d '{"text":"hello"}' http://127.0.0.1:8080/api/entries
@@ -167,7 +163,7 @@ Profile B (plain Java) runs these services yourself on the default local ports, 
 | `OLLAMA_MODELS_TO_PULL` | compose | Space separated model list pulled on first start |
 | `WHISPER_MODEL` | compose | Hugging Face id of the faster-whisper model |
 | `PIPER_VOICES` | compose | Voices downloaded on first start (default `de_DE-thorsten-medium en_US-lessac-medium`) |
-| `LITE_BACKEND_JVM_OPTS`, `LITE_FRONTEND_JVM_OPTS` | `scripts/run-lite.*` | Override the tuned JVM flags |
+| `LITE_BACKEND_JVM_OPTS` | `scripts/run-lite.*` | Override the tuned JVM flags |
 
 ## Whisper service (`whisper/`)
 
