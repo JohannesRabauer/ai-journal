@@ -155,6 +155,7 @@ export class DiaryAnswerRecorder extends HTMLElement {
     this.setAttribute('data-state', `answer-${state}`);
     const recording = state === AnswerState.RECORDING;
     const busy = state !== AnswerState.IDLE;
+    const hadFocus = this.shadowRoot.activeElement;
     this.els.record.disabled = busy;
     this.els.record.hidden = recording;
     this.els.stop.hidden = !recording;
@@ -174,7 +175,18 @@ export class DiaryAnswerRecorder extends HTMLElement {
     } else if (state === AnswerState.TRANSCRIBING) {
       this.#say(this.#labels.transcribing);
     }
+    this.#keepFocus(hadFocus, state);
     this.#emit('answer-busy', { busy });
+  }
+
+  /** Buttons are hidden/disabled between states; keep keyboard focus on a usable one (stop -> cancel -> record). */
+  #keepFocus(previous, state) {
+    const usable = (b) => !b.hidden && !b.disabled;
+    if (!previous || usable(previous) || state === AnswerState.RECORDING) {
+      return;
+    }
+    const target = [this.els.cancel, this.els.record].find(usable);
+    target?.focus();
   }
 }
 

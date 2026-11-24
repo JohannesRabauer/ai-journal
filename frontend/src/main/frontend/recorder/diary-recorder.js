@@ -50,7 +50,7 @@ const TEMPLATE = `
   .row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
   .time { font-variant-numeric: tabular-nums; font-size: 1.5rem; min-width: 5ch; }
   button { font: inherit; min-height: 44px; min-width: 44px; padding: 0 1.1rem; border-radius: 22px; cursor: pointer;
-           border: 1px solid var(--lumo-contrast-30pct, #777); background: var(--lumo-base-color, #fff);
+           border: 1px solid var(--lumo-contrast-60pct, #777); background: var(--lumo-base-color, #fff);
            color: var(--lumo-body-text-color, #1b1b1b); }
   button.primary { background: var(--lumo-primary-color, #1a5fb4); color: var(--lumo-primary-contrast-color, #fff); border-color: transparent; }
   button:focus-visible { outline: 3px solid var(--lumo-primary-color, #1a5fb4); outline-offset: 2px; }
@@ -61,7 +61,7 @@ const TEMPLATE = `
   @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
   @keyframes pulse { 50% { opacity: .35; } }
   .status { min-height: 1.4em; color: var(--lumo-secondary-text-color, #4a4a4a); }
-  .recover { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--lumo-contrast-30pct, #777); }
+  .recover { padding: .75rem 1rem; border-radius: 12px; border: 1px solid var(--lumo-contrast-60pct, #777); }
   .recover[hidden] { display: none; }
   .recover p { margin: 0 0 .5rem; }
 </style>
@@ -80,7 +80,7 @@ const TEMPLATE = `
   <div class="row">
     <output class="time" id="time" role="timer" aria-label="" aria-live="off">00:00</output>
     <button type="button" class="primary" id="record"><span class="dot" aria-hidden="true"></span><span class="t"></span></button>
-    <button type="button" id="pause" aria-pressed="false" hidden></button>
+    <button type="button" id="pause" hidden></button>
     <button type="button" id="stop" hidden></button>
     <button type="button" id="retry" hidden></button>
   </div>
@@ -98,6 +98,7 @@ export class DiaryRecorder extends HTMLElement {
   #lastError = null;
   #waiting = false;
   #pending = 0;
+  #focusLost = false;
   #onOnline = () => this.#session?.networkRestored();
   #onBeforeUnload = (e) => {
     if (this.#session && [State.RECORDING, State.PAUSED].includes(this.#session.state)) {
@@ -131,7 +132,6 @@ export class DiaryRecorder extends HTMLElement {
       caf: (id) => cancelAnimationFrame(id),
       color: () => getComputedStyle(this).getPropertyValue('--lumo-primary-color').trim() || '#1a5fb4',
     });
-    $('.level').setAttribute('role', 'meter');
     this.#session = new RecorderSession({
       mediaDevices: navigator.mediaDevices,
       MediaRecorder: globalThis.MediaRecorder,
@@ -289,6 +289,8 @@ export class DiaryRecorder extends HTMLElement {
     const { record, pause, stop, retry, status, time, recover, rtitle, rtext, rfinish } = this.els;
     const live = state === State.RECORDING || state === State.PAUSED;
     const busy = state === State.REQUESTING || state === State.STOPPING || state === State.UPLOADING;
+    // A button that had keyboard focus may be hidden below (record -> pause/stop and back); remember to move focus on.
+    const focused = this.shadowRoot.activeElement;
 
     record.querySelector('.t').textContent = L.record;
     record.setAttribute('aria-label', L.record);
@@ -296,13 +298,11 @@ export class DiaryRecorder extends HTMLElement {
     record.disabled = Boolean(this.#recovery);
     pause.hidden = !live;
     pause.textContent = state === State.PAUSED ? L.resume : L.pause;
-    pause.setAttribute('aria-pressed', String(state === State.PAUSED));
     stop.hidden = !live;
     stop.textContent = L.stop;
     retry.hidden = state !== State.ERROR;
     retry.textContent = L.retry;
     time.setAttribute('aria-label', L.elapsed);
-    this.shadowRoot.querySelector('.level').setAttribute('aria-label', L.level);
 
     recover.hidden = !this.#recovery;
     rtitle.textContent = L.recoverTitle;
@@ -324,6 +324,30 @@ export class DiaryRecorder extends HTMLElement {
       text = '';
     }
     status.textContent = text;
+    this.#rescueFocus(focused);
+  }
+
+  /** Keeps keyboard focus inside the recorder when the focused button was hidden or disabled by this render. */
+  #rescueFocus(previous) {
+    const usable = (b) => b && !b.hidden && !b.disabled;
+    if (previous && !usable(previous)) {
+      this.#focusLost = true;
+    }
+    if (!this.#focusLost) {
+      return;
+    }
+    const elsewhere = document.activeElement;
+    if (elsewhere && elsewhere !== document.body && elsewhere !== this) {
+      this.#focusLost = false; // the user moved on; do not pull focus back
+      return;
+    }
+    const { record, pause, stop, retry, rfinish } = this.els;
+    const next = [pause, retry, rfinish, record].find((b) => usable(b) && b.getClientRects().length > 0)
+      ?? (usable(stop) ? stop : null);
+    if (next) {
+      this.#focusLost = false;
+      next.focus();
+    }
   }
 }
 

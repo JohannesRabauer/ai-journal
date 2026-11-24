@@ -41,7 +41,11 @@ export class DiaryCoachSpeech extends HTMLElement {
     this.live = root.querySelector('#live');
     this.stopButton = root.querySelector('#stop');
     this.stopButton.textContent = this.#labels.stop;
-    this.stopButton.addEventListener('click', () => this.stop());
+    this.stopButton.addEventListener('click', () => {
+      this.stop();
+      // The stop button hides itself once nothing plays; hand keyboard focus to the answer field, not <body>.
+      document.getElementById('coach-answer')?.focus?.();
+    });
 
     this.#guard = pageGuard();
     this.#queue = createPlaybackQueue({
