@@ -40,8 +40,7 @@ class ShellPageTest {
 
     @Test
     void everyNavigationTargetAnswersWithAPageWithOneH1AndTheRightCurrentItem() {
-        String[][] routes = {{"/", "Today"}, {"/memory", "Remember"}, {"/gym", "Thinking Gym"}, {"/weekly", "Week"},
-                {"/settings", "Settings"}, {"/journal/12", "Journal"}, {"/journal/12/reflect", "Journal"}};
+        String[][] routes = {{"/", "Today"}, {"/journal/12", "Journal"}, {"/journal/12/reflect", "Journal"}};
         for (String[] r : routes) {
             String body = html(r[0]);
             assertThat(Pattern.compile("<h1").matcher(body).results().count()).as(r[0]).isEqualTo(1);
@@ -53,7 +52,6 @@ class ShellPageTest {
 
     @Test
     void notMovedPagesLinkToThePreviousInterfaceOnTheSameHost() {
-        assertThat(html("/memory")).contains("href=\"http://127.0.0.1:8081/memory\"").contains("Open it in the previous interface");
         assertThat(html("/")).contains("href=\"http://127.0.0.1:8081/\"");
         assertThat(html("/journal/12")).contains("href=\"http://127.0.0.1:8081/entries/12\"");
         assertThat(html("/journal/12/reflect")).contains("href=\"http://127.0.0.1:8081/entries/12/coach\"");
@@ -63,7 +61,7 @@ class ShellPageTest {
 
     @Test
     void notMovedPagesAreGerman() {
-        String body = given().header("Accept-Language", "de").get("/gym").then().statusCode(200).extract().asString();
+        String body = given().header("Accept-Language", "de").get("/journal/12").then().statusCode(200).extract().asString();
         assertThat(body).contains("Diese Seite ist noch nicht in die neue Oberfläche umgezogen.").contains("lang=\"de\"");
     }
 

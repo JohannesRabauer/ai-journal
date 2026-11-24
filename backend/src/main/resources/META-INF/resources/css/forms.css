@@ -1,0 +1,131 @@
+/* Native form controls and button variants for the interactive pages (Remember, Thinking Gym, Week, Settings).
+   Replaces the Lumo look of vaadin-text-area/select/checkbox/button with the same tokens. Theme tokens only. */
+
+.diary-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.diary-field > label,
+.diary-field-label {
+  font-weight: 600;
+}
+.diary-help {
+  color: var(--diary-muted);
+  font-size: 0.875rem;
+}
+.diary-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--diary-border);
+  border-radius: var(--diary-radius-md);
+  background: var(--diary-surface);
+  color: var(--diary-text);
+  font: inherit;
+  line-height: 1.5;
+}
+textarea.diary-input {
+  min-height: 6rem;
+  resize: vertical;
+}
+select.diary-input {
+  padding-right: 2rem;
+}
+.diary-input[aria-invalid='true'] {
+  border-color: var(--diary-error);
+}
+.diary-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.65rem;
+  align-items: start;
+}
+.diary-check input {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--diary-accent);
+}
+.diary-check .diary-help {
+  grid-column: 2;
+}
+.diary-error-text {
+  margin: 0;
+  color: var(--diary-error);
+}
+
+/* Buttons: .diary-button is the soft pill from styles.css */
+.diary-button[hidden] {
+  display: none;
+}
+button.diary-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.diary-button-primary {
+  background: var(--diary-accent);
+  color: var(--diary-on-accent);
+}
+.diary-button-primary:hover {
+  background: color-mix(in srgb, var(--diary-accent) 85%, var(--diary-text));
+}
+.diary-button-quiet {
+  background: transparent;
+}
+.diary-button-quiet:hover {
+  background: var(--diary-surface-2);
+}
+.diary-button-contrast {
+  background: var(--diary-surface-2);
+  color: var(--diary-text);
+  border: 1px solid var(--diary-border);
+}
+.diary-button-contrast:hover {
+  background: color-mix(in srgb, var(--diary-text) 10%, var(--diary-surface-2));
+}
+
+/* Messages */
+.diary-flash {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--diary-accent);
+  background: var(--diary-surface);
+  border-radius: 0 var(--diary-radius-md) var(--diary-radius-md) 0;
+}
+.diary-flash[data-kind='error'] {
+  border-left-color: var(--diary-error);
+  color: var(--diary-error);
+}
+.diary-flash:empty {
+  display: none;
+}
+.diary-problem {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--diary-error);
+  border-radius: var(--diary-radius-md);
+  background: var(--diary-surface);
+  color: var(--diary-error);
+}
+.diary-problem p {
+  margin: 0 0 0.5rem;
+}
+.diary-problem:empty {
+  display: none;
+}
+.diary-js-only[hidden] {
+  display: none;
+}
+.diary-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

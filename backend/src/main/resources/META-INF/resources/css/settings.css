@@ -1,0 +1,25 @@
+/* Settings: grouped cards, theme tokens only (docs/DESIGN.md). Ported from the Vaadin frontend. */
+.settings-view { display: flex; flex-direction: column; gap: 1rem; }
+.settings-view > h1, .settings-view > p { margin: 0; }
+.settings-form { display: flex; flex-direction: column; gap: 1rem; }
+.settings-card { padding: 1.25rem 1.4rem; min-width: 0; }
+.settings-card h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+.settings-card h3 { margin: 1.25rem 0 .25rem; font-size: 1.05rem; }
+.settings-fields { display: flex; flex-direction: column; gap: 1rem; max-width: 34rem; }
+.settings-fields[hidden] { display: none; }
+.settings-label { font-weight: 600; }
+
+/* Theme: segmented control of real buttons (aria-pressed) */
+.settings-seg { display: inline-flex; flex-wrap: wrap; align-self: flex-start; padding: .25rem; gap: .25rem; border-radius: 999px;
+  background: var(--diary-surface-2); border: 1px solid var(--diary-border); }
+.settings-seg button { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.75rem; padding: .45rem 1rem; border: 2px solid transparent;
+  border-radius: 999px; background: transparent; color: var(--diary-muted); font: inherit; font-weight: 550; cursor: pointer; }
+.settings-seg button[aria-pressed='true'] { background: var(--diary-surface); color: var(--diary-text); font-weight: 700;
+  border-color: var(--diary-accent); box-shadow: var(--diary-shadow); }
+
+.settings-save { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+.settings-save .diary-status { margin: 0; }
+.settings-card .diary-danger { max-width: 34rem; }
+.settings-card .diary-form { max-width: 34rem; }
+.settings-card .diary-form > .diary-button { width: auto; align-self: flex-start; }
+.settings-card ul { margin: 0; padding-left: 1.25rem; }

@@ -27,30 +27,6 @@ public class NotMovedResource {
         return page(h, u, "/", "nav.today", "/");
     }
 
-    @GET
-    @Path("memory")
-    public TemplateInstance memory(@Context HttpHeaders h, @Context UriInfo u) {
-        return page(h, u, "/memory", "nav.memory", "/memory");
-    }
-
-    @GET
-    @Path("gym")
-    public TemplateInstance gym(@Context HttpHeaders h, @Context UriInfo u) {
-        return page(h, u, "/gym", "nav.gym", "/gym");
-    }
-
-    @GET
-    @Path("weekly")
-    public TemplateInstance weekly(@Context HttpHeaders h, @Context UriInfo u) {
-        return page(h, u, "/weekly", "nav.weekly", "/weekly");
-    }
-
-    @GET
-    @Path("settings")
-    public TemplateInstance settings(@Context HttpHeaders h, @Context UriInfo u) {
-        return page(h, u, "/settings", "nav.settings", "/settings");
-    }
-
     private TemplateInstance page(HttpHeaders h, UriInfo u, String active, String titleKey, String legacyPath) {
         return pages.render(h.getAcceptableLanguages(), u.getRequestUri(), active, titleKey, legacyPath);
     }
