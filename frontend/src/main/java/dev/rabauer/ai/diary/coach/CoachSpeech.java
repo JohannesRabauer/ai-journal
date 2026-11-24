@@ -36,12 +36,12 @@ public class CoachSpeech extends Component {
 
     /** Queue a question for automatic playback (waits while recording). */
     public void enqueue(long id, String text, Language language, String voice) {
-        getElement().callJsFunction("enqueue", id, text, language.name(), voice);
+        getElement().callJsFunction("enqueue", (double) id, text, language.name(), voice);
     }
 
     /** Explicit play button. */
     public void play(long id, String text, Language language, String voice) {
-        getElement().callJsFunction("play", id, text, language.name(), voice);
+        getElement().callJsFunction("play", (double) id, text, language.name(), voice);
     }
 
     public void stop() {
