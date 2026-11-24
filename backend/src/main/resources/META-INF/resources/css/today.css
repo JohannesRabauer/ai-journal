@@ -1,0 +1,329 @@
+/* Today page (ported from the Vaadin today.css). Theme tokens only (docs/DESIGN.md); the shared stylesheet already
+   stops transitions and animations for prefers-reduced-motion, the spinner below repeats it explicitly.
+   The editor panel (review) is styled by entry-panel.css. */
+.today-view {
+  display: block;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.today-view h1,
+.today-view h2,
+.today-view p {
+  margin: 0;
+}
+.today-view .today-eyebrow {
+  margin-bottom: 0.25rem;
+}
+.today-view .today-title {
+  font-size: clamp(1.9rem, 4vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.today-title:focus {
+  outline: none;
+}
+.today-title:focus-visible {
+  outline: 3px solid var(--diary-text);
+  outline-offset: 4px;
+  border-radius: 0.25rem;
+}
+.today-view .today-lead {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1.1rem;
+  max-width: var(--diary-measure);
+}
+
+/* ---- Composer card ------------------------------------------------------------------- */
+.today-composer {
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+.today-composer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.today-seg {
+  display: inline-flex;
+  padding: 0.25rem;
+  gap: 0.25rem;
+  border-radius: 999px;
+  background: var(--diary-surface-2);
+}
+.today-seg[hidden] {
+  display: none;
+}
+.today-seg-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--diary-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.today-seg-button[aria-pressed='true'] {
+  background: var(--diary-surface);
+  color: var(--diary-text);
+  box-shadow: var(--diary-shadow);
+}
+.today-seg-button .diary-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Compact language select (replaces vaadin-select with a small theme) */
+.today-lang {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 12.5rem;
+  max-width: 100%;
+}
+.today-lang label {
+  font-size: 0.8125rem;
+  color: var(--diary-muted);
+}
+.today-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.today-select .diary-icon {
+  position: absolute;
+  left: 0.9rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--diary-muted);
+  pointer-events: none;
+}
+.today-select select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 1rem 0 2.5rem;
+  border: 1px solid var(--diary-border);
+  border-radius: 999px;
+  background: var(--diary-bg);
+  color: var(--diary-text);
+  font: inherit;
+}
+
+/* Speak panel: the recorder web component styles itself (shadow DOM, css/recorder.css) with the same tokens. */
+.today-speak {
+  padding-top: 0.5rem;
+}
+.today-recorder {
+  display: block;
+}
+
+/* Write panel: a grid so the autosave status sits left of the primary button. */
+.today-write {
+  display: none;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1.25rem;
+}
+.today-write.today-write--on {
+  display: grid;
+}
+.today-write .today-field {
+  grid-column: 1 / -1;
+}
+.today-write .today-field label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.today-write .today-field textarea {
+  min-height: 14rem;
+  max-height: none;
+  background: var(--diary-bg);
+  font-size: 1.15rem;
+}
+.today-write .today-autosave {
+  grid-column: 1;
+  min-height: 1.5rem;
+  gap: 0.4rem;
+}
+/* The check next to the saved text; removed again as soon as the user types, so a failed save never shows it. */
+.today-write--saved .today-autosave[data-state='saved'] .diary-autosave__text::before {
+  content: '';
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-inline-end: 0.4rem;
+  vertical-align: -0.15rem;
+  background: var(--diary-sage-text);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.today-write .today-finish {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+}
+
+/* ---- Review card --------------------------------------------------------------------- */
+.today-review {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+.today-review[hidden] {
+  display: none;
+}
+.today-view .today-review h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+.today-review .entries-field textarea {
+  min-height: 12rem;
+  background: var(--diary-bg);
+}
+.today-review .entries-panel__editor > .entries-primary {
+  align-self: flex-end;
+}
+.today-view .today-message {
+  margin-top: 1rem;
+  color: var(--diary-muted);
+}
+.today-message:empty {
+  display: none;
+}
+
+/* ---- Earlier today ------------------------------------------------------------------- */
+.today-view .today-earlier {
+  margin: 2.25rem 0 0.5rem;
+  font-size: 1.3rem;
+}
+.today-view .today-empty {
+  margin-top: 0.5rem;
+}
+.today-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+.today-timeline::before {
+  content: '';
+  position: absolute;
+  /* centre of the node column: time (3rem) + gap + half of the node column (0.6rem) */
+  left: calc(3rem + 0.6rem + 0.6rem);
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--diary-rule);
+}
+.today-tl-item {
+  display: grid;
+  grid-template-columns: 3rem 1.2rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  padding: 0.5rem 0;
+}
+.today-tl-time {
+  padding-top: 0.9rem;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--diary-muted);
+  font-variant-numeric: tabular-nums;
+}
+.today-tl-node {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: 1.05rem auto 0;
+  border-radius: 50%;
+  background: var(--diary-surface);
+  border: 2px solid var(--diary-accent);
+}
+.today-tl-link {
+  display: block;
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--diary-radius-lg);
+  color: inherit;
+  text-decoration: none;
+}
+.today-tl-link:hover {
+  background: var(--diary-surface-2);
+}
+.today-tl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.today-tl-meta .diary-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.today-tl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--diary-muted);
+}
+.today-spin {
+  width: 0.8rem;
+  height: 0.8rem;
+  box-sizing: border-box;
+  border: 2px solid var(--diary-rule);
+  border-top-color: var(--diary-accent);
+  border-radius: 50%;
+  animation: today-spin 1s linear infinite;
+}
+@keyframes today-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .today-spin {
+    animation: none;
+    border-top-color: var(--diary-muted);
+  }
+}
+.today-view .today-tl-excerpt {
+  margin: 0.3rem 0 0;
+  max-width: none;
+  font-size: 1.05rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.today-tl-meta + .today-tl-excerpt {
+  margin-top: 0.45rem;
+}
+
+@media (max-width: 30rem) {
+  .today-composer,
+  .today-review {
+    padding: 1rem;
+  }
+  .today-lang {
+    width: 100%;
+  }
+  .today-composer-top {
+    align-items: stretch;
+  }
+}

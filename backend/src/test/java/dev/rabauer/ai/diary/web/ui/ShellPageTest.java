@@ -40,8 +40,8 @@ class ShellPageTest {
 
     @Test
     void everyNavigationTargetAnswersWithAPageWithOneH1AndTheRightCurrentItem() {
-        String[][] routes = {{"/", "Today"}, {"/memory", "Remember"}, {"/gym", "Thinking Gym"}, {"/weekly", "Week"},
-                {"/settings", "Settings"}, {"/journal/12", "Journal"}, {"/journal/12/reflect", "Journal"}};
+        String[][] routes = {{"/memory", "Remember"}, {"/gym", "Thinking Gym"}, {"/weekly", "Week"},
+                {"/settings", "Settings"}, {"/journal/12/reflect", "Journal"}};
         for (String[] r : routes) {
             String body = html(r[0]);
             assertThat(Pattern.compile("<h1").matcher(body).results().count()).as(r[0]).isEqualTo(1);
@@ -54,8 +54,6 @@ class ShellPageTest {
     @Test
     void notMovedPagesLinkToThePreviousInterfaceOnTheSameHost() {
         assertThat(html("/memory")).contains("href=\"http://127.0.0.1:8081/memory\"").contains("Open it in the previous interface");
-        assertThat(html("/")).contains("href=\"http://127.0.0.1:8081/\"");
-        assertThat(html("/journal/12")).contains("href=\"http://127.0.0.1:8081/entries/12\"");
         assertThat(html("/journal/12/reflect")).contains("href=\"http://127.0.0.1:8081/entries/12/coach\"");
         // the Host header was already checked by the guard; a non-numeric id is no entry route at all
         given().get("/journal/abc").then().statusCode(404);

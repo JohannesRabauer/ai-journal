@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
  */
 public final class Messages {
 
-    private static final List<String> BUNDLES = List.of("i18n.shell", "i18n.entries");
+    private static final List<String> BUNDLES = List.of("i18n.shell", "i18n.entries", "i18n.today");
 
     private final Locale locale;
     private final List<ResourceBundle> bundles;

@@ -23,11 +23,6 @@ public class NotMovedResource {
     NotMovedPages pages;
 
     @GET
-    public TemplateInstance today(@Context HttpHeaders h, @Context UriInfo u) {
-        return page(h, u, "/", "nav.today", "/");
-    }
-
-    @GET
     @Path("memory")
     public TemplateInstance memory(@Context HttpHeaders h, @Context UriInfo u) {
         return page(h, u, "/memory", "nav.memory", "/memory");

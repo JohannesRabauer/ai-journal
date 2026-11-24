@@ -1,0 +1,94 @@
+{#include base}
+{#title}{t.get('entries.detail.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/entry-panel.css">
+<link rel="stylesheet" href="/css/entry.css">{/head}
+<div class="entries-detail" id="entry" data-entry-id="{v.id}" data-status="{v.status}" data-texts="{texts}">
+  <a class="entries-back" href="/journal">{#icon 'chevron-left' /}<span>{t.get('entries.detail.back')}</span></a>
+  {#if v.eyebrow}<p class="diary-eyebrow">{v.eyebrow}</p>{/if}
+  <h1 class="entries-title" id="entry-title" tabindex="-1">{v.heading}</h1>
+  <div class="entries-meta">
+    {#if v.voice}<span class="diary-chip">{#icon 'mic' /}<span>{t.get('entries.badge.voice')}</span></span>{/if}
+    {#if v.coach}<span class="diary-chip diary-chip-accent">{#icon 'chat' /}<span>{t.get('entries.badge.coach')}</span></span>{/if}
+    {#if v.statusLabel}<span class="diary-chip entries-chip-status"><span>{v.statusLabel}</span></span>{/if}
+  </div>
+  {#if v.notice}<p class="entries-notice" role="status">{v.notice}</p>{#else}<p class="entries-notice" role="status" hidden></p>{/if}
+
+  {#if v.hasAudio}
+  <diary-audio-player class="diary-card entries-player" src="/api/recordings/{v.recordingId}/audio" labels="{audioLabels}">
+    <audio controls preload="none" src="/api/recordings/{v.recordingId}/audio"></audio>
+  </diary-audio-player>
+  {#else if v.audioDeleted}
+  <p class="diary-muted">{t.get('entries.audio.deleted')}</p>
+  {/if}
+
+  <div class="entries-panel entries-reading" id="entry-panel" data-status="{v.status}" data-has-audio="{v.hasAudio}">
+    {#if v.panelTranscribing}
+    <p role="status">{t.get('entries.transcription.running')}</p>
+    <progress aria-label="{t.get('entries.transcription.running')}"></progress>
+    {#else if v.panelFailed}
+    <div class="entries-notice-box" role="status">
+      <p>{t.get('entries.transcription.failed')}</p>
+      {#if v.typeManuallyHref}<p><a href="{v.typeManuallyHref}">{t.get('entries.transcription.typeManually')}</a></p>{/if}
+    </div>
+    {#else if v.panelEdit}
+    <form class="entries-panel__form" method="post" action="/journal/{v.id}/text">
+      {#csrf /}
+      <div class="entries-field">
+        <label for="entry-text">{v.panelLabel}</label>
+        {#if v.panelHelper}<p class="entries-field__helper" id="entry-helper">{v.panelHelper}</p>{/if}
+        <textarea id="entry-text" name="text" rows="10"{#if v.panelHelper} aria-describedby="entry-helper"{/if}>{v.text}</textarea>
+      </div>
+      <div class="entries-panel__row">
+        <button type="submit" class="entries-ghost">{t.get('entries.save')}</button>
+        {#if v.showFinish}<button type="submit" class="entries-primary" formaction="/journal/{v.id}/finish"{#if v.finishDisabled} disabled{/if}>{t.get('entries.finish')}</button>{/if}
+      </div>
+    </form>
+    {/if}
+  </div>
+
+  {#if v.legacyRemark}
+  <details class="entries-remark"><summary>{t.get('entries.legacyRemark')}</summary><p>{v.legacyRemark}</p></details>
+  {/if}
+
+  <section class="diary-card entries-reflect" aria-labelledby="entry-reflect-title">
+    <h2 class="entries-reflect__title" id="entry-reflect-title">{#icon 'chat' /}<span>{t.get('entries.reflect')}</span></h2>
+    <p class="diary-muted">{v.reflectText}</p>
+    {#if v.reflectEnabled}
+    <a class="entries-primary" href="{v.reflectHref}">{v.reflectLabel}</a>
+    {#else}
+    <button type="button" class="entries-primary" disabled>{v.reflectLabel}</button>
+    {/if}
+  </section>
+
+  <div class="entries-actions">
+    {#if v.showEdit}<button type="button" class="entries-ghost" data-action="edit" hidden>{#icon 'pen' /}<span>{t.get('entries.edit')}</span></button>{/if}
+    {#if v.showExtract}<a class="entries-ghost" href="{v.extractHref}" title="{t.get('memory.extractLearnings.title')}">{#icon 'bulb' /}<span>{t.get('memory.extractLearnings')}</span></a>{/if}
+    {#if v.showDeleteAudio}
+    <form class="entries-action" method="post" action="/journal/{v.id}/delete-audio" data-kind="audio" data-recording-id="{v.recordingId}"
+          data-title="{t.get('entries.audio.delete.title')}" data-message="{t.get('entries.audio.delete.text')}"
+          data-confirm="{t.get('entries.audio.delete')}" data-cancel="{t.get('entries.cancel')}">
+      {#csrf /}
+      <details class="entries-confirm">
+        <summary class="entries-ghost">{#icon 'trash' /}<span>{t.get('entries.audio.delete')}</span></summary>
+        <p>{t.get('entries.audio.delete.text')}</p>
+        <button type="submit" class="entries-danger-button">{t.get('entries.audio.delete')}</button>
+      </details>
+    </form>
+    {/if}
+    {#if v.showDeleteEntry}
+    <form class="entries-action entries-danger" method="post" action="/journal/{v.id}/delete" data-kind="entry"
+          data-title="{t.get('entries.delete.title')}" data-message="{t.get('entries.delete.text')}"
+          data-confirm="{t.get('entries.delete')}" data-cancel="{t.get('entries.cancel')}">
+      {#csrf /}
+      <details class="entries-confirm">
+        <summary class="entries-ghost">{#icon 'trash' /}<span>{t.get('entries.delete')}</span></summary>
+        <p>{t.get('entries.delete.text')}</p>
+        <button type="submit" class="entries-danger-button">{t.get('entries.delete')}</button>
+      </details>
+    </form>
+    {/if}
+  </div>
+</div>
+{#scripts}<script type="module" src="/js/entry.js"></script>
+<script type="module" src="/js/audio-player.js"></script>{/scripts}
+{/include}
