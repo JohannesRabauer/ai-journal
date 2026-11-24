@@ -389,4 +389,46 @@ class CoachFlowTest {
         assertThat(c.getString("status")).isEqualTo("ACTIVE");
         assertThat(c.getString("endedAt")).isNull();
     }
+
+    @Test
+    void retryingTheSameAnswerAfterAFailureStoresOneAnswerAndOneReply() {
+        long entry = finishedEntry(EN_ENTRY, null);
+        Fakes.llm().enqueue(opening("Q1 what?", "Q2 why?"));
+        long id = startOk(entry).getLong("id");
+
+        Fakes.llm().enqueueFailure(new ProviderException("ollama", ProviderException.Kind.UNREACHABLE, "down"));
+        answer(id, "My answer.", false).then().statusCode(503);
+        Fakes.llm().enqueue(turn("FOLLOW_UP_QUESTION", "What else?"));
+        JsonPath c = answer(id, "  My answer.  ", true).then().statusCode(200).extract().jsonPath();
+
+        assertThat(kinds(c)).containsExactly("OPENING_QUESTION", "USER_ANSWER", "FOLLOW_UP_QUESTION");
+        assertThat(c.getBoolean("messages[1].voice")).isTrue();
+    }
+
+    @Test
+    void retryingAfterInvalidOutputIsIdempotentToo() {
+        long entry = finishedEntry(EN_ENTRY, null);
+        Fakes.llm().enqueue(opening("Q1 what?", "Q2 why?"));
+        long id = startOk(entry).getLong("id");
+
+        String bad = turn("FOLLOW_UP_QUESTION", "No question here.");
+        Fakes.llm().enqueue(bad).enqueue(bad).enqueue(bad);
+        answer(id, "My answer.", false).then().statusCode(502);
+        Fakes.llm().enqueue(turn("FOLLOW_UP_QUESTION", "What else?"));
+        JsonPath c = answerOk(id, "My answer.");
+        assertThat(kinds(c)).containsExactly("OPENING_QUESTION", "USER_ANSWER", "FOLLOW_UP_QUESTION");
+    }
+
+    @Test
+    void aDifferentTextAfterAnUnansweredAnswerIsStoredAsASecondAnswer() {
+        long entry = finishedEntry(EN_ENTRY, null);
+        Fakes.llm().enqueue(opening("Q1 what?", "Q2 why?"));
+        long id = startOk(entry).getLong("id");
+
+        Fakes.llm().enqueueFailure(new ProviderException("ollama", ProviderException.Kind.UNREACHABLE, "down"));
+        answer(id, "First text.", false).then().statusCode(503);
+        Fakes.llm().enqueue(turn("FOLLOW_UP_QUESTION", "What else?"));
+        JsonPath c = answerOk(id, "Second text.");
+        assertThat(kinds(c)).containsExactly("OPENING_QUESTION", "USER_ANSWER", "USER_ANSWER", "FOLLOW_UP_QUESTION");
+    }
 }

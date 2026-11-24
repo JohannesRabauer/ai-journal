@@ -67,7 +67,9 @@ import java.util.Set;
  *       localized message. ENDED rather than PAUSED because the coach has stopped questioning for good; the user can
  *       start a new conversation. The text is never logged.</li>
  *   <li><b>Failure of the coach turn</b> (provider down, invalid output after retries): the user's answer stays
- *       stored, nothing from the LLM is persisted, the client receives 503/502.</li>
+ *       stored, nothing from the LLM is persisted, the client receives 503/502. Re-posting the identical text
+ *       (trimmed) while the latest message is that unanswered USER_ANSWER does not store a second answer; it only
+ *       generates the missing coach turn (voice flag is OR-ed). A different text is stored as a new answer.</li>
  *   <li>Similar past entries (max 3, FINISHED, via embeddings) are used only for the opening questions; follow-ups
  *       see the entry and the transcript. Retrieval failure never fails a start.</li>
  * </ul>
@@ -207,7 +209,14 @@ public class CoachService {
         Loaded loaded = tx(() -> {
             CoachConversationEntity c = require(id);
             requireActive(c);
-            append(c, CoachRole.USER, CoachMessageKind.USER_ANSWER, text, voice, true);
+            // Idempotent retry: the same text re-sent after a failed coach turn reuses the stored answer.
+            CoachMessageEntity last = messages.forConversation(id).stream().filter(CoachMessageEntity::revealed)
+                    .max(Comparator.comparingInt(m -> m.seqNo)).orElse(null);
+            if (last != null && last.kind == CoachMessageKind.USER_ANSWER && last.content.strip().equals(text)) {
+                last.voice = last.voice || voice;
+            } else {
+                append(c, CoachRole.USER, CoachMessageKind.USER_ANSWER, text, voice, true);
+            }
             touch(c);
             return load(c);
         });
