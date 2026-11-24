@@ -1,0 +1,10 @@
+/* Loaded only inside <noscript>: without JavaScript there is no recorder, so the plain Write form is the page. */
+.today-speak {
+  display: none;
+}
+.today-write {
+  display: grid !important;
+}
+.today-autosave {
+  display: none;
+}

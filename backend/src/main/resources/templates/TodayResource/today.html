@@ -1,0 +1,86 @@
+{#include base}
+{#title}{t.get('entries.today.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/entry-panel.css">
+<link rel="stylesheet" href="/css/today.css">
+<noscript><link rel="stylesheet" href="/css/today-nojs.css"></noscript>{/head}
+<div class="today-view" id="today" data-zone="{v.zone}" data-texts="{v.texts}">
+  <p class="diary-eyebrow today-eyebrow">{v.dateLine}</p>
+  <h1 class="today-title" id="today-title" tabindex="-1">{v.greeting}</h1>
+  <p class="diary-muted today-lead">{t.get('today.lead')}</p>
+
+  <div class="diary-card today-composer">
+    <div class="today-composer-top">
+      <div class="today-seg" id="today-seg" role="group" aria-label="{t.get('today.mode.group')}" hidden>
+        <button type="button" class="today-seg-button" data-mode="speak" aria-pressed="true">{#icon 'mic' /}<span>{t.get('today.mode.speak')}</span></button>
+        <button type="button" class="today-seg-button" data-mode="write" aria-pressed="false">{#icon 'pen' /}<span>{t.get('today.mode.write')}</span></button>
+      </div>
+      <div class="today-lang">
+        <label for="today-lang">{t.get('entries.language.label')}</label>
+        <span class="today-select">{#icon 'globe' /}<select id="today-lang" name="language" form="today-write">
+          <option value="AUTO" selected>{t.get('entries.language.AUTO')}</option>
+          <option value="DE">{t.get('entries.language.DE')}</option>
+          <option value="EN">{t.get('entries.language.EN')}</option>
+        </select></span>
+      </div>
+    </div>
+
+    <div class="today-speak" id="today-speak">
+      <diary-recorder class="today-recorder" id="today-recorder" upload-url="/api/recordings" language="auto" labels="{v.recorderLabels}"></diary-recorder>
+    </div>
+
+    <form class="today-write" id="today-write" method="post" action="/">
+      {#csrf /}
+      <div class="entries-field today-field">
+        <label for="today-text">{t.get('entries.write.label')}</label>
+        <textarea id="today-text" name="text" rows="8" aria-describedby="today-helper"></textarea>
+        <p class="entries-field__helper" id="today-helper">{t.get('entries.write.helper')}</p>
+      </div>
+      <div class="diary-autosave today-autosave" id="today-autosave" role="status" aria-live="polite"
+           data-saving="{t.get('entries.autosave.saving')}" data-saved="{t.get('entries.autosave.saved')}"
+           data-failed="{t.get('entries.autosave.failed')}" data-retry="{t.get('entries.autosave.retry')}"></div>
+      <button type="submit" class="entries-primary today-finish">{t.get('entries.finish')}</button>
+    </form>
+  </div>
+
+  <section class="diary-card today-review" id="today-review" aria-labelledby="today-review-title" hidden>
+    <h2 id="today-review-title">{t.get('entries.review.title')}</h2>
+    <div class="entries-panel" id="today-panel"></div>
+  </section>
+
+  <p class="today-message" id="today-message" role="status">{#if v.saved}{t.get('entries.finished')}{/if}</p>
+
+  <h2 class="today-earlier">{t.get('today.timeline.title')}</h2>
+  <div id="today-timeline">
+  {#fragment id=timeline}
+  {#if v.loadFailed}
+  <p class="diary-muted today-empty" role="status">{t.get('entries.journal.loadFailed')}</p>
+  {#else if v.empty}
+  <p class="diary-muted today-empty">{t.get('entries.today.none')}</p>
+  {#else}
+  <ol class="today-timeline" role="list" aria-label="{t.get('entries.today.list')}">
+    {#for i in v.items}
+    <li class="today-tl-item" data-id="{i.id}">
+      <span class="today-tl-time">{i.time}</span>
+      <span class="today-tl-node" aria-hidden="true"></span>
+      <div class="diary-card today-tl-card">
+        <a class="today-tl-link" href="{i.href}">
+          {#if i.hasMeta}
+          <div class="today-tl-meta">
+            {#if i.voice}<span class="diary-chip">{#icon 'mic' /}<span>{t.get('entries.badge.voice')}</span></span>{/if}
+            {#if i.coach}<span class="diary-chip diary-chip-accent">{#icon 'chat' /}<span>{t.get('entries.badge.coach')}</span></span>{/if}
+            {#if i.statusLabel}<span class="today-tl-status">{#if i.spinner}<span class="today-spin" aria-hidden="true"></span>{/if}<span>{i.statusLabel}</span></span>{/if}
+          </div>
+          {/if}
+          <p class="today-tl-excerpt{#if i.blank} diary-muted{/if}">{i.excerpt}</p>
+        </a>
+      </div>
+    </li>
+    {/for}
+  </ol>
+  {/if}
+  {/fragment}
+  </div>
+</div>
+{#scripts}<script type="module" src="/js/recorder/diary-recorder.js"></script>
+<script type="module" src="/js/today.js"></script>{/scripts}
+{/include}

@@ -6,9 +6,12 @@ import dev.rabauer.ai.diary.entry.EntryService;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -16,6 +19,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.time.Clock;
@@ -57,12 +61,45 @@ public class JournalResource {
     Clock clock;
     @Inject
     NotMovedPages notMoved;
+    @Inject
+    EntryPage entryPage;
 
-    /** Entry detail (phase 1 replaces this): /journal/{id}. */
+    /** Entry detail: /journal/{id} (phase 1). The page and its form actions live in {@link EntryPage}. */
     @GET
     @Path("{id: [0-9]+}")
-    public TemplateInstance entry(@PathParam("id") long id, @Context HttpHeaders headers, @Context UriInfo uri) {
-        return notMoved.render(headers.getAcceptableLanguages(), uri.getRequestUri(), "/journal", "nav.journal", "/entries/" + id);
+    public Response entry(@PathParam("id") long id, @QueryParam("notice") String notice,
+                          @QueryParam("manual") String manual, @Context HttpHeaders headers) {
+        return entryPage.render(id, notice, manual != null && !manual.isEmpty() && !"0".equals(manual),
+                headers.getAcceptableLanguages());
+    }
+
+    /** No-JavaScript form actions of the entry page; each checks the form token first (CSRF, docs/MIGRATION-QUTE.md). */
+    @POST
+    @Path("{id: [0-9]+}/text")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response saveText(@PathParam("id") long id, @FormParam("text") String text, @FormParam("_csrf") String token) {
+        return entryPage.saveText(id, text, false, token);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/finish")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response finish(@PathParam("id") long id, @FormParam("text") String text, @FormParam("_csrf") String token) {
+        return entryPage.saveText(id, text, true, token);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/delete-audio")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response deleteAudio(@PathParam("id") long id, @FormParam("_csrf") String token) {
+        return entryPage.deleteAudio(id, token);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/delete")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response deleteEntry(@PathParam("id") long id, @FormParam("_csrf") String token) {
+        return entryPage.deleteEntry(id, token);
     }
 
     /** Coach for one entry (phase 3 replaces this): /journal/{id}/reflect. */

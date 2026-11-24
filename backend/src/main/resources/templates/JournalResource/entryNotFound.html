@@ -1,0 +1,9 @@
+{#include base}
+{#title}{t.get('entries.detail.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/entry.css">{/head}
+<div class="entries-detail">
+  <a class="entries-back" href="/journal">{#icon 'chevron-left' /}<span>{t.get('entries.detail.back')}</span></a>
+  <h1 class="entries-title">{t.get('entries.detail.title')}</h1>
+  <p role="status">{t.get('entries.detail.notFound')}</p>
+</div>
+{/include}
