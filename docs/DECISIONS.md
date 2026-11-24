@@ -91,3 +91,12 @@ explanations stay impossible (SPEC 5.3). Small models dodged explicit requests w
 
 **D-027 Idempotent answer retry (W2a review).** Re-posting the same answer after a failed coach turn generates the turn
 for the stored answer instead of storing a duplicate.
+
+**D-028 Gym and entry deletion (W3b).** Exercises personalized from a deleted entry are deleted with their attempts and
+follow-up questions (a prompt may paraphrase the entry); template exercises stay. Next exercise without a category =
+least recently practiced category.
+
+**D-029 Weekly reflection policies (W3c).** One report per ISO week; regenerate replaces it (edits lost, with
+confirmation); user edits get structural validation only. Entry deletion redacts that entry's ids and quotes from
+stored reports. Health/percentage words are allowed only when they occur in the user's own week text; claims about
+the user stay forbidden.
