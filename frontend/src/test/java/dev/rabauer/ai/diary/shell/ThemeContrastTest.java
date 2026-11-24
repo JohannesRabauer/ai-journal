@@ -34,6 +34,12 @@ class ThemeContrastTest {
                 // control borders / focus ring: 3:1
                 assertThat(ratio(t.get("--diary-border"), t.get(bg))).as("border on " + bg).isGreaterThanOrEqualTo(3.0);
             }
+            // recessed surface (segmented controls, wells): body and secondary text
+            assertThat(ratio(t.get("--diary-text"), t.get("--diary-surface-2"))).as("text on surface-2").isGreaterThanOrEqualTo(4.5);
+            assertThat(ratio(t.get("--diary-muted"), t.get("--diary-surface-2"))).as("muted on surface-2").isGreaterThanOrEqualTo(4.5);
+            // chips: label colour on chip fill
+            assertThat(ratio(t.get("--diary-sage-text"), t.get("--diary-sage"))).as("sage chip").isGreaterThanOrEqualTo(4.5);
+            assertThat(ratio(t.get("--diary-accent"), t.get("--diary-accent-soft"))).as("accent chip").isGreaterThanOrEqualTo(4.5);
             assertThat(ratio(t.get("--diary-on-accent"), t.get("--diary-accent"))).as("text on accent").isGreaterThanOrEqualTo(4.5);
             // destructive primary buttons: Lumo error contrast colour on the error fill
             assertThat(ratio(t.get("--lumo-error-contrast-color"), t.get("--diary-error"))).as("text on error fill")
@@ -56,7 +62,7 @@ class ThemeContrastTest {
 
     private static Map<String, String> tokens(String block) {
         Map<String, String> out = new HashMap<>();
-        Matcher m = Pattern.compile("(--diary-[a-z-]+|--lumo-error-contrast-color):\\s*(#[0-9a-fA-F]{6});").matcher(block);
+        Matcher m = Pattern.compile("(--diary-[a-z0-9-]+|--lumo-error-contrast-color):\\s*(#[0-9a-fA-F]{6});").matcher(block);
         while (m.find()) {
             out.put(m.group(1), m.group(2));
         }

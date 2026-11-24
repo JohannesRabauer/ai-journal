@@ -10,6 +10,7 @@ import dev.rabauer.ai.diary.api.system.SystemInfoDto;
 import dev.rabauer.ai.diary.client.SystemClient;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Persistent, non-dismissible notice at the top of every route (it lives in {@link MainLayout}).
@@ -21,6 +22,7 @@ public class CloudBanner extends Div {
     private final SystemClient system;
     private final Div inner = new Div();
     private volatile ShellStatus status = new ShellStatus(ShellStatus.Kind.LOCAL, "");
+    private Consumer<ShellStatus> statusListener = s -> { };
 
     public CloudBanner(SystemClient system) {
         this.system = system;
@@ -32,6 +34,11 @@ public class CloudBanner extends Div {
 
     public ShellStatus status() {
         return status;
+    }
+
+    /** Called on the UI thread whenever a new status is rendered (the shell mirrors it in the navigation). */
+    public void setStatusListener(Consumer<ShellStatus> listener) {
+        this.statusListener = listener == null ? s -> { } : listener;
     }
 
     @Override
@@ -59,6 +66,7 @@ public class CloudBanner extends Div {
 
     void render(ShellStatus s) {
         this.status = s;
+        statusListener.accept(s);
         inner.removeAll();
         removeClassName("diary-banner-cloud");
         setVisible(s.visible());

@@ -1,13 +1,19 @@
 # Design notes (owner: W1c)
 
-Calm, minimalist, text-first. One accent colour, generous whitespace, system fonts only (no external fonts or CDNs,
-SPEC section 10). Implemented in `frontend/src/main/frontend/themes/diary/styles.css` on top of Vaadin Lumo.
+Direction "Quiet paper": calm, text-first, a warm paper background with raised cards, one accent colour, generous
+whitespace. System sans-serif fonts only: no external fonts or CDNs (SPEC section 10) and, by owner decision, no serif
+face. Implemented in `frontend/src/main/frontend/themes/diary/styles.css` on top of Vaadin Lumo. A clickable mockup of
+the full overhaul is in `docs/mockups/ui-overhaul.html`.
 
 ## Principles
 - Reading measure about 65ch (`--diary-measure`); content column is centred.
-- Typography: `system-ui` stack, base size 17px, line height 1.6.
-- Colour is never the only signal: the active navigation item has a bar marker plus bold text, errors carry the text
-  prefix "Error:" and a border, the cloud banner has a double rule and text.
+- Typography: `system-ui` stack, base size 17px, line height 1.6; headings weight 650 with slight negative tracking.
+- Shape: cards use `--diary-radius-lg` (1.25rem) and `--diary-shadow`; controls use `--diary-radius-md`; buttons are
+  pills.
+- Icons: thin line icons from the local sprite `META-INF/resources/icons/diary-icons.svg`, created with `DiaryIcons`.
+  They are decorative (`aria-hidden`) and always sit next to a text label or an `aria-label`.
+- Colour is never the only signal: the active navigation item is a raised card with a bar marker plus bold text, errors
+  carry the text prefix "Error:" and a border, the cloud banner has a double rule and text.
 - Motion: only a 150 ms hover transition; `prefers-reduced-motion: reduce` disables all transitions and animations.
 - No streaks, counters or scores in the shell.
 
@@ -22,34 +28,37 @@ fails the build if any pair drops below its threshold (4.5:1 for text, 3:1 for c
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--diary-bg` | #faf8f5 | #16191c | page background |
-| `--diary-surface` | #ffffff | #1e2226 | banner, nav bar (mobile), status boxes |
+| `--diary-bg` | #f6f3ed | #14171a | page background (paper) |
+| `--diary-surface` | #fffdf9 | #1c2024 | cards, active nav item, banner, nav bar (mobile) |
+| `--diary-surface-2` | #efebe3 | #23282d | recessed areas: segmented controls, wells |
 | `--diary-text` | #1f2328 | #e8e6e3 | body text |
 | `--diary-muted` | #575d64 | #a9afb5 | secondary text |
 | `--diary-accent` | #2c5f66 | #7cc4cc | the one accent: links, primary buttons, focus ring, active marker |
+| `--diary-accent-soft` | #dfeae9 | #1f3336 | accent chip fill ("Reflection"), coach bubbles |
 | `--diary-on-accent` | #ffffff | #10181a | text on accent fills |
+| `--diary-sage` / `--diary-sage-text` | #e6ebe1 / #3d4d38 | #262d24 / #c5d4bd | neutral chip ("Voice") |
 | `--diary-error` | #a4262c | #ff9a9f | error text and borders |
-| `--diary-border` | #8a8f94 | #7b8288 | control borders |
+| `--diary-border` | #83888d | #7b8288 | control borders |
+| `--diary-rule` | #e3ddd2 | #2d3338 | dividers, card outlines (decorative) |
 
 | Pair | Light | Dark | Required |
 |---|---|---|---|
-| text on bg | 14.90 | 14.17 | 4.5 |
-| text on surface | 15.80 | 12.85 | 4.5 |
-| muted on bg | 6.28 | 7.97 | 4.5 |
-| muted on surface | 6.66 | 7.23 | 4.5 |
-| accent on bg | 6.75 | 8.93 | 4.5 |
-| accent on surface | 7.15 | 8.10 | 4.5 |
+| text on bg / surface / surface-2 | 14.26 / 15.55 / 13.29 | 14.44 / 13.16 / 11.93 | 4.5 |
+| muted on bg / surface / surface-2 | 6.01 / 6.55 / 5.60 | 8.13 / 7.40 / 6.71 | 4.5 |
+| accent on bg / surface | 6.46 / 7.04 | 9.10 / 8.29 | 4.5 |
 | on-accent on accent | 7.15 | 9.10 | 4.5 |
-| error on bg | 6.85 | 8.72 | 4.5 |
-| error on surface | 7.26 | 7.91 | 4.5 |
-| border on bg | 3.08 | 4.53 | 3.0 |
-| border on surface | 3.26 | 4.11 | 3.0 |
+| accent on accent-soft | 5.82 | 6.70 | 4.5 |
+| sage-text on sage | 7.48 | 9.12 | 4.5 |
+| error on bg / surface | 6.56 / 7.15 | 8.89 / 8.10 | 4.5 |
+| border on bg / surface | 3.23 / 3.52 | 4.62 / 4.21 | 3.0 |
 
 ## Layout and navigation
-One `<nav aria-label>` landmark, restyled by CSS: side bar at 768px and wider, fixed bottom bar below. Items follow
-SPEC section 12 (Today, Journal, Remember, Thinking Gym, Week, Settings), each with icon and text label; the active item
-has `aria-current="page"`. A skip link ("Skip to main content") is the first focusable element; content lives in
-`<main id="main-content" tabindex="-1">`.
+One `<nav aria-label>` landmark, restyled by CSS. At 768px and wider it is a side bar: brand mark, the destinations,
+Settings set apart by a rule, and a quiet privacy line at the bottom ("Local. Nothing leaves this device.", or the cloud
+/ offline state, mirrored from the banner). Below 768px it is a fixed bottom bar with five items (Today, Journal,
+Remember, Thinking Gym, Week); Settings moves to a gear link in a small header with the brand. Items follow SPEC
+section 12, each with icon and text label; the active item has `aria-current="page"`. A skip link ("Skip to main
+content") is the first focusable element; content lives in `<main id="main-content" tabindex="-1">`.
 
 The cloud / offline banner sits above `<main>` in the shell, so it appears on every route, is sticky and cannot be
 dismissed. It is hidden in local profiles.

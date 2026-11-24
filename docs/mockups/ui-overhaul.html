@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Diary – UI overhaul mockup</title>
+<style>
+/* ===== Tokens ("Quiet paper") — system fonts only, per SPEC 10 ===== */
+:root {
+  --bg: #f6f3ed;          /* paper */
+  --surface: #fffdf9;     /* sheet */
+  --surface-2: #efebe3;   /* recessed */
+  --text: #1f2328;
+  --muted: #575d64;
+  --accent: #2c5f66;      /* unchanged, contrast-tested */
+  --accent-soft: #dfeae9;
+  --on-accent: #ffffff;
+  --sage: #e6ebe1;
+  --sage-text: #3d4d38;
+  --error: #a4262c;
+  --border: #8a8f94;
+  --rule: #e3ddd2;
+  --shadow: 0 1px 2px rgba(40,30,20,.05), 0 4px 16px rgba(40,30,20,.06);
+
+  --serif: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* no serif font, per owner */
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --measure: 65ch;
+  --r-lg: 1.25rem; --r-md: .75rem; --r-sm: .5rem;
+}
+:root[data-theme="dark"] {
+  --bg: #14171a; --surface: #1c2024; --surface-2: #23282d;
+  --text: #e8e6e3; --muted: #a9afb5; --accent: #7cc4cc; --accent-soft: #1f3336;
+  --on-accent: #10181a; --sage: #262d24; --sage-text: #c5d4bd;
+  --error: #ff9a9f; --border: #7b8288; --rule: #2d3338;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 1.0625rem/1.6 var(--sans); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+svg.i { width: 1.25rem; height: 1.25rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ===== Mockup chrome (not part of the design) ===== */
+.mock-bar { position: fixed; right: 1rem; top: 1rem; z-index: 50; display: flex; gap: .5rem; }
+.mock-bar button { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: .35rem .8rem; font-size: .8rem; }
+
+/* ===== Shell ===== */
+.shell { display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+nav.side { position: sticky; top: 0; height: 100vh; padding: 1.75rem 1rem; display: flex; flex-direction: column; gap: 1.5rem; border-right: 1px solid var(--rule); }
+.brand { display: flex; align-items: center; gap: .6rem; padding: 0 .6rem; font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
+.brand-mark { width: 2rem; height: 2rem; border-radius: .6rem; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.brand-mark svg { width: 1.1rem; height: 1.1rem; }
+nav.side ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .2rem; }
+nav.side a { display: flex; align-items: center; gap: .75rem; min-height: 2.75rem; padding: 0 .75rem; border-radius: var(--r-md); color: var(--text); text-decoration: none; transition: background-color 150ms ease; }
+nav.side a:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+nav.side a[aria-current="page"] { background: var(--surface); box-shadow: var(--shadow), inset 3px 0 0 var(--accent); font-weight: 650; }
+nav.side a[aria-current="page"] svg { color: var(--accent); }
+.nav-sep { height: 1px; background: var(--rule); margin: .5rem .75rem; }
+.side-foot { margin-top: auto; padding: .75rem; font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: .5rem; }
+.dot { width: .5rem; height: .5rem; border-radius: 50%; background: #3f8a5a; }
+
+main { min-width: 0; padding: 2.5rem 2rem 5rem; }
+.page { max-width: 46rem; margin: 0 auto; }
+.page.wide { max-width: 72rem; }
+.eyebrow { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 .25rem; }
+h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.9rem, 3.5vw, 2.4rem); line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.01em; }
+h2 { font-family: var(--serif); font-weight: 600; font-size: 1.3rem; margin: 2.5rem 0 1rem; }
+.lead { color: var(--muted); margin: 0 0 2rem; max-width: var(--measure); }
+
+.card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); border: 1px solid var(--rule); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-weight: 550; transition: background-color 150ms ease, transform 150ms ease; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, black); }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--surface-2); }
+.btn.danger { color: var(--error); border-color: var(--error); }
+.chip { display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .6rem; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--sage); color: var(--sage-text); }
+.chip svg { width: .9rem; height: .9rem; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.muted { color: var(--muted); }
+
+/* ===== Today: composer ===== */
+.composer { padding: 1.5rem; }
+.seg { display: inline-flex; padding: .25rem; border-radius: 999px; background: var(--surface-2); gap: .25rem; }
+.seg button { border: 0; background: transparent; padding: .45rem 1rem; border-radius: 999px; display: inline-flex; gap: .45rem; align-items: center; min-height: 2.5rem; font-weight: 550; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.composer-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.lang { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: .3rem .8rem; background: transparent; }
+.record-stage { display: grid; place-items: center; text-align: center; gap: 1rem; padding: 2.5rem 1rem 1.5rem; }
+.rec-btn { width: 6.5rem; height: 6.5rem; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: 0 0 0 10px var(--accent-soft), var(--shadow); transition: transform 150ms ease; }
+.rec-btn:hover { transform: scale(1.03); }
+.rec-btn svg { width: 2.4rem; height: 2.4rem; }
+.rec-btn.on { background: var(--error); box-shadow: 0 0 0 10px color-mix(in srgb, var(--error) 18%, transparent), var(--shadow); }
+.wave { display: flex; align-items: center; gap: 3px; height: 2.5rem; }
+.wave span { width: 3px; border-radius: 2px; background: var(--accent); opacity: .7; }
+.timer { font-variant-numeric: tabular-nums; font-size: 1.5rem; font-family: var(--serif); }
+.write-area { margin-top: 1.25rem; }
+.write-area textarea { width: 100%; min-height: 14rem; resize: vertical; border: 1px solid var(--border); border-radius: var(--r-md); padding: 1rem 1.1rem; background: var(--bg); color: var(--text); font: 1.15rem/1.7 var(--serif); }
+.write-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: .75rem; flex-wrap: wrap; }
+.saved { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; color: var(--muted); }
+.saved svg { width: 1rem; height: 1rem; color: #3f8a5a; }
+
+/* Timeline */
+.timeline { list-style: none; padding: 0; margin: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 3.6rem; top: .5rem; bottom: .5rem; width: 1px; background: var(--rule); }
+.timeline li { display: grid; grid-template-columns: 3rem 1.2rem 1fr; gap: .6rem; align-items: start; padding: .5rem 0; }
+.t-time { font-size: .85rem; color: var(--muted); text-align: right; padding-top: .9rem; font-variant-numeric: tabular-nums; }
+.t-node { width: .7rem; height: .7rem; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); margin: 1.05rem auto 0; position: relative; z-index: 1; }
+.entry-link { display: block; padding: .9rem 1.1rem; text-decoration: none; color: inherit; transition: transform 150ms ease; }
+.entry-link:hover { transform: translateY(-1px); }
+.entry-link p { margin: .25rem 0 .5rem; font-family: var(--serif); font-size: 1.05rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.status { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--muted); }
+.status .spin { width: .8rem; height: .8rem; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Journal ===== */
+.toolbar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.search { flex: 1 1 16rem; display: flex; align-items: center; gap: .5rem; border: 1px solid var(--border); border-radius: 999px; padding: 0 1rem; min-height: 2.75rem; background: var(--surface); color: var(--muted); }
+.search input { border: 0; outline: 0; background: transparent; flex: 1; font: inherit; color: var(--text); }
+.day { margin-bottom: 2rem; }
+.day-head { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: .5rem 0; display: flex; align-items: baseline; gap: .75rem; border-bottom: 1px solid var(--rule); margin-bottom: .75rem; }
+.day-head strong { font-family: var(--serif); font-size: 1.15rem; }
+.entries-grid { display: grid; gap: .75rem; }
+
+/* ===== Entry + Reflect ===== */
+.entry-layout { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 2rem; align-items: start; }
+.back { display: inline-flex; align-items: center; gap: .35rem; color: var(--accent); text-decoration: none; font-weight: 550; margin-bottom: 1rem; }
+.prose { font-family: var(--serif); font-size: 1.2rem; line-height: 1.75; max-width: var(--measure); }
+.prose p { margin: 0 0 1.1em; }
+.player { display: flex; align-items: center; gap: .9rem; padding: .7rem 1rem; margin: 1.25rem 0 2rem; }
+.play { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.track { flex: 1; height: 2rem; display: flex; align-items: center; gap: 2px; }
+.track span { flex: 1; border-radius: 2px; background: var(--border); opacity: .45; }
+.track span.p { background: var(--accent); opacity: 1; }
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; padding-top: 1rem; border-top: 1px solid var(--rule); }
+.coach { position: sticky; top: 1.5rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+.coach h2 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: .5rem; }
+.bubble { padding: .8rem 1rem; border-radius: 1rem; font-size: .98rem; max-width: 92%; }
+.bubble.q { background: var(--accent-soft); border-bottom-left-radius: .3rem; font-family: var(--serif); font-size: 1.05rem; }
+.bubble.a { background: var(--surface-2); align-self: flex-end; border-bottom-right-radius: .3rem; }
+.who { font-size: .75rem; font-weight: 650; color: var(--muted); margin-bottom: .15rem; }
+.answer-row { display: flex; gap: .5rem; }
+.answer-row textarea { flex: 1; min-height: 3rem; resize: none; border: 1px solid var(--border); border-radius: var(--r-md); padding: .6rem .8rem; background: var(--bg); color: var(--text); font: inherit; }
+.icon-btn { width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; }
+
+/* ===== Remember ===== */
+.flash { padding: 2rem; text-align: center; }
+.flash .q { font-family: var(--serif); font-size: 1.5rem; line-height: 1.4; margin: .75rem auto 1.5rem; max-width: 30ch; }
+.reveal { margin-top: 1.5rem; padding: 1.25rem; border-radius: var(--r-md); background: var(--surface-2); text-align: left; }
+.grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: 1.25rem; }
+.grades .btn { border-radius: var(--r-md); flex-direction: column; gap: 0; min-height: 3.5rem; }
+.grades small { font-weight: 400; color: var(--muted); font-size: .75rem; }
+.split3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+.mini { padding: 1rem 1.1rem; }
+.mini h3 { margin: 0 0 .25rem; font-size: 1rem; }
+.mini p { margin: 0; font-size: .9rem; color: var(--muted); }
+
+/* ===== Week ===== */
+.week-nav { display: flex; align-items: center; gap: .5rem; margin-bottom: 1.5rem; }
+.themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .75rem; margin: 1rem 0 2rem; }
+.theme { padding: 1.1rem 1.2rem; border-top: 3px solid var(--accent); }
+.theme h3 { margin: 0 0 .35rem; font-family: var(--serif); font-size: 1.1rem; }
+.theme p { margin: 0; font-size: .95rem; color: var(--muted); }
+blockquote { margin: 1.5rem 0; padding: .25rem 0 .25rem 1.25rem; border-left: 3px solid var(--accent); font-family: var(--serif); font-size: 1.2rem; font-style: italic; }
+
+/* ===== Mobile ===== */
+@media (max-width: 767.98px) {
+  .shell { grid-template-columns: 1fr; }
+  nav.side { position: fixed; inset: auto 0 0 0; height: auto; z-index: 20; padding: 0 0 env(safe-area-inset-bottom); border-right: 0; border-top: 1px solid var(--rule); background: var(--surface); flex-direction: row; }
+  .brand, .side-foot, .nav-sep { display: none; }
+  nav.side ul { flex-direction: row; width: 100%; gap: 0; }
+  nav.side li { flex: 1; }
+  nav.side li.more-only { display: none; }
+  nav.side a { flex-direction: column; justify-content: center; gap: .15rem; min-height: 4rem; border-radius: 0; font-size: .7rem; padding: .3rem 0; }
+  nav.side a[aria-current="page"] { box-shadow: inset 0 3px 0 var(--accent); background: transparent; }
+  main { padding: 1.5rem 1rem 6.5rem; }
+  .entry-layout { grid-template-columns: 1fr; }
+  .coach { position: static; }
+  .split3 { grid-template-columns: 1fr; }
+  .grades { grid-template-columns: repeat(2, 1fr); }
+  .mock-bar { top: auto; bottom: 5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-6 .1A4 4 0 0 0 4 12a4 4 0 0 0 2 6.9A3 3 0 0 0 12 19Z"/><path d="M12 5a3 3 0 1 1 6 .1A4 4 0 0 1 20 12a4 4 0 0 1-2 6.9A3 3 0 0 1 12 19Z"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8Z" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-feather" viewBox="0 0 24 24"><path d="M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5Z"/><path d="M16 8 2 22M17.5 15H9"/></symbol>
+</svg>
+
+<div class="mock-bar" aria-label="Mockup controls">
+  <button id="theme-toggle" type="button">Toggle dark</button>
+</div>
+
+<div class="shell">
+  <nav class="side" aria-label="Main navigation">
+    <div class="brand"><span class="brand-mark"><svg class="i"><use href="#i-feather"/></svg></span>AI Diary</div>
+    <ul>
+      <li><a href="#today" data-view="today"><svg class="i"><use href="#i-pen"/></svg>Today</a></li>
+      <li><a href="#journal" data-view="journal"><svg class="i"><use href="#i-book"/></svg>Journal</a></li>
+      <li><a href="#remember" data-view="remember"><svg class="i"><use href="#i-bulb"/></svg>Remember</a></li>
+      <li><a href="#gym" data-view="gym"><svg class="i"><use href="#i-brain"/></svg>Gym</a></li>
+      <li><a href="#week" data-view="week"><svg class="i"><use href="#i-cal"/></svg>Week</a></li>
+      <li class="nav-sep" aria-hidden="true"></li>
+      <li class="more-only"><a href="#settings" data-view="settings"><svg class="i"><use href="#i-cog"/></svg>Settings</a></li>
+    </ul>
+    <div class="side-foot"><span class="dot" aria-hidden="true"></span><svg class="i" style="width:1rem;height:1rem"><use href="#i-lock"/></svg>Local · nothing leaves this device</div>
+  </nav>
+
+  <main id="main-content" tabindex="-1">
+
+    <!-- ================= TODAY ================= -->
+    <section class="page" data-page="today">
+      <p class="eyebrow">Tuesday, 24 November</p>
+      <h1>Good evening.</h1>
+      <p class="lead">Say or write whatever is on your mind. Nothing is analysed while you write.</p>
+
+      <div class="card composer">
+        <div class="composer-top">
+          <div class="seg" role="group" aria-label="How do you want to add an entry?">
+            <button type="button" aria-pressed="true" data-mode="speak"><svg class="i"><use href="#i-mic"/></svg>Speak</button>
+            <button type="button" aria-pressed="false" data-mode="write"><svg class="i"><use href="#i-pen"/></svg>Write</button>
+          </div>
+          <button class="lang" type="button"><svg class="i" style="width:1rem;height:1rem"><use href="#i-globe"/></svg>Detect language</button>
+        </div>
+
+        <div class="record-stage" data-panel="speak">
+          <button class="rec-btn" id="rec" type="button" aria-label="Record"><svg class="i"><use href="#i-mic"/></svg></button>
+          <div class="wave" id="wave" aria-hidden="true" hidden></div>
+          <div><div class="timer" id="timer">0:00</div><div class="muted" id="rec-status" role="status">Ready to record.</div></div>
+        </div>
+
+        <div class="write-area" data-panel="write" hidden>
+          <label for="w" class="eyebrow" style="display:block;margin-bottom:.4rem">Your entry</label>
+          <textarea id="w" placeholder="Today I noticed…">Long day. The review with Sarah went better than expected – I was ready for pushback on the timeline, but she mostly asked about the testing plan.</textarea>
+          <div class="write-foot">
+            <span class="saved"><svg class="i"><use href="#i-check"/></svg>Saved just now</span>
+            <button class="btn primary" type="button">Finish entry</button>
+          </div>
+        </div>
+      </div>
+
+      <h2>Earlier today</h2>
+      <ol class="timeline">
+        <li>
+          <span class="t-time">18:42</span><span class="t-node" aria-hidden="true"></span>
+          <div class="card"><a class="entry-link" href="#entry">
+            <div class="meta"><span class="chip"><svg class="i"><use href="#i-mic"/></svg>Voice</span><span class="status"><span class="spin" aria-hidden="true"></span>Transcribing…</span></div>
+            <p class="muted">Recording · 3 min 12 s</p></a></div>
+        </li>
+        <li>
+          <span class="t-time">07:15</span><span class="t-node" aria-hidden="true"></span>
+          <div class="card"><a class="entry-link" href="#entry">
+            <div class="meta"><span class="chip accent"><svg class="i"><use href="#i-chat"/></svg>Reflection</span></div>
+            <p>Couldn't sleep past six again. I keep replaying the conversation from Friday and wondering whether I said too much.</p></a></div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= JOURNAL ================= -->
+    <section class="page" data-page="journal" hidden>
+      <p class="eyebrow">142 entries</p>
+      <h1>Journal</h1>
+      <div class="toolbar">
+        <label class="search"><svg class="i"><use href="#i-search"/></svg><input placeholder="Search your entries" aria-label="Search your entries"></label>
+        <div class="seg" role="group" aria-label="Filter"><button aria-pressed="true">All</button><button aria-pressed="false">Voice</button><button aria-pressed="false">Reflected</button></div>
+      </div>
+      <div class="day">
+        <div class="day-head"><strong>Today</strong><span class="muted">Tue 24 Nov</span></div>
+        <div class="entries-grid">
+          <div class="card"><a class="entry-link" href="#entry"><div class="meta"><span class="muted" style="font-size:.85rem">07:15</span><span class="chip accent"><svg class="i"><use href="#i-chat"/></svg>Reflection</span></div><p>Couldn't sleep past six again. I keep replaying the conversation from Friday and wondering whether I said too much.</p></a></div>
+        </div>
+      </div>
+      <div class="day">
+        <div class="day-head"><strong>Yesterday</strong><span class="muted">Mon 23 Nov</span></div>
+        <div class="entries-grid">
+          <div class="card"><a class="entry-link" href="#entry"><div class="meta"><span class="muted" style="font-size:.85rem">21:03</span><span class="chip"><svg class="i"><use href="#i-mic"/></svg>Voice</span></div><p>Walked home along the river instead of taking the tram. Felt like the first time in weeks that my head was quiet for more than ten minutes.</p></a></div>
+          <div class="card"><a class="entry-link" href="#entry"><div class="meta"><span class="muted" style="font-size:.85rem">12:40</span><span class="chip" style="background:var(--surface-2);color:var(--muted)">Draft</span></div><p>Lunch with Tom. He's thinking about leaving – I didn't know what to say and I think I just listened, which might have been the right thing.</p></a></div>
+        </div>
+      </div>
+      <div class="day">
+        <div class="day-head"><strong>Saturday</strong><span class="muted">21 Nov</span></div>
+        <div class="entries-grid">
+          <div class="card"><a class="entry-link" href="#entry"><div class="meta"><span class="muted" style="font-size:.85rem">10:20</span></div><p>Finally fixed the bike. Small thing, but finishing something with my hands after a week of meetings felt disproportionately good.</p></a></div>
+        </div>
+      </div>
+      <div style="text-align:center"><button class="btn" type="button">Load older entries</button></div>
+    </section>
+
+    <!-- ================= ENTRY + REFLECT ================= -->
+    <section class="page wide" data-page="entry" hidden>
+      <a class="back" href="#journal"><svg class="i"><use href="#i-left"/></svg>Journal</a>
+      <div class="entry-layout">
+        <article>
+          <p class="eyebrow">Tuesday, 24 November · 07:15</p>
+          <h1>Couldn't sleep past six</h1>
+          <div class="meta" style="margin-bottom:.5rem"><span class="chip"><svg class="i"><use href="#i-mic"/></svg>Voice</span><span class="chip accent"><svg class="i"><use href="#i-chat"/></svg>Reflection</span></div>
+          <div class="card player">
+            <button class="play" type="button" aria-label="Play recording"><svg class="i"><use href="#i-play"/></svg></button>
+            <div class="track" aria-hidden="true" id="track"></div>
+            <span class="muted" style="font-variant-numeric:tabular-nums;font-size:.9rem">1:04 / 3:12</span>
+          </div>
+          <div class="prose">
+            <p>Couldn't sleep past six again. I keep replaying the conversation from Friday and wondering whether I said too much. It's strange how a meeting that felt fine in the moment turns into something else at 5 a.m.</p>
+            <p>What I actually said was that I'd rather slip the release by a week than ship without the migration tests. That's a reasonable position. Nobody pushed back. And still.</p>
+            <p>Maybe what bothers me is not what I said, but that I didn't say it earlier.</p>
+          </div>
+          <div class="actions">
+            <button class="btn" type="button"><svg class="i"><use href="#i-pen"/></svg>Edit</button>
+            <button class="btn ghost" type="button"><svg class="i"><use href="#i-trash"/></svg>Delete audio</button>
+            <button class="btn ghost" type="button" style="color:var(--error)"><svg class="i"><use href="#i-trash"/></svg>Delete entry</button>
+          </div>
+        </article>
+
+        <aside class="card coach" aria-label="Reflect">
+          <h2><svg class="i" style="color:var(--accent)"><use href="#i-chat"/></svg>Reflect</h2>
+          <div><div class="who">Coach</div><div class="bubble q">You said it bothers you that you didn't say it earlier. What held you back then?</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end"><div class="who">You</div><div class="bubble a">Probably that I wasn't sure the tests were really the bottleneck. I wanted data first.</div></div>
+          <div><div class="who">Coach · question 3 of ~5</div><div class="bubble q">If you'd had the data a week earlier, what would you have done differently?</div></div>
+          <div class="answer-row">
+            <textarea aria-label="Your answer" placeholder="Answer, or press the mic…"></textarea>
+            <button class="icon-btn" type="button" aria-label="Answer by voice"><svg class="i"><use href="#i-mic"/></svg></button>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:.5rem">
+            <button class="btn ghost" type="button">End reflection</button>
+            <button class="btn primary" type="button"><svg class="i"><use href="#i-send"/></svg>Answer</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= REMEMBER ================= -->
+    <section class="page" data-page="remember" hidden>
+      <p class="eyebrow">3 cards due today</p>
+      <h1>Remember</h1>
+      <p class="lead">Bring back what you decided to keep. Try an answer first; the answer and its source follow afterwards.</p>
+      <div class="card flash">
+        <span class="chip">Card 1 of 3</span>
+        <p class="q">What did you decide to do the next time a release date feels unsafe?</p>
+        <button class="btn primary" type="button" id="reveal-btn">Show answer and source</button>
+        <div id="reveal" hidden>
+          <div class="reveal">
+            <p style="margin:0 0 .5rem;font-family:var(--serif);font-size:1.1rem">Say it in the first planning meeting, with whatever data I have – not after the date is public.</p>
+            <a href="#entry" class="muted" style="font-size:.9rem">From your entry on 24 November →</a>
+          </div>
+          <div class="grades" role="group" aria-label="How did it go?">
+            <button class="btn" type="button">Forgot<small>again soon</small></button>
+            <button class="btn" type="button">Hard<small>in 2 days</small></button>
+            <button class="btn" type="button">Good<small>in 6 days</small></button>
+            <button class="btn" type="button">Easy<small>in 2 weeks</small></button>
+          </div>
+        </div>
+      </div>
+      <h2>Also here</h2>
+      <div class="split3">
+        <a class="card mini" href="#remember" style="color:inherit;text-decoration:none"><h3>To review · 2</h3><p>Suggestions from your writing. Nothing is kept until you approve it.</p></a>
+        <a class="card mini" href="#remember" style="color:inherit;text-decoration:none"><h3>Your cards · 24</h3><p>Browse, edit or delete what you keep.</p></a>
+        <a class="card mini" href="#remember" style="color:inherit;text-decoration:none"><h3>Techniques</h3><p>Short lessons that open as you use this page.</p></a>
+      </div>
+    </section>
+
+    <!-- ================= GYM ================= -->
+    <section class="page" data-page="gym" hidden>
+      <h1>Thinking Gym</h1>
+      <p class="lead">Short thinking exercises, five to ten minutes each. Choose a category, or let the diary pick one.</p>
+      <div class="split3">
+        <button class="card mini" type="button" style="text-align:left"><h3>Perspective</h3><p>See a situation through someone else's eyes.</p></button>
+        <button class="card mini" type="button" style="text-align:left"><h3>Assumptions</h3><p>Find what you're taking for granted.</p></button>
+        <button class="card mini" type="button" style="text-align:left"><h3>Decisions</h3><p>Weigh options without spiralling.</p></button>
+      </div>
+      <div style="margin-top:1rem"><button class="btn primary" type="button">Surprise me</button></div>
+    </section>
+
+    <!-- ================= WEEK ================= -->
+    <section class="page" data-page="week" hidden>
+      <div class="week-nav">
+        <button class="icon-btn" type="button" aria-label="Previous week"><svg class="i"><use href="#i-left"/></svg></button>
+        <div><p class="eyebrow" style="margin:0">16 – 22 November</p><h1 style="margin:0">Week 47</h1></div>
+        <button class="icon-btn" type="button" aria-label="Next week" disabled style="opacity:.4"><svg class="i"><use href="#i-right"/></svg></button>
+      </div>
+      <p class="lead">A calm look back, made from 9 finished entries and 2 reflections. Created when you asked for it.</p>
+      <h2 style="margin-top:0">Themes</h2>
+      <div class="themes">
+        <div class="card theme"><h3>Speaking up earlier</h3><p>Three entries circle back to saying things later than you wanted to.</p></div>
+        <div class="card theme"><h3>Quiet time</h3><p>Walks and hands-on tasks show up as the moments that felt restful.</p></div>
+        <div class="card theme"><h3>Listening</h3><p>With Tom and with your team, you noticed listening was enough.</p></div>
+      </div>
+      <blockquote>“Maybe what bothers me is not what I said, but that I didn't say it earlier.”</blockquote>
+      <h2>A question to carry into next week</h2>
+      <p class="prose" style="font-size:1.15rem">What is one thing you already know you'll want to say – and when is the earliest moment you could say it?</p>
+      <div class="actions" style="margin-top:2rem"><button class="btn" type="button">Edit</button><button class="btn ghost" type="button">Create again</button></div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section class="page" data-page="settings" hidden>
+      <h1>Settings</h1>
+      <p class="lead">Grouped into cards: Appearance · Language · Coach &amp; voice · Reminders · Your data (export, delete all).</p>
+    </section>
+  </main>
+</div>
+
+<script>
+const pages = [...document.querySelectorAll('[data-page]')];
+const links = [...document.querySelectorAll('nav.side a')];
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (a) { e.preventDefault(); show(a.getAttribute('href').slice(1)); }
+});
+function show(v) {
+  v = v || (location.hash || '#today').slice(1);
+  pages.forEach(p => p.hidden = p.dataset.page !== v);
+  const navKey = v === 'entry' ? 'journal' : v;
+  links.forEach(a => a.dataset.view === navKey ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  window.scrollTo(0, 0);
+}
+show();
+
+document.getElementById('theme-toggle').onclick = () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.mode);
+});
+document.querySelectorAll('.toolbar .seg button').forEach(b => b.onclick = () =>
+  b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)));
+
+// fake recorder
+const rec = document.getElementById('rec'), wave = document.getElementById('wave'), timer = document.getElementById('timer'), st = document.getElementById('rec-status');
+for (let i = 0; i < 40; i++) wave.appendChild(document.createElement('span'));
+let t, s = 0, anim;
+rec.onclick = () => {
+  const on = rec.classList.toggle('on');
+  rec.innerHTML = `<svg class="i"><use href="#${on ? 'i-stop' : 'i-mic'}"/></svg>`;
+  rec.setAttribute('aria-label', on ? 'Stop and save' : 'Record');
+  wave.hidden = !on; st.textContent = on ? 'Recording.' : 'Recording saved.';
+  if (on) { s = 0; t = setInterval(() => { s++; timer.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }, 1000);
+    anim = setInterval(() => wave.querySelectorAll('span').forEach(b => b.style.height = (4 + Math.random()*36) + 'px'), 120); }
+  else { clearInterval(t); clearInterval(anim); }
+};
+// player track
+const tr = document.getElementById('track');
+for (let i = 0; i < 60; i++) { const b = document.createElement('span'); b.style.height = (6 + Math.abs(Math.sin(i*.7))*22 + Math.random()*4) + 'px'; if (i < 20) b.className = 'p'; tr.appendChild(b); }
+document.getElementById('reveal-btn').onclick = e => { e.target.hidden = true; document.getElementById('reveal').hidden = false; };
+</script>
+</body>
+</html>
