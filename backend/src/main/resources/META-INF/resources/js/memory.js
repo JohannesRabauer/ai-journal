@@ -220,6 +220,11 @@ export function initMemory(doc = globalThis.document, deps = {}) {
     if (target && target.tagName && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
       return;
     }
+    // WCAG 2.1.4: a single-character shortcut is only active while focus is inside the revealed card (focus is
+    // moved there on reveal), so it cannot fire by accident for speech-input or other users of the page.
+    if (!target || !target.closest || !target.closest('.memory-reveal')) {
+      return;
+    }
     const grade = gradeForDigit(event.key);
     if (grade) {
       event.preventDefault();

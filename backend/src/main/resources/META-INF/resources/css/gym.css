@@ -8,12 +8,12 @@
 .gym-error { position: sticky; top: .5rem; z-index: 2; max-width: var(--diary-measure); }
 .gym-pick, .gym-exercise, .gym-history { display: flex; flex-direction: column; gap: .75rem; }
 .gym-exercise[hidden], .gym-pick[hidden], .gym-history[hidden] { display: none; }
-.gym-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.gym-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: .75rem; }
 .gym-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .35rem; min-height: 2.75rem;
   padding: 1rem 1.1rem; text-align: start; font: inherit; color: var(--diary-text); cursor: pointer; }
 .gym-card:hover { border-color: var(--diary-accent); }
 .gym-card:disabled { cursor: default; opacity: .6; }
-.gym-card__title { font-size: 1.05rem; font-weight: 650; }
+.gym-card__title { font-size: 1.05rem; font-weight: 650; overflow-wrap: anywhere; }
 .gym-card__text { color: var(--diary-muted); font-size: .9375rem; line-height: 1.4; }
 .gym-surprise { align-self: flex-start; gap: .5rem; }
 .gym-pick > .diary-button, .gym-exercise > .diary-button, .gym-history > .diary-button { align-self: flex-start; }

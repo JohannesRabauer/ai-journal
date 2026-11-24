@@ -92,6 +92,8 @@
   justify-content: center;
   gap: 0.4rem;
   box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   min-height: 2.75rem;
   margin: 0;
   padding: 0 1.25rem;

@@ -153,9 +153,12 @@
 }
 .entries-filter {
   display: inline-flex;
+  flex-wrap: wrap; /* large text (WCAG 1.4.4): the options wrap instead of running off the page */
+  max-width: 100%;
+  box-sizing: border-box;
   gap: 0.25rem;
   padding: 0.25rem;
-  border-radius: 999px;
+  border-radius: 1.5rem;
   background: var(--diary-surface-2);
 }
 .entries-filter__option {

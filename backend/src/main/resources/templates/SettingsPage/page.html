@@ -72,7 +72,7 @@
           <input class="diary-input" type="text" id="settings-intervals" name="intervals" value="{v.intervals}" inputmode="numeric" autocomplete="off"
                  aria-describedby="settings-intervals-help settings-intervals-error"{#if v.intervalsError} aria-invalid="true"{/if}>
           <span class="diary-help" id="settings-intervals-help">{t.get('settings.intervals.help')}</span>
-          <p class="diary-error-text" id="settings-intervals-error">{#if v.intervalsError}{v.intervalsError}{/if}</p>
+          <p class="diary-error-text" id="settings-intervals-error" role="alert">{#if v.intervalsError}{v.intervalsError}{/if}</p>
         </div>
       </div>
     </section>

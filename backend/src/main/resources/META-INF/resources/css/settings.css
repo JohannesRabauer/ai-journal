@@ -10,7 +10,7 @@
 .settings-label { font-weight: 600; }
 
 /* Theme: segmented control of real buttons (aria-pressed) */
-.settings-seg { display: inline-flex; flex-wrap: wrap; align-self: flex-start; padding: .25rem; gap: .25rem; border-radius: 999px;
+.settings-seg { box-sizing: border-box; max-width: 100%; display: inline-flex; flex-wrap: wrap; align-self: flex-start; padding: .25rem; gap: .25rem; border-radius: 999px;
   background: var(--diary-surface-2); border: 1px solid var(--diary-border); }
 .settings-seg button { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.75rem; padding: .45rem 1rem; border: 2px solid transparent;
   border-radius: 999px; background: transparent; color: var(--diary-muted); font: inherit; font-weight: 550; cursor: pointer; }

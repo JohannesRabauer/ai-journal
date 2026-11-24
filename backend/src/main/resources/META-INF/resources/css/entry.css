@@ -163,6 +163,9 @@
 .entries-layout > .entries-actions {
   grid-area: actions;
 }
+.entries-layout > * {
+  min-width: 0;
+}
 @media (min-width: 1024px) {
   .diary-main:has(.entries-layout) {
     max-width: 76rem;

@@ -46,7 +46,7 @@
 .memory-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: .75rem; }
 .memory-tile { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; padding: 1rem 1.1rem; min-height: 44px;
   text-align: left; font: inherit; color: var(--diary-text); cursor: pointer; width: 100%; box-sizing: border-box; text-decoration: none; }
-.memory-tile__title { font-weight: 600; font-size: 1rem; }
+.memory-tile__title { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
 .memory-tile__desc { color: var(--diary-muted); font-size: .9rem; flex: 1; }
 .memory-tile__state { color: var(--diary-accent); font-size: .875rem; font-weight: 600; text-decoration: underline; }
 .memory-tile[aria-expanded="true"] { border-color: var(--diary-accent); }
@@ -70,7 +70,7 @@
 .memory-confirm__body p { margin: 0 0 .75rem; }
 
 @media (max-width: 800px) {
-  .memory-tiles { grid-template-columns: 1fr; }
+  .memory-tiles { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .memory-grades { grid-template-columns: repeat(2, 1fr); }

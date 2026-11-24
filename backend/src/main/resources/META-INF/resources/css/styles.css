@@ -26,7 +26,7 @@
   --diary-measure: 65ch;
   --diary-space: 1.5rem;
   --diary-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --diary-nav-height: 4.25rem;
+  --diary-nav-height: 3.5rem;
 }
 
 html[theme~='dark'] {
@@ -322,8 +322,16 @@ code.diary-phrase {
 
 /* ---- Mobile: header plus bottom navigation bar (five items) -------------------------- */
 @media (max-width: 767.98px) {
+  /* The tab bar sits after the content in visual order and sticks to the bottom of the window. It is part of
+     the flow (not fixed) and its row wraps, so large text (WCAG 1.4.4) neither overflows nor covers content. */
   .diary-shell {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .diary-body {
+    flex: 1 0 auto;
   }
   .diary-topbar {
     display: flex;
@@ -362,8 +370,12 @@ code.diary-phrase {
     display: none;
   }
   .diary-nav {
-    position: fixed;
-    inset: auto 0 0 0;
+    order: 2;
+    flex: 0 0 auto;
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    align-self: stretch;
     z-index: 20;
     height: auto;
     min-height: var(--diary-nav-height);
@@ -376,10 +388,11 @@ code.diary-phrase {
   }
   .diary-nav ul {
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0;
   }
   .diary-nav li {
-    flex: 1 1 0;
+    flex: 1 1 3.75rem;
     min-width: 0;
   }
   .diary-nav a {
@@ -395,13 +408,14 @@ code.diary-phrase {
     text-align: center;
     hyphens: auto;
     -webkit-hyphens: auto;
+    overflow-wrap: anywhere;
   }
   .diary-nav a[aria-current='page'] {
     background: transparent;
     box-shadow: inset 0 3px 0 var(--diary-accent);
   }
   .diary-main {
-    padding: 1.5rem 1rem calc(var(--diary-nav-height) + 2.5rem);
+    padding: 1.5rem 1rem 2.5rem;
   }
   .diary-banner {
     padding: 0.6rem 1rem;
@@ -427,6 +441,8 @@ code.diary-phrase {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  max-width: 100%; /* large text: long labels wrap instead of pushing the page wider */
+  overflow-wrap: anywhere;
   min-height: 2.75rem;
   padding: 0 1.25rem;
   border: 0;
