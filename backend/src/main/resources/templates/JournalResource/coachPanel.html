@@ -1,0 +1,16 @@
+<section class="diary-card coach-panel{#if c.fullPage} coach-panel--page{/if}" id="coach" aria-labelledby="coach-title"
+         data-entry-id="{c.entryId}" data-conversation-id="{c.conversationId}" data-speech-language="{c.speechLanguage}"
+         data-autoplay="{c.autoPlay}" data-voice-de="{c.voiceDe ?: ''}" data-voice-en="{c.voiceEn ?: ''}" data-texts="{c.texts}">
+  <div class="coach-panel__head">
+    <h2 class="coach-panel__title" id="coach-title">{#icon 'chat' /}<span>{c.title}</span></h2>
+    {#if !c.fullPage && !c.notFinished}<a class="coach-panel__full" href="{c.reflectHref}">{t.get('coach.openFull')}</a>{/if}
+  </div>
+  <diary-coach-speech labels="{c.speechLabels}"></diary-coach-speech>
+  <p class="coach-thinking" data-coach-thinking role="status" hidden></p>
+  <div class="coach-error" data-coach-error role="alert"{#if !c.hasError} hidden{/if}>
+    <p data-coach-error-text>{c.error ?: ''}</p>
+    <button type="button" class="entries-ghost" data-coach-retry hidden>{t.get('coach.retry')}</button>
+  </div>
+  {#include JournalResource/coachBody /}
+  <noscript><p class="diary-muted">{t.get('coach.noscript')}</p></noscript>
+</section>

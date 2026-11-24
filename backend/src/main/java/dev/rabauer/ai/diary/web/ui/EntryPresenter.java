@@ -60,8 +60,7 @@ public final class EntryPresenter {
     public record View(long id, String eyebrow, String heading, boolean voice, boolean coach, String statusLabel,
                        String status, boolean finished, String recordingId, boolean audioDeleted, String text,
                        Panel panel, String panelLabel, String panelHelper, boolean showFinish, boolean finishDisabled,
-                       String typeManuallyHref, String legacyRemark, boolean reflectEnabled,
-                       String reflectHref, String reflectLabel, String reflectText, boolean showEdit,
+                       String typeManuallyHref, String legacyRemark, boolean showEdit,
                        boolean showExtract, String extractHref, boolean showDeleteAudio, boolean showDeleteEntry,
                        String notice) {
         public boolean hasAudio() {
@@ -108,10 +107,7 @@ public final class EntryPresenter {
                 reviewing ? t.get("entries.review.helper") : null,
                 panel == Panel.EDIT && EntryActions.forEntry(e.status(), hasAudio, true, manualMode).finish(), !hasText,
                 actions.typeManually() ? "/journal/" + e.id() + "?manual=1#entry-text" : null,
-                remark, finished, "/journal/" + e.id() + "/reflect",
-                t.get(e.hasCoachConversation() ? "coach.entry.reflect.open" : "entries.reflect"),
-                t.get(finished ? "entries.reflect.text" : "coach.notFinished"),
-                actions.editText(), finished && hasText, "/memory?source=entry&id=" + e.id(),
+                remark, actions.editText(), finished && hasText, "/memory?source=entry&id=" + e.id(),
                 hasAudio && actions.deleteAudio(), actions.deleteEntry(),
                 notice == null ? null : t.get(notice.key));
     }

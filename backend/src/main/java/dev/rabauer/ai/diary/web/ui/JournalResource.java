@@ -20,7 +20,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -60,17 +59,18 @@ public class JournalResource {
     @Inject
     Clock clock;
     @Inject
-    NotMovedPages notMoved;
-    @Inject
     EntryPage entryPage;
+    @Inject
+    CoachPage coachPage;
 
     /** Entry detail: /journal/{id} (phase 1). The page and its form actions live in {@link EntryPage}. */
     @GET
     @Path("{id: [0-9]+}")
     public Response entry(@PathParam("id") long id, @QueryParam("notice") String notice,
-                          @QueryParam("manual") String manual, @Context HttpHeaders headers) {
+                          @QueryParam("manual") String manual, @CookieParam(ClientZone.COOKIE) String zoneCookie,
+                          @Context HttpHeaders headers) {
         return entryPage.render(id, notice, manual != null && !manual.isEmpty() && !"0".equals(manual),
-                headers.getAcceptableLanguages());
+                headers.getAcceptableLanguages(), zoneCookie);
     }
 
     /** No-JavaScript form actions of the entry page; each checks the form token first (CSRF, docs/MIGRATION-QUTE.md). */
@@ -102,11 +102,63 @@ public class JournalResource {
         return entryPage.deleteEntry(id, token);
     }
 
-    /** Coach for one entry (phase 3 replaces this): /journal/{id}/reflect. */
+    /**
+     * Coach for one entry: /journal/{id}/reflect, the same conversation as the panel beside the entry, as a full page
+     * (focus mode, and the no-JavaScript target of the panel). {@code ?fragment=1} is the panel body for the script's
+     * in-place update; {@code ?new=1} shows the start state of "Start a new reflection".
+     */
     @GET
     @Path("{id: [0-9]+}/reflect")
-    public TemplateInstance reflect(@PathParam("id") long id, @Context HttpHeaders headers, @Context UriInfo uri) {
-        return notMoved.render(headers.getAcceptableLanguages(), uri.getRequestUri(), "/journal", "nav.journal", "/entries/" + id + "/coach");
+    public Response reflect(@PathParam("id") long id, @QueryParam("fragment") String fragment,
+                            @QueryParam("new") String fresh, @CookieParam(ClientZone.COOKIE) String zoneCookie,
+                            @Context HttpHeaders headers) {
+        boolean newOne = fresh != null && !fresh.isEmpty() && !"0".equals(fresh);
+        if (fragment != null && !fragment.isEmpty() && !"0".equals(fragment)) {
+            return coachPage.renderFragment(id, newOne, headers.getAcceptableLanguages(), zoneCookie);
+        }
+        return coachPage.renderPage(id, newOne, null, null, headers.getAcceptableLanguages(), zoneCookie);
+    }
+
+    /** No-JavaScript form actions of the coach; each checks the form token first and answers 303 to the full page. */
+    @POST
+    @Path("{id: [0-9]+}/reflect/start")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response reflectStart(@PathParam("id") long id, @FormParam("_csrf") String token,
+                                 @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
+        return coachPage.start(id, token, headers.getAcceptableLanguages(), zoneCookie);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/reflect/answer")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response reflectAnswer(@PathParam("id") long id, @FormParam("text") String text,
+                                  @FormParam("_csrf") String token, @CookieParam(ClientZone.COOKIE) String zoneCookie,
+                                  @Context HttpHeaders headers) {
+        return coachPage.answer(id, text, token, headers.getAcceptableLanguages(), zoneCookie);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/reflect/pause")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response reflectPause(@PathParam("id") long id, @FormParam("_csrf") String token,
+                                 @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
+        return coachPage.pause(id, token, headers.getAcceptableLanguages(), zoneCookie);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/reflect/resume")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response reflectResume(@PathParam("id") long id, @FormParam("_csrf") String token,
+                                  @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
+        return coachPage.resume(id, token, headers.getAcceptableLanguages(), zoneCookie);
+    }
+
+    @POST
+    @Path("{id: [0-9]+}/reflect/end")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response reflectEnd(@PathParam("id") long id, @FormParam("_csrf") String token,
+                               @CookieParam(ClientZone.COOKIE) String zoneCookie, @Context HttpHeaders headers) {
+        return coachPage.end(id, token, headers.getAcceptableLanguages(), zoneCookie);
     }
 
     @GET

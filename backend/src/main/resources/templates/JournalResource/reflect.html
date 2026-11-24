@@ -1,0 +1,12 @@
+{#include base}
+{#title}{t.get('coach.title')} - {t.get('app.name')}{/title}
+{#head}<link rel="stylesheet" href="/css/entry-panel.css">
+<link rel="stylesheet" href="/css/entry.css">
+<link rel="stylesheet" href="/css/coach.css">{/head}
+<div class="coach-page">
+  <a class="entries-back" href="/journal/{entryId}">{#icon 'chevron-left' /}<span>{t.get('coach.back')}</span></a>
+  <h1 id="coach-page-title">{t.get('coach.title')}</h1>
+  {#include JournalResource/coachPanel /}
+</div>
+{#scripts}<script type="module" src="/js/coach.js"></script>{/scripts}
+{/include}

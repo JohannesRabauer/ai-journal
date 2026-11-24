@@ -143,26 +143,38 @@
   margin: 0 0 1.5rem;
 }
 
-.entries-reflect {
-  box-sizing: border-box;
-  max-width: var(--diary-measure);
-  margin: 0 0 1.5rem;
-  padding: 1.1rem 1.25rem;
+/* Entry beside the coach panel: one column up to 1023px (the panel stacks under the entry), two columns from 1024px
+   with the panel sticky on the right. The actions sit under the entry text, not under the panel. */
+.entries-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'main' 'aside' 'actions';
+  gap: 0 2rem;
 }
-.entries-detail .entries-reflect__title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.35rem;
-  font-size: 1.15rem;
+.entries-main {
+  grid-area: main;
+  min-width: 0;
 }
-.entries-reflect__title .diary-icon {
-  width: 1.2rem;
-  height: 1.2rem;
-  color: var(--diary-accent);
+.entries-aside {
+  grid-area: aside;
+  min-width: 0;
+  margin-bottom: 1.5rem;
 }
-.entries-reflect p {
-  margin: 0 0 0.9rem;
+.entries-layout > .entries-actions {
+  grid-area: actions;
+}
+@media (min-width: 1024px) {
+  .diary-main:has(.entries-layout) {
+    max-width: 76rem;
+  }
+  .entries-layout {
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    grid-template-areas: 'main aside' 'actions aside';
+    grid-template-rows: auto 1fr;
+  }
+  .entries-aside {
+    margin-bottom: 0;
+  }
 }
 
 .entries-actions {

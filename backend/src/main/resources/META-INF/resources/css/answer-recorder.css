@@ -1,0 +1,17 @@
+/* Styles of the <diary-answer-recorder> shadow DOM, loaded with <link> from the element: the CSP (style-src 'self')
+   forbids an inline <style> element. Tokens (--diary-*) come from css/styles.css through inheritance. */
+:host { display: block; }
+.row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.time { font-variant-numeric: tabular-nums; font-size: 1.25rem; min-width: 5ch; }
+button { font: inherit; font-weight: 550; min-height: 44px; min-width: 44px; padding: 0 1.1rem; border-radius: 999px; cursor: pointer;
+         border: 1px solid var(--diary-border, #777); background: var(--diary-surface, #fff);
+         color: var(--diary-text, #1b1b1b); }
+button:focus-visible { outline: 3px solid var(--diary-text, #1b1b1b); outline-offset: 2px; }
+button[hidden], .time[hidden] { display: none; }
+button[disabled] { cursor: default; opacity: .7; }
+.dot { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em;
+       background: var(--diary-error, #a4262c); }
+:host([data-state="answer-recording"]) .dot { animation: pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+@keyframes pulse { 50% { opacity: .35; } }
+.status { min-height: 1.4em; margin-top: .5rem; color: var(--diary-muted, #575d64); }

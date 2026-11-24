@@ -52,23 +52,17 @@ class EntryPresenterTest {
         assertThat(v.extractHref()).isEqualTo("/memory?source=entry&id=5");
         assertThat(v.showDeleteEntry()).isTrue();
         assertThat(v.showDeleteAudio()).isFalse();
-        assertThat(v.reflectEnabled()).isTrue();
-        assertThat(v.reflectHref()).isEqualTo("/journal/5/reflect");
-        assertThat(v.reflectLabel()).isEqualTo("Reflect");
     }
 
     @Test
-    void coachConversationChangesTheReflectLabel() {
+    void coachConversationShowsTheReflectionChip() {
         var v = EntryPresenter.view(entry(EntryStatus.FINISHED, "x", EntrySource.TEXT, true, null), null, false, false, null, EN);
         assertThat(v.coach()).isTrue();
-        assertThat(v.reflectLabel()).isEqualTo("Open reflection");
     }
 
     @Test
-    void unfinishedEntryCannotBeReflectedOnYet() {
+    void draftEntryOffersFinishNotExtract() {
         var v = EntryPresenter.view(entry(EntryStatus.DRAFT, "x", EntrySource.TEXT, false, null), null, false, false, null, EN);
-        assertThat(v.reflectEnabled()).isFalse();
-        assertThat(v.reflectText()).isEqualTo(EN.get("coach.notFinished"));
         assertThat(v.statusLabel()).isEqualTo("Draft");
         assertThat(v.showFinish()).isTrue();
         assertThat(v.showExtract()).isFalse();

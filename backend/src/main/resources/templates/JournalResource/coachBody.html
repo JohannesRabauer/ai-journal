@@ -1,0 +1,70 @@
+<div class="coach-body" data-coach-body data-state="{c.state}" data-conversation-id="{c.conversationId}" data-conv-language="{c.language}">
+{#if c.notFinished}
+  <p class="diary-muted">{t.get('coach.notFinished')}</p>
+{#else if c.notStarted}
+  <p class="diary-muted">{t.get('coach.start.text')}</p>
+  <form method="post" action="{c.reflectHref}/start" data-coach-form="start">
+    {#csrf /}
+    <button type="submit" class="entries-primary" data-coach-start>{#icon 'chat' /}<span>{t.get('coach.start.button')}</span></button>
+  </form>
+{#else}
+  <p class="coach-status">{c.statusText}</p>
+  <ol class="coach-transcript" role="list" aria-label="{t.get('coach.transcript.label')}">
+    {#for m in c.messages}
+    <li class="coach-message coach-message--{#if m.coach}coach{#else}user{/if}{#if m.explanation} coach-message--explanation{/if}{#if m.current} coach-message--current{/if}" data-message-id="{m.id}">
+      <div class="coach-message__head">
+        <span class="coach-message__speaker">{m.speaker}</span>
+        <span>{#if m.number}{m.number}{#else}{m.kind}{/if}</span>
+        {#if m.current}<span class="coach-message__now">{t.get('coach.current.title')}</span>{/if}
+        {#if m.voice}<span>{t.get('coach.voiceBadge')}</span>{/if}
+        <time datetime="{m.iso}">{m.time}</time>
+      </div>
+      <p class="coach-message__body">{m.content}</p>
+      {#if m.coach}
+      <div class="coach-message__actions"><button type="button" class="entries-ghost" data-action="play" aria-label="{t.get('coach.play.label')}" hidden>{t.get('coach.play')}</button></div>
+      {/if}
+    </li>
+    {/for}
+  </ol>
+  {#if c.canAnswer}
+  <form class="coach-answer" method="post" action="{c.reflectHref}/answer" data-coach-form="answer">
+    {#csrf /}
+    <div class="entries-field">
+      <label for="coach-answer">{t.get('coach.answer.label')}</label>
+      <textarea id="coach-answer" name="text" rows="4" aria-describedby="coach-answer-help">{c.draft}</textarea>
+      <p class="entries-field__helper" id="coach-answer-help">{t.get('coach.answer.helper')}</p>
+    </div>
+    <div class="coach-answer__actions">
+      <diary-answer-recorder labels="{c.voiceLabels}" language="{c.language}"></diary-answer-recorder>
+      <button type="submit" class="entries-primary" data-coach-send>{#icon 'send' /}<span>{t.get('coach.answer.send')}</span></button>
+    </div>
+  </form>
+  {/if}
+  <div class="coach-controls">
+    {#if c.canPause}
+    <form class="coach-action" method="post" action="{c.reflectHref}/pause" data-coach-form="pause">
+      {#csrf /}
+      <button type="submit" class="entries-ghost">{t.get('coach.pause')}</button>
+    </form>
+    {/if}
+    {#if c.canResume}
+    <form class="coach-action" method="post" action="{c.reflectHref}/resume" data-coach-form="resume">
+      {#csrf /}
+      <button type="submit" class="entries-primary">{t.get('coach.resume')}</button>
+    </form>
+    {/if}
+    {#if c.canEnd}
+    <form class="coach-action" method="post" action="{c.reflectHref}/end" data-coach-form="end">
+      {#csrf /}
+      <details class="entries-confirm">
+        <summary class="entries-ghost">{t.get('coach.end')}</summary>
+        <p>{t.get('coach.end.text')}</p>
+        <button type="submit" class="entries-primary">{t.get('coach.end.confirm')}</button>
+      </details>
+    </form>
+    {/if}
+    {#if c.canExtract}<a class="entries-ghost" href="{c.extractHref}" title="{t.get('memory.extractLearnings.title')}">{#icon 'bulb' /}<span>{t.get('memory.extractLearnings')}</span></a>{/if}
+    {#if c.canStartNew}<a class="entries-primary" href="{c.newHref}" data-coach-new>{t.get('coach.startNew.button')}</a>{/if}
+  </div>
+{/if}
+</div>

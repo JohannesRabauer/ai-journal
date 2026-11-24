@@ -52,6 +52,31 @@ public final class PageTexts {
         return write(map);
     }
 
+    /** Texts of the coach panel's script (busy line, errors, the end dialog); {@code {0}} stays a placeholder. */
+    static final String[] COACH_KEYS = {
+            "coach.thinking", "coach.waitingForRecording", "coach.retry", "coach.error.invalid", "coach.error.provider",
+            "coach.error.state", "coach.error.notFound", "coach.error.unavailable", "coach.error.unreachable",
+            "coach.announce.question", "coach.end.title", "coach.end.text", "coach.end.confirm", "coach.cancel"
+    };
+
+    private static final List<String> VOICE_KEYS = List.of("record", "stop", "cancel", "elapsed", "requesting",
+            "recording", "transcribing", "done", "cancelled", "error.mic-denied", "error.unsupported",
+            "error.unavailable", "error.too-large", "error.empty", "error.failed");
+
+    /** Labels of {@code <diary-answer-recorder>} (coach.voice.&lt;key&gt;). */
+    public static String coachVoiceLabels(Messages t) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String key : VOICE_KEYS) {
+            map.put(key, t.get("coach.voice." + key));
+        }
+        return write(map);
+    }
+
+    /** Labels of {@code <diary-coach-speech>}. */
+    public static String coachSpeechLabels(Messages t) {
+        return write(Map.of("stop", t.get("coach.speech.stop")));
+    }
+
     private static String write(Map<String, String> map) {
         try {
             return JSON.writeValueAsString(map);

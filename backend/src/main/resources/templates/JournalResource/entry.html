@@ -1,9 +1,12 @@
 {#include base}
 {#title}{t.get('entries.detail.title')} - {t.get('app.name')}{/title}
 {#head}<link rel="stylesheet" href="/css/entry-panel.css">
-<link rel="stylesheet" href="/css/entry.css">{/head}
+<link rel="stylesheet" href="/css/entry.css">
+<link rel="stylesheet" href="/css/coach.css">{/head}
 <div class="entries-detail" id="entry" data-entry-id="{v.id}" data-status="{v.status}" data-texts="{texts}">
   <a class="entries-back" href="/journal">{#icon 'chevron-left' /}<span>{t.get('entries.detail.back')}</span></a>
+  <div class="entries-layout">
+  <div class="entries-main">
   {#if v.eyebrow}<p class="diary-eyebrow">{v.eyebrow}</p>{/if}
   <h1 class="entries-title" id="entry-title" tabindex="-1">{v.heading}</h1>
   <div class="entries-meta">
@@ -50,15 +53,11 @@
   <details class="entries-remark"><summary>{t.get('entries.legacyRemark')}</summary><p>{v.legacyRemark}</p></details>
   {/if}
 
-  <section class="diary-card entries-reflect" aria-labelledby="entry-reflect-title">
-    <h2 class="entries-reflect__title" id="entry-reflect-title">{#icon 'chat' /}<span>{t.get('entries.reflect')}</span></h2>
-    <p class="diary-muted">{v.reflectText}</p>
-    {#if v.reflectEnabled}
-    <a class="entries-primary" href="{v.reflectHref}">{v.reflectLabel}</a>
-    {#else}
-    <button type="button" class="entries-primary" disabled>{v.reflectLabel}</button>
-    {/if}
-  </section>
+  </div>
+  <div class="entries-aside">
+    {#include JournalResource/coachPanel /}
+  </div>
+
 
   <div class="entries-actions">
     {#if v.showEdit}<button type="button" class="entries-ghost" data-action="edit" hidden>{#icon 'pen' /}<span>{t.get('entries.edit')}</span></button>{/if}
@@ -88,7 +87,9 @@
     </form>
     {/if}
   </div>
+  </div>
 </div>
 {#scripts}<script type="module" src="/js/entry.js"></script>
-<script type="module" src="/js/audio-player.js"></script>{/scripts}
+<script type="module" src="/js/audio-player.js"></script>
+<script type="module" src="/js/coach.js"></script>{/scripts}
 {/include}

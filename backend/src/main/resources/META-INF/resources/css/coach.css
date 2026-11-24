@@ -1,0 +1,185 @@
+/* Coach conversation: the panel beside the entry (/journal/{id}) and the full page (/journal/{id}/reflect).
+   Calm chat, theme tokens only (docs/DESIGN.md), no animation. Who is speaking is shown by the "Coach" / "You" label,
+   side and shape, never by colour alone. Classes are prefixed "coach-"; buttons and the text area come from
+   entry-panel.css (entries-primary, entries-ghost, entries-field). */
+.coach-page {
+  display: block;
+}
+.coach-page .entries-back {
+  margin-bottom: 0.5rem;
+}
+.coach-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.25rem;
+}
+.coach-panel--page {
+  max-width: var(--diary-measure);
+}
+@media (min-width: 1024px) {
+  .coach-panel:not(.coach-panel--page) {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+  }
+}
+.coach-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+.coach-panel .coach-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.15rem;
+}
+.coach-panel__title .diary-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--diary-accent);
+}
+.coach-panel__full {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--diary-accent);
+  font-size: 0.9rem;
+  font-weight: 550;
+}
+.coach-panel p {
+  margin: 0;
+}
+.coach-panel .diary-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.coach-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.coach-body > form {
+  margin: 0;
+}
+.coach-status {
+  color: var(--diary-muted);
+}
+.coach-thinking {
+  color: var(--diary-muted);
+}
+.coach-thinking[hidden],
+.coach-error[hidden],
+.coach-panel [hidden] {
+  display: none;
+}
+.coach-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--diary-error);
+  border-radius: var(--diary-radius-md);
+  background: var(--diary-surface);
+  color: var(--diary-error);
+}
+.coach-error p {
+  margin: 0 0 0.35rem;
+}
+.coach-error p:last-child {
+  margin: 0;
+}
+
+.coach-transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.coach-message {
+  box-sizing: border-box;
+  max-width: 94%;
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  color: var(--diary-text);
+}
+.coach-message--coach {
+  align-self: flex-start;
+  background: var(--diary-accent-soft);
+  border-bottom-left-radius: 0.3rem;
+}
+.coach-message--user {
+  align-self: flex-end;
+  background: var(--diary-surface-2);
+  border-bottom-right-radius: 0.3rem;
+}
+.coach-message--explanation {
+  border: 1px dashed var(--diary-border);
+}
+.coach-message--current {
+  border: 2px solid var(--diary-accent);
+}
+.coach-message__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.5rem;
+  color: var(--diary-muted);
+  font-size: 0.8125rem;
+}
+.coach-message__speaker {
+  font-weight: 650;
+  color: var(--diary-text);
+}
+.coach-message__now {
+  font-weight: 650;
+  color: var(--diary-text);
+}
+.coach-message .coach-message__body {
+  margin: 0.3rem 0 0;
+  max-width: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.coach-message__actions {
+  margin-top: 0.15rem;
+}
+
+.coach-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.coach-answer .entries-field textarea {
+  min-height: 5.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.coach-answer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.coach-answer__actions diary-answer-recorder {
+  flex: 1 1 11rem;
+}
+.coach-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--diary-rule);
+}
+.coach-action {
+  margin: 0;
+}

@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 
@@ -30,7 +31,7 @@ public class EntryPage {
     @CheckedTemplate(basePath = "JournalResource")
     static class Templates {
         static native TemplateInstance entry(Shell shell, Messages t, EntryPresenter.View v, String texts,
-                                             String audioLabels);
+                                             String audioLabels, CoachPresenter.View c);
 
         static native TemplateInstance entryNotFound(Shell shell, Messages t);
     }
@@ -43,8 +44,12 @@ public class EntryPage {
     ShellFactory shells;
     @Inject
     Csrf csrf;
+    @Inject
+    CoachPage coachPage;
+    @Inject
+    Clock clock;
 
-    public Response render(long id, String notice, boolean manual, List<Locale> acceptable) {
+    public Response render(long id, String notice, boolean manual, List<Locale> acceptable, String zoneCookie) {
         Messages t = Messages.forAcceptable(acceptable);
         Shell shell = shells.create(t, "/journal");
         EntryDto entry;
@@ -74,7 +79,10 @@ public class EntryPage {
         EntryPresenter.View view = EntryPresenter.view(entry, recordingId, audioDeleted, manual,
                 EntryPresenter.Notice.of(notice), t);
         String texts = PageTexts.json(t, PageTexts.PANEL_KEYS);
-        return Response.ok(Templates.entry(shell, t, view, texts, PageTexts.audioLabels(t)), MediaType.TEXT_HTML_TYPE).build();
+        // The coach panel beside the entry (Reflect); its start state replaces the former Reflect card.
+        CoachPresenter.View coach = coachPage.view(entry, t, ClientZone.resolve(zoneCookie, clock.getZone()), false, false,
+                null, null);
+        return Response.ok(Templates.entry(shell, t, view, texts, PageTexts.audioLabels(t), coach), MediaType.TEXT_HTML_TYPE).build();
     }
 
     // ---- no-JavaScript actions: token first, then the same service calls the JSON API makes, then 303 ----
