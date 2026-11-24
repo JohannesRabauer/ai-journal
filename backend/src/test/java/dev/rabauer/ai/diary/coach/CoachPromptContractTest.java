@@ -164,7 +164,7 @@ class CoachPromptContractTest {
         Fakes.llm().enqueue(turn("EXPLANATION", "Focus often drops when we are tired. Does that sound right to you?"));
         answerOk(id, "What do you think is going on?");
         FakeLlmGateway.Call explicit = Fakes.llm().calls().get(2);
-        assertThat(explicit.schema().schemaJson()).contains("\"enum\":[\"FOLLOW_UP_QUESTION\",\"EXPLANATION\"]");
+        assertThat(explicit.schema().schemaJson()).contains("\"enum\":[\"EXPLANATION\"]");
         assertThat(system(explicit)).contains("explicitly asked").doesNotContain("did NOT ask");
     }
 

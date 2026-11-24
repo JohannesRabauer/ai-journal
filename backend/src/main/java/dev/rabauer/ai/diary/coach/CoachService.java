@@ -271,12 +271,14 @@ public class CoachService {
     }
 
     static List<CoachTurnKind> allowedKinds(boolean explicit, boolean done, boolean questionsExhausted) {
+        if (explicit) {
+            // The user explicitly asked: answer the request (briefly, ending with a question, SPEC 5.3) instead of
+            // dodging it. Small models otherwise tend to reply with another question.
+            return List.of(CoachTurnKind.EXPLANATION);
+        }
         List<CoachTurnKind> allowed = new ArrayList<>();
         if (!done) {
             allowed.add(CoachTurnKind.FOLLOW_UP_QUESTION);
-        }
-        if (explicit) {
-            allowed.add(CoachTurnKind.EXPLANATION);
         }
         if (done || questionsExhausted) {
             allowed.add(CoachTurnKind.CLOSING);
@@ -301,6 +303,9 @@ public class CoachService {
                 }
                 if (CoachRules.questionMarks(t.text()) > 1) {
                     problems.add("ask exactly one question at a time");
+                }
+                if (!t.text().strip().matches("(?s).*[.!:].*\\S.*\\?$")) {
+                    problems.add("the user asked for an explanation: first explain briefly in one or two statements, then ask one question");
                 }
             }
             case CLOSING -> {

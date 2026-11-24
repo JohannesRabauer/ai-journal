@@ -121,11 +121,22 @@ class CoachRulesTest {
     }
 
     @Test
+    void explanationMustExplainBeforeAsking() {
+        var only = java.util.List.of(CoachTurnKind.EXPLANATION);
+        assertThat(CoachService.checkTurn(new CoachTurn(CoachTurnKind.EXPLANATION, "Wie kann der nächste Versuch anders laufen?"), only))
+                .anyMatch(p -> p.contains("first explain"));
+        assertThat(CoachService.checkTurn(new CoachTurn(CoachTurnKind.EXPLANATION,
+                "Unklare Gespräche wirken oft lange nach, weil nichts abgeschlossen ist. Was fehlt dir noch zum Abschluss?"), only))
+                .isEmpty();
+    }
+
+    @Test
     void allowedKindsNeverContainExplanationUnlessRequested() {
         assertThat(CoachService.allowedKinds(false, false, false)).containsExactly(CoachTurnKind.FOLLOW_UP_QUESTION);
         assertThat(CoachService.allowedKinds(false, false, true)).containsExactly(CoachTurnKind.FOLLOW_UP_QUESTION, CoachTurnKind.CLOSING);
         assertThat(CoachService.allowedKinds(false, true, false)).containsExactly(CoachTurnKind.CLOSING);
-        assertThat(CoachService.allowedKinds(true, false, false)).containsExactly(CoachTurnKind.FOLLOW_UP_QUESTION, CoachTurnKind.EXPLANATION);
+        assertThat(CoachService.allowedKinds(true, false, false)).as("an explicit request is answered").containsExactly(CoachTurnKind.EXPLANATION);
+        assertThat(CoachService.allowedKinds(true, true, true)).containsExactly(CoachTurnKind.EXPLANATION);
     }
 
     @Test
