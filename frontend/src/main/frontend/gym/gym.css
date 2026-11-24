@@ -34,3 +34,10 @@
 .gym-history__snippet { overflow-wrap: anywhere; }
 .gym-history__body { display: flex; flex-direction: column; gap: .5rem; padding-bottom: .5rem; }
 .gym-answer-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Buttons keep their natural width inside the column layouts. */
+.gym-pick > vaadin-button, .gym-exercise > vaadin-button, .gym-history > vaadin-button { align-self: flex-start; }
+.gym-error { position: sticky; top: .5rem; z-index: 2; }
+.gym-history__item { min-width: 0; }
+.gym-history__item vaadin-details-summary, .gym-history__head, .gym-history__snippet { white-space: normal; min-width: 0; }
+.gym-history__snippet { font-weight: 400; color: var(--diary-text, #1f2328); }
+.gym-history__head { font-weight: 400; }
