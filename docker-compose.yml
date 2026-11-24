@@ -2,12 +2,12 @@
 #
 #   docker compose --profile gpu up --build -d                  # + Ollama and Whisper on an NVIDIA GPU
 #   docker compose --profile cpu up --build -d                  # + Ollama and Whisper on CPU
-#   docker compose --profile cpu --profile tts up --build -d    # + Piper text-to-speech
+#   docker compose --profile cpu --profile tts up --build -d    # + Piper text-to-speech (also set JOURNAL_TTS_PROVIDER=piper in .env)
 #   docker compose up --build -d                                # only db, backend, frontend (AI services external)
 #
 # Pick exactly one of gpu / cpu. All published ports bind to 127.0.0.1. Secrets come from .env only.
 # Directories under ./data are created on first start; on Linux create them first
-# (mkdir -p data/audio data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
+# (mkdir -p data/audio data/tts-cache data/whisper data/piper data/ollama) and set JOURNAL_UID/JOURNAL_GID in .env
 # if your user id is not 1001 (backend and piper containers must be able to write there).
 
 x-ollama: &ollama
@@ -81,7 +81,7 @@ services:
       - JOURNAL_DB_URL=jdbc:postgresql://db:5432/ai-diary
       - JOURNAL_DB_PASSWORD=${JOURNAL_DB_PASSWORD:?Set JOURNAL_DB_PASSWORD in .env}
       - JOURNAL_HTTP_HOST=0.0.0.0
-      # Providers (docs/CONFIG.md). TTS defaults to none until the Piper client lands (Wave 2); then use JOURNAL_TTS_PROVIDER=piper with the tts profile.
+      # Providers (docs/CONFIG.md). TTS defaults to none (D-021); with the tts profile set JOURNAL_TTS_PROVIDER=piper in .env.
       - JOURNAL_STT_PROVIDER=${JOURNAL_STT_PROVIDER:-whisper}
       - JOURNAL_LLM_PROVIDER=${JOURNAL_LLM_PROVIDER:-ollama}
       - JOURNAL_EMBEDDING_PROVIDER=${JOURNAL_EMBEDDING_PROVIDER:-ollama}
@@ -94,8 +94,10 @@ services:
       - JOURNAL_EMBEDDING_OLLAMA_BASE_URL=${JOURNAL_EMBEDDING_OLLAMA_BASE_URL:-http://ollama:11434}
       - JOURNAL_TTS_PIPER_BASE_URL=${JOURNAL_TTS_PIPER_BASE_URL:-http://piper:5000}
       - JOURNAL_AUDIO_FILESYSTEM_DIRECTORY=/data/audio
+      - JOURNAL_TTS_CACHE_DIR=/data/tts-cache
     volumes:
       - ${JOURNAL_AUDIO_DATA_DIR:-./data/audio}:/data/audio
+      - ./data/tts-cache:/data/tts-cache
     ports:
       - "127.0.0.1:${JOURNAL_BACKEND_HOST_PORT:-8080}:8080"
     healthcheck:

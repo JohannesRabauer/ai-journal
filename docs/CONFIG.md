@@ -27,13 +27,13 @@ Startup fails without them. It cannot be activated by accident in A/B.
 | `journal.embedding.provider` | `ollama`, `openai`*, `fake` | `ollama` | `openai` |
 | `journal.vector.provider` | `pgvector` (PostgreSQL only), `jdbc` (H2 or PostgreSQL), `memory` | `pgvector` | `jdbc` |
 | `journal.audio.provider` | `filesystem`, `memory` | `filesystem` | `filesystem` |
-| `journal.tts.provider` | `piper`, `openai`*, `none`, `fake` | `piper` | `openai` |
+| `journal.tts.provider` | `piper`, `openai`*, `none`, `fake` | `none` (set `piper` with the `tts` compose profile) | `openai` |
 | `journal.scheduler.provider` | `fake` (W3a adds the real one) | `fake` | `fake` |
 
 \* `openai` sends data off the device and is only accepted with `journal.profile=lite-cloud`.
 `fake`/`memory` are for tests and development. Compose defaults come from `docker-compose.yml`; without the `tts`
-compose profile set `JOURNAL_TTS_PROVIDER=none` in `.env` (speech output is then simply unavailable, the coach shows
-text).
+compose profile keep `JOURNAL_TTS_PROVIDER=none` (the default, D-021; the coach shows text). With `--profile tts` set
+`JOURNAL_TTS_PROVIDER=piper` in `.env`. See "Text to speech" below.
 
 ## Core keys (backend)
 
@@ -64,10 +64,28 @@ text).
 | `journal.index.backfill.enabled` / `.initial-delay` / `.interval` / `.pause` | | see application.properties | W1e |
 | `journal.audio.filesystem.directory` | `JOURNAL_AUDIO_FILESYSTEM_DIRECTORY` | `./data/audio` (compose: `/data/audio`) | W1a |
 | `journal.tts.piper.base-url` | `JOURNAL_TTS_PIPER_BASE_URL` | `http://localhost:5000` (compose: `http://piper:5000`) | W2b |
+| `journal.tts.piper.timeout` / `.voice-de` / `.voice-en` | | `30s` / `de_DE-thorsten-medium` / `en_US-lessac-medium` | W2b |
+| `journal.tts.openai.model` / `.voice` / `.format` / `.timeout` | | `gpt-4o-mini-tts` / `alloy` / `mp3` (or `wav`) / `30s` | W2b (lite-cloud) |
+| `journal.tts.cache.directory` / `.max-entries` | `JOURNAL_TTS_CACHE_DIR` / `JOURNAL_TTS_CACHE_MAX_ENTRIES` | `./data/tts-cache` (compose: `/data/tts-cache`) / `500` | W2b |
 
 The Ollama models named above must be pulled into the Ollama instance. Compose does that automatically on the first
 start (`OLLAMA_MODELS_TO_PULL` in `.env`, default `qwen3-embedding:0.6b qwen3:1.7b`). If you change a model key, change
 `OLLAMA_MODELS_TO_PULL` too. A changed embedding model never mixes vector spaces (vectors carry their `modelId`, D-012).
+
+## Text to speech (W2b)
+
+`POST /api/tts` `{text, language, voice}` answers audio (`audio/wav` for Piper, `audio/mpeg` for OpenAI by default) or
+**204 No Content** whenever speech is unavailable (provider `none`, Piper down, OpenAI error): clients then show the text only.
+Text must be 1..1000 characters (else 400). `language` AUTO is guessed (German markers, otherwise English). The voice is the
+request's `voice`, else the voice chosen in the settings (`ttsVoiceDe`/`ttsVoiceEn`) if the active provider lists it,
+else the provider default (`journal.tts.piper.voice-de/-en`, `journal.tts.openai.voice`). `GET /api/tts/voices` lists the
+provider's voices (Piper: installed models by `de_`/`en_` prefix; empty when Piper is unreachable).
+
+Cache: audio is stored as files in `journal.tts.cache.directory` under `sha256(provider, voice, language, text)`, at most
+`journal.tts.cache.max-entries` files (least recently used evicted). A cache hit never calls the provider. The cache holds
+spoken coach text, so "delete all" (SPEC section 10) clears it; it is not part of the export (derived data).
+The OpenAI provider is lite-cloud only; the format defaults to mp3 (about 10x smaller than wav, which keeps the cache small).
+Logs contain the provider and failure kind only, never the text.
 
 ## Frontend
 
