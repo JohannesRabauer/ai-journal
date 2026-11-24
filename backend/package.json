@@ -1,0 +1,9 @@
+{
+  "name": "ai-diary-backend-web",
+  "private": true,
+  "type": "module",
+  "description": "Only for the node tests of the browser modules in src/main/resources/META-INF/resources/js (no dependencies).",
+  "scripts": {
+    "test": "node --test \"src/test/js/**/*.test.mjs\""
+  }
+}
