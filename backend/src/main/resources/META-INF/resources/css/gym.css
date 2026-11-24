@@ -1,0 +1,51 @@
+/* Thinking Gym. Calm, text first, theme tokens only (docs/DESIGN.md). No animation at all, so reduced motion is respected
+   by construction. Ported from the Vaadin frontend. */
+.gym-view { display: flex; flex-direction: column; gap: 1rem; max-width: 48rem; }
+.gym-view h2 { font-size: 1.25rem; font-weight: 650; }
+.gym-view h1, .gym-view h2, .gym-view h3, .gym-view p { margin: 0; }
+.gym-status { color: var(--diary-muted); min-height: 1.5rem; }
+.gym-status:empty { display: none; }
+.gym-error { position: sticky; top: .5rem; z-index: 2; max-width: var(--diary-measure); }
+.gym-pick, .gym-exercise, .gym-history { display: flex; flex-direction: column; gap: .75rem; }
+.gym-exercise[hidden], .gym-pick[hidden], .gym-history[hidden] { display: none; }
+.gym-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.gym-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .35rem; min-height: 2.75rem;
+  padding: 1rem 1.1rem; text-align: start; font: inherit; color: var(--diary-text); cursor: pointer; }
+.gym-card:hover { border-color: var(--diary-accent); }
+.gym-card:disabled { cursor: default; opacity: .6; }
+.gym-card__title { font-size: 1.05rem; font-weight: 650; }
+.gym-card__text { color: var(--diary-muted); font-size: .9375rem; line-height: 1.4; }
+.gym-surprise { align-self: flex-start; gap: .5rem; }
+.gym-pick > .diary-button, .gym-exercise > .diary-button, .gym-history > .diary-button { align-self: flex-start; }
+.gym-meta { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--diary-muted); font-size: .875rem; }
+.gym-prompt { font-size: 1.15rem; line-height: 1.55; max-width: var(--diary-measure); overflow-wrap: anywhere; padding: 1.1rem 1.25rem; }
+.gym-source { padding: .75rem 1rem; border-left: 4px solid var(--diary-accent); background: var(--diary-surface);
+  border-radius: 0 var(--diary-radius-md) var(--diary-radius-md) 0; max-width: var(--diary-measure); display: flex; flex-direction: column; gap: .35rem; }
+.gym-source[hidden] { display: none; }
+.gym-source__label, .gym-label { color: var(--diary-muted); font-size: .875rem; font-weight: 600; }
+.gym-source blockquote { margin: 0; font-style: italic; white-space: pre-wrap; overflow-wrap: anywhere; }
+.gym-steps { margin: .25rem 0 0; padding-left: 1.5rem; max-width: var(--diary-measure); }
+.gym-steps li { margin: .25rem 0; padding-left: .25rem; }
+.gym-timer { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; }
+.gym-timer__running { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; }
+.gym-timer__running[hidden] { display: none; }
+.gym-timer__value { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.gym-answer { display: flex; flex-direction: column; gap: .75rem; max-width: var(--diary-measure); }
+.gym-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.gym-feedback { padding: 1rem 1.25rem; border-radius: var(--diary-radius-md); background: var(--diary-accent-soft); max-width: var(--diary-measure); }
+.gym-feedback[hidden] { display: none; }
+.gym-feedback h3 { margin-bottom: .25rem; font-size: 1.05rem; }
+.gym-questions { margin: .25rem 0 0; padding-left: 1.5rem; max-width: var(--diary-measure); }
+.gym-questions li { margin: .35rem 0; }
+
+.gym-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; max-width: var(--diary-measure); }
+.gym-filter .diary-field { flex: 1 1 14rem; }
+.gym-history__list { display: flex; flex-direction: column; gap: .5rem; }
+.gym-history__item { padding: .25rem .75rem; max-width: var(--diary-measure); min-width: 0; }
+.gym-history__item > summary { display: flex; flex-direction: column; gap: .15rem; min-height: 2.75rem; padding: .4rem 0; cursor: pointer; }
+.gym-history__head { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--diary-muted); font-size: .875rem; }
+.gym-history__head span:nth-child(2) { color: var(--diary-text); font-weight: 600; }
+.gym-history__snippet { overflow-wrap: anywhere; color: var(--diary-text); }
+.gym-history__body { display: flex; flex-direction: column; gap: .5rem; padding-bottom: .5rem; }
+.gym-answer-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.gym-history__more { align-self: flex-start; }
