@@ -13,7 +13,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  padding: 1.25rem;
+  padding: 1.35rem;
+  border-radius: 1.5rem;
 }
 .coach-panel--page {
   max-width: var(--diary-measure);
@@ -40,11 +41,15 @@
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
 }
-.coach-panel__title .diary-icon {
-  width: 1.2rem;
-  height: 1.2rem;
+.coach-panel .coach-panel__title .diary-icon {
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.4rem;
+  border-radius: 0.65rem;
+  background: var(--diary-accent-soft);
   color: var(--diary-accent);
 }
 .coach-panel__full {
@@ -53,7 +58,7 @@
   min-height: 2.75rem;
   color: var(--diary-accent);
   font-size: 0.9rem;
-  font-weight: 550;
+  font-weight: 600;
 }
 .coach-panel p {
   margin: 0;
@@ -105,26 +110,27 @@
 }
 .coach-message {
   box-sizing: border-box;
-  max-width: 94%;
-  padding: 0.8rem 1rem;
-  border-radius: 1rem;
+  max-width: 92%;
+  padding: 0.85rem 1.1rem;
+  border-radius: 1.25rem;
   color: var(--diary-text);
 }
 .coach-message--coach {
   align-self: flex-start;
   background: var(--diary-accent-soft);
-  border-bottom-left-radius: 0.3rem;
+  border-bottom-left-radius: 0.35rem;
 }
 .coach-message--user {
   align-self: flex-end;
   background: var(--diary-surface-2);
-  border-bottom-right-radius: 0.3rem;
+  border-bottom-right-radius: 0.35rem;
 }
 .coach-message--explanation {
   border: 1px dashed var(--diary-border);
 }
 .coach-message--current {
   border: 2px solid var(--diary-accent);
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--diary-accent) 60%, transparent);
 }
 .coach-message__head {
   display: flex;
@@ -147,7 +153,7 @@
   max-width: none;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.55;
 }
 .coach-message__actions {

@@ -10,8 +10,9 @@
 .gym-exercise[hidden], .gym-pick[hidden], .gym-history[hidden] { display: none; }
 .gym-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: .75rem; }
 .gym-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .35rem; min-height: 2.75rem;
-  padding: 1rem 1.1rem; text-align: start; font: inherit; color: var(--diary-text); cursor: pointer; }
-.gym-card:hover { border-color: var(--diary-accent); }
+  padding: 1.1rem 1.2rem; text-align: start; font: inherit; color: var(--diary-text); cursor: pointer;
+  transition: box-shadow 200ms ease, transform 200ms var(--diary-ease), border-color 150ms ease; }
+.gym-card:hover:not(:disabled) { border-color: var(--diary-accent); box-shadow: var(--diary-shadow-lift); transform: translateY(-1px); }
 .gym-card:disabled { cursor: default; opacity: .6; }
 .gym-card__title { font-size: 1.05rem; font-weight: 650; overflow-wrap: anywhere; }
 .gym-card__text { color: var(--diary-muted); font-size: .9375rem; line-height: 1.4; }

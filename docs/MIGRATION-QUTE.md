@@ -29,7 +29,7 @@ browser ──same origin──> backend (Quarkus, :8080)
   Interactive parts are small vanilla ES modules (no framework, no CDN, no inline script; SPEC 10).
 - Page classes call the services directly (no HTTP hop). Pure view logic lives in small presenter classes, unit-tested
   like the Vaadin presenters today (`JournalPresenter` in the spike is the pattern).
-- Look and accessibility stay as they are: the "Quiet paper" tokens, building blocks, page stylesheets and icon sprite
+- Look and accessibility stay as they are: the theme tokens (now "Dusk", docs/DESIGN.md), building blocks, page stylesheets and icon sprite
   move over; `ThemeContrastTest` moves to the backend. Lumo mappings disappear; native controls get explicit styles.
 
 ## What carries over unchanged

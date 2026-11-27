@@ -16,9 +16,9 @@
 
 /* the one flashcard */
 .memory-section.memory-review { max-width: none; align-self: stretch; }
-.memory-flash { padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
+.memory-flash { padding: 2.5rem 2rem; border-radius: 1.75rem; box-shadow: var(--diary-shadow-lift); display: flex; flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
 .memory-flash__meta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .5rem; }
-.memory-flash__q { font-size: 1.5rem; line-height: 1.4; max-width: 30ch; margin: .25rem auto 1rem; }
+.memory-flash__q { font-family: var(--diary-font-display); font-size: 1.6rem; line-height: 1.35; letter-spacing: -.015em; max-width: 30ch; margin: .25rem auto 1rem; text-wrap: balance; }
 .memory-done { padding: 1.5rem 2rem; align-self: stretch; box-sizing: border-box; width: 100%; }
 .memory-done p { margin: 0; font-size: 1.1rem; }
 .memory-card__type { color: var(--diary-muted); font-size: .875rem; }
@@ -45,7 +45,9 @@
 .memory-also { margin: .5rem 0 0; font-size: 1.1rem; }
 .memory-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: .75rem; }
 .memory-tile { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; padding: 1rem 1.1rem; min-height: 44px;
-  text-align: left; font: inherit; color: var(--diary-text); cursor: pointer; width: 100%; box-sizing: border-box; text-decoration: none; }
+  text-align: left; font: inherit; color: var(--diary-text); cursor: pointer; width: 100%; box-sizing: border-box; text-decoration: none;
+  transition: box-shadow 200ms ease, transform 200ms var(--diary-ease), border-color 150ms ease; }
+.memory-tile:hover { box-shadow: var(--diary-shadow-lift); transform: translateY(-1px); }
 .memory-tile__title { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
 .memory-tile__desc { color: var(--diary-muted); font-size: .9rem; flex: 1; }
 .memory-tile__state { color: var(--diary-accent); font-size: .875rem; font-weight: 600; text-decoration: underline; }

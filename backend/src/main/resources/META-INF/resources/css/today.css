@@ -1,5 +1,5 @@
-/* Today page (ported from the Vaadin today.css). Theme tokens only (docs/DESIGN.md); the shared stylesheet already
-   stops transitions and animations for prefers-reduced-motion, the spinner below repeats it explicitly.
+/* Today page. Theme tokens only (docs/DESIGN.md); the shared stylesheet already stops transitions and animations for
+   prefers-reduced-motion, the spinner below repeats it explicitly.
    The editor panel (review) is styled by entry-panel.css. */
 .today-view {
   display: block;
@@ -12,12 +12,13 @@
   margin: 0;
 }
 .today-view .today-eyebrow {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.4rem;
 }
+/* The greeting is the one loud line of the app. */
 .today-view .today-title {
-  font-size: clamp(1.9rem, 4vw, 2.5rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.4rem, 6vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
 }
 .today-title:focus {
   outline: none;
@@ -28,15 +29,26 @@
   border-radius: 0.25rem;
 }
 .today-view .today-lead {
-  margin: 0.5rem 0 1.5rem;
+  margin: 0.9rem 0 2rem;
   font-size: 1.1rem;
-  max-width: var(--diary-measure);
+  max-width: 34rem;
+  text-wrap: pretty;
 }
 
-/* ---- Composer card ------------------------------------------------------------------- */
+/* ---- Composer card: the place to speak or write. Its edge catches the light of the sky. ---- */
 .today-composer {
   padding: 1.5rem;
   box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(var(--diary-surface), var(--diary-surface)) padding-box,
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--diary-sky-a) 70%, var(--diary-rule)),
+      var(--diary-rule) 38%,
+      var(--diary-rule) 62%,
+      color-mix(in srgb, var(--diary-sky-b) 70%, var(--diary-rule))) border-box;
+  box-shadow: var(--diary-shadow-lift);
 }
 .today-composer-top {
   display: flex;
@@ -61,11 +73,11 @@
 .today-seg-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   margin: 0;
   min-height: 2.75rem;
   min-width: 2.75rem;
-  padding: 0 1rem;
+  padding: 0 1.15rem;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -73,23 +85,30 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.today-seg-button:hover {
+  color: var(--diary-text);
 }
 .today-seg-button[aria-pressed='true'] {
   background: var(--diary-surface);
   color: var(--diary-text);
   box-shadow: var(--diary-shadow);
 }
+.today-seg-button[aria-pressed='true'] .diary-icon {
+  color: var(--diary-accent);
+}
 .today-seg-button .diary-icon {
   width: 1.1rem;
   height: 1.1rem;
 }
 
-/* Compact language select (replaces vaadin-select with a small theme) */
+/* Compact language select */
 .today-lang {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  width: 12.5rem;
+  width: 13.75rem;
   max-width: 100%;
 }
 .today-lang label {
@@ -113,10 +132,10 @@
   box-sizing: border-box;
   width: 100%;
   height: 2.75rem;
-  padding: 0 1rem 0 2.5rem;
+  padding: 0 0.6rem 0 2.4rem;
   border: 1px solid var(--diary-border);
   border-radius: 999px;
-  background: var(--diary-bg);
+  background: var(--diary-surface);
   color: var(--diary-text);
   font: inherit;
 }
@@ -143,16 +162,14 @@
 .today-write .today-field {
   grid-column: 1 / -1;
 }
-.today-write .today-field label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 .today-write .today-field textarea {
-  min-height: 14rem;
+  min-height: 16rem;
   max-height: none;
-  background: var(--diary-bg);
-  font-size: 1.15rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--diary-bg) 60%, var(--diary-surface));
+  font-size: 1.2rem;
+  line-height: 1.75;
 }
 .today-write .today-autosave {
   grid-column: 1;
@@ -167,7 +184,7 @@
   height: 1rem;
   margin-inline-end: 0.4rem;
   vertical-align: -0.15rem;
-  background: var(--diary-sage-text);
+  background: var(--diary-accent);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
@@ -192,7 +209,7 @@
 }
 .today-review .entries-field textarea {
   min-height: 12rem;
-  background: var(--diary-bg);
+  background: color-mix(in srgb, var(--diary-bg) 60%, var(--diary-surface));
 }
 .today-review .entries-panel__editor > .entries-primary {
   align-self: flex-end;
@@ -207,7 +224,7 @@
 
 /* ---- Earlier today ------------------------------------------------------------------- */
 .today-view .today-earlier {
-  margin: 2.25rem 0 0.5rem;
+  margin: 3rem 0 0.75rem;
   font-size: 1.3rem;
 }
 .today-view .today-empty {
@@ -226,8 +243,10 @@
   left: calc(3rem + 0.6rem + 0.6rem);
   top: 0.5rem;
   bottom: 0.5rem;
-  width: 1px;
-  background: var(--diary-rule);
+  width: 2px;
+  margin-left: -0.5px;
+  border-radius: 1px;
+  background: linear-gradient(var(--diary-accent-soft), var(--diary-rule));
 }
 .today-tl-item {
   display: grid;
@@ -237,9 +256,10 @@
   padding: 0.5rem 0;
 }
 .today-tl-time {
-  padding-top: 0.9rem;
+  padding-top: 0.95rem;
   text-align: right;
   font-size: 0.85rem;
+  font-weight: 550;
   color: var(--diary-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -249,22 +269,26 @@
   box-sizing: border-box;
   width: 0.75rem;
   height: 0.75rem;
-  margin: 1.05rem auto 0;
+  margin: 1.1rem auto 0;
   border-radius: 50%;
-  background: var(--diary-surface);
-  border: 2px solid var(--diary-accent);
+  background: var(--diary-accent);
+  box-shadow: 0 0 0 4px var(--diary-bg), 0 0 0 5px var(--diary-accent-soft);
+}
+.today-tl-card {
+  transition: box-shadow 200ms ease, transform 200ms var(--diary-ease);
+}
+.today-tl-card:hover {
+  box-shadow: var(--diary-shadow-lift);
+  transform: translateY(-1px);
 }
 .today-tl-link {
   display: block;
   box-sizing: border-box;
   min-height: 2.75rem;
-  padding: 0.9rem 1.1rem;
+  padding: 0.95rem 1.15rem;
   border-radius: var(--diary-radius-lg);
   color: inherit;
   text-decoration: none;
-}
-.today-tl-link:hover {
-  background: var(--diary-surface-2);
 }
 .today-tl-meta {
   display: flex;
@@ -324,6 +348,9 @@
   .today-composer,
   .today-review {
     padding: 1rem;
+  }
+  .today-composer {
+    border-radius: 1.4rem;
   }
   .today-lang {
     width: 100%;

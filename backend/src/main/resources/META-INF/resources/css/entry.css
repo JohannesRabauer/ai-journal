@@ -11,13 +11,16 @@
   align-items: center;
   gap: 0.35rem;
   min-height: 2.75rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.75rem -0.75rem;
+  padding: 0 0.9rem 0 0.6rem;
+  border-radius: 999px;
   color: var(--diary-accent);
-  font-weight: 550;
+  font-weight: 600;
   text-decoration: none;
+  transition: background-color 150ms ease;
 }
 .entries-back:hover {
-  text-decoration: underline;
+  background: var(--diary-accent-soft);
 }
 .entries-back .diary-icon {
   width: 1.1rem;
@@ -25,6 +28,8 @@
 }
 .entries-detail .entries-title {
   margin: 0 0 1rem;
+  font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+  line-height: 1.18;
   overflow-wrap: anywhere;
 }
 .entries-title:focus {
@@ -67,8 +72,13 @@
   align-items: center;
   gap: 0.9rem;
   box-sizing: border-box;
-  padding: 0.7rem 1rem;
+  padding: 0.7rem 1.1rem 0.7rem 0.7rem;
   margin: 1rem 0 1.75rem;
+  border-radius: 999px;
+}
+.entries-player:has(.entries-player__error:not(:empty)),
+.entries-player:not(:has(.entries-player__play)) {
+  border-radius: var(--diary-radius-lg);
 }
 .entries-player audio {
   width: 100%;
@@ -82,9 +92,19 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--diary-accent);
+  background:
+    radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--diary-on-accent) 24%, transparent), transparent 50%),
+    var(--diary-accent);
   color: var(--diary-on-accent);
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--diary-accent) 70%, transparent);
   cursor: pointer;
+  transition: transform 150ms var(--diary-ease);
+}
+.entries-player__play:hover {
+  transform: scale(1.06);
+}
+.entries-player__play:active {
+  transform: scale(0.95);
 }
 .entries-player__play .diary-icon {
   width: 1.2rem;
@@ -135,8 +155,9 @@
   margin-bottom: 1.5rem;
 }
 .entries-reading .entries-field textarea {
+  padding: 1.25rem 1.4rem;
   font-size: 1.2rem;
-  line-height: 1.75;
+  line-height: 1.8;
 }
 .entries-remark {
   max-width: var(--diary-measure);
@@ -211,7 +232,7 @@
   padding: 0 1.25rem;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 550;
+  font-weight: 600;
 }
 .entries-confirm summary::-webkit-details-marker {
   display: none;

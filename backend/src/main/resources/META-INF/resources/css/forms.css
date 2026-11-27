@@ -29,8 +29,14 @@
   border-radius: var(--diary-radius-md);
   background: var(--diary-surface);
   color: var(--diary-text);
+  caret-color: var(--diary-accent);
   font: inherit;
   line-height: 1.5;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.diary-input:focus {
+  border-color: var(--diary-accent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--diary-accent) 12%, transparent);
 }
 textarea.diary-input {
   min-height: 6rem;
@@ -73,17 +79,23 @@ button.diary-button:disabled {
 .diary-button-primary {
   background: var(--diary-accent);
   color: var(--diary-on-accent);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--diary-accent) 70%, transparent);
+}
+button.diary-button-primary:disabled {
+  box-shadow: none;
 }
 .diary-button-primary:hover {
   background: color-mix(in srgb, var(--diary-accent) 85%, var(--diary-text));
 }
 .diary-button-quiet {
   background: transparent;
+  box-shadow: none;
 }
 .diary-button-quiet:hover {
   background: var(--diary-surface-2);
 }
 .diary-button-contrast {
+  box-shadow: none;
   background: var(--diary-surface-2);
   color: var(--diary-text);
   border: 1px solid var(--diary-border);

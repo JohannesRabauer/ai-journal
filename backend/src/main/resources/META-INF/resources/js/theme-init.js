@@ -42,4 +42,12 @@
     mq.addEventListener('change', apply);
   }
   apply();
+
+  // The sky behind the page follows the local time of day (css/styles.css, html[data-daypart]). Decoration only.
+  function daypart() {
+    var h = new Date().getHours();
+    root.setAttribute('data-daypart', h < 5 ? 'night' : h < 11 ? 'morning' : h < 17 ? 'day' : h < 22 ? 'evening' : 'night');
+  }
+  daypart();
+  window.setInterval(daypart, 10 * 60 * 1000);
 })();

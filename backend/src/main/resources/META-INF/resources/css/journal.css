@@ -1,4 +1,4 @@
-/* Journal list (copied from the Vaadin frontend's entries.css; detail page rules left out). Theme tokens only. */
+/* Journal list: the days of the diary, newest first. Theme tokens only (docs/DESIGN.md). */
 
 .entries-journal {
   display: block;
@@ -11,27 +11,32 @@
   margin-bottom: 0.25rem;
 }
 .entries-days {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
 }
 .entries-day {
-  margin-bottom: 1.75rem;
+  margin-bottom: 2rem;
 }
-.entries-day__heading {
+/* The day sticks to the top while its entries scroll by; frosted, so the sky still shows through. */
+.entries-journal .entries-day__heading {
   position: sticky;
   top: 0;
   z-index: 2;
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
-  margin: 0 0 0.75rem;
-  padding: 0.5rem 0;
-  background: var(--diary-bg);
-  border-bottom: 1px solid var(--diary-rule);
-  font-size: 1.15rem;
+  margin: 0 -0.75rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0 0 var(--diary-radius-md) var(--diary-radius-md);
+  background: color-mix(in srgb, var(--diary-bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  font-size: 1.2rem;
 }
 .entries-day__detail {
+  font-family: var(--diary-font);
   font-size: 0.9rem;
   font-weight: 400;
+  letter-spacing: 0;
 }
 .entries-list {
   list-style: none;
@@ -42,18 +47,20 @@
 }
 .entries-card {
   position: relative;
+  transition: box-shadow 200ms ease, transform 200ms var(--diary-ease);
+}
+.entries-card:hover {
+  box-shadow: var(--diary-shadow-lift);
+  transform: translateY(-1px);
 }
 .entries-card__link {
   display: block;
   box-sizing: border-box;
   min-height: 2.75rem;
-  padding: 0.9rem 1.1rem;
+  padding: 1rem 1.2rem;
   border-radius: var(--diary-radius-lg);
   color: inherit;
   text-decoration: none;
-}
-.entries-card__link:hover {
-  background: var(--diary-surface-2);
 }
 .entries-meta {
   display: flex;
@@ -62,7 +69,9 @@
   gap: 0.4rem;
 }
 .entries-time {
-  font-size: 0.85rem;
+  margin-right: 0.15rem;
+  font-size: 0.875rem;
+  font-weight: 550;
   font-variant-numeric: tabular-nums;
 }
 .entries-chip-status {
@@ -75,16 +84,18 @@
   height: 0.9rem;
 }
 .entries-excerpt {
-  margin: 0.35rem 0 0;
+  margin: 0.4rem 0 0;
   max-width: none;
+  font-size: 1.05rem;
   overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .entries-remark {
-  margin: 0 1.1rem 0.75rem;
+  margin: 0 1.2rem 0.75rem;
 }
 .entries-progress {
   margin: 0.5rem 0 0;
@@ -106,7 +117,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
 }
 .entries-search {
   flex: 1 1 16rem;
@@ -126,14 +137,15 @@
 .entries-search__field {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   box-sizing: border-box;
-  min-height: 2.75rem;
-  padding: 0 1rem;
+  min-height: 3rem;
+  padding: 0 1.1rem;
   border: 1px solid var(--diary-border);
   border-radius: 999px;
   background: var(--diary-surface);
   color: var(--diary-muted);
+  box-shadow: var(--diary-shadow);
 }
 .entries-search__field:focus-within {
   outline: 3px solid var(--diary-accent);
@@ -169,8 +181,9 @@
   padding: 0 1rem;
   border-radius: 999px;
   color: var(--diary-muted);
-  font-weight: 550;
+  font-weight: 600;
   text-decoration: none;
+  transition: color 150ms ease;
 }
 .entries-filter__option:hover {
   color: var(--diary-text);
@@ -181,7 +194,10 @@
   box-shadow: var(--diary-shadow);
 }
 .entries-count {
-  margin: 1.25rem 0 0;
+  margin: 1.5rem 0 0;
+}
+.entries-results {
+  transition: opacity 150ms ease;
 }
 .entries-results[aria-busy='true'] {
   opacity: 0.6;
